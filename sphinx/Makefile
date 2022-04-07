@@ -20,7 +20,7 @@ help:
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 # Add github build
-github:
+ghpage:
 	@make clean
 	@make html
 	@cp -a $(BUILDDIR)/html/. $(BUILDDIR)

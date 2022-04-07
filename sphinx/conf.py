@@ -15,9 +15,9 @@
 # sys.path.insert(0, os.path.abspath("."))
 from pathlib import Path
 
-import template
+import toreplace
 
-base_dir = Path(template.__file__).parent
+base_dir = Path(toreplace.__file__).parent
 
 about = {}
 with (base_dir / "__about__.py").open() as f:
@@ -51,6 +51,11 @@ extensions = [
 ]
 autodoc_typehints = "description"
 autodoc_member_order = "bysource"
+autodoc_type_aliases = {
+    "ArrayLike": "ArrayLike",
+    "NDArray": "NDArray",
+    "DataFrame": "DataFrame",
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

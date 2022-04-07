@@ -11,9 +11,9 @@ __all__ = [
     "__copyright__",
 ]
 
-__title__ = "template"
+__title__ = "toreplace"
 __summary__ = ""
-__uri__ = "https://github.com/ihmeuw-msca/template"
+__uri__ = "https://github.com/ihmeuw-msca/toreplace"
 __version__ = "0.0.0"
 __author__ = "IHME Math Sciences"
 __email__ = "ihme.math.sciences@gmail.com"
