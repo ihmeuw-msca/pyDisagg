@@ -28,6 +28,7 @@ if __name__ == "__main__":
         version=about["__version__"],
         description=about["__summary__"],
         long_description=long_description,
+        long_description_content_type="text/x-rst",
         license=about["__license__"],
         url=about["__uri__"],
         author=about["__author__"],
