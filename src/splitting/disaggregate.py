@@ -72,8 +72,8 @@ def split_dataframe(
                 split_row,
                 axis=1)
             .reset_index()
-            .groupby('location_id')
-            .sum()
+            # .groupby('location_id')
+            # .sum()
         )
     else:
         def split_row(x):
@@ -97,6 +97,6 @@ def split_dataframe(
         )
         point_estimates=result_raw.applymap(lambda x:x[0])
         standard_errors=result_raw.applymap(lambda x:x[1])
-        result=pd.concat([ point_estimates, standard_errors ], keys=['estimate','se'],axis=1).groupby(level=0).sum()
+        result=pd.concat([ point_estimates, standard_errors ], keys=['estimate','se'],axis=1)#.groupby(level=0).sum()
 
     return result
