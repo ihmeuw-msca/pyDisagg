@@ -5,7 +5,7 @@ The most basic functionality is to perform disaggregation under the rate multipl
 
 The setup is as follows: 
 
-Let $D_{1,...,k}$ be an aggregated measurement across groups ${g_1,...,g_k}$, where the population of each is $p_i,...,p_k$. Let $f_1,...,f_k$ be the baseline pattern of the prevalence across groups, which could have potentially been estimated on a larger dataset or a population in which have higher quality data on. Using this data, we generate estimates for $D_i$, the number of events in group $g_i$ and $\hat{f}_i$, the prevalence in each group in the population of interest by combining $D_{1,...,k}$ with $f_1,...,f_k$ to make the estimates self consistent. 
+Let $D_{1,...,k}$ be an aggregated measurement across groups ${g_1,...,g_k}$, where the population of each is $p_i,...,p_k$. Let $f_1,...,f_k$ be the baseline pattern of the prevalence across groups, which could have potentially been estimated on a larger dataset or a population in which have higher quality data on. Using this data, we generate estimates for $D_i$, the number of events in group $g_i$ and $\hat{f}_{i}$, the prevalence in each group in the population of interest by combining $D_{1,...,k}$ with $f_1,...,f_k$ to make the estimates self consistent. 
 
 Mathematically, in the simpler rate multiplicative model, we find $\beta$ such that 
 $$D_{1,...,k} = \sum_{i=1}^{k}\hat{f}_i \cdot p_i $$
