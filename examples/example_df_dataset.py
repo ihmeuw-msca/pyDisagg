@@ -7,6 +7,7 @@ baseline_patterns=pd.DataFrame.from_dict({
     1:np.array([0.1,0.15,0.2,0.7])
 },orient='index')
 baseline_patterns.index.name='pattern_id'
+baseline_patterns.columns=groups_to_split_into
 
 
 #Population ids correspond to the overall aggregated population we are splitting
