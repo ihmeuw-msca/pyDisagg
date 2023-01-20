@@ -22,7 +22,7 @@ def test_inverse_consistency(T, x):
 
 @pytest.mark.parametrize('T', transformations)
 @pytest.mark.parametrie('x', x_values)
-def test_approximate_derivative(T, x_values, h=0.001):
+def test_approximate_derivative(T, x, h=0.001):
     '''
     Sanity check that the derivatives are are close to correct with a
     finite difference. It would have been a good idea to just do
