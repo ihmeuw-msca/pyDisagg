@@ -15,9 +15,9 @@
 # sys.path.insert(0, os.path.abspath("."))
 from pathlib import Path
 
-import splitting
+import pydisagg
 
-base_dir = Path(splitting.__file__).parent
+base_dir = Path(pydisagg.__file__).parent
 
 about = {}
 with (base_dir / "__about__.py").open() as f:
