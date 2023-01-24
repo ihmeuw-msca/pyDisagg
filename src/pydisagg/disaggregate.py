@@ -1,5 +1,7 @@
-from splitting.models import LMO_model
 import pandas as pd
+
+from pydisagg.models import LMO_model
+
 
 def split_datapoint(
     measured_count,
@@ -8,7 +10,7 @@ def split_datapoint(
     measured_count_se=None,
     model=LMO_model(1),
     CI_method='delta-wald'
-    ):
+):
     '''
     Disaggregates a datapoint using the model given as input.
     Defaults to assuming multiplicativity in the odds ratio
@@ -23,7 +25,8 @@ def split_datapoint(
         measured_count_se,
         baseline_prevalence,
         CI_method=CI_method
-        )
+    )
+
 
 def split_dataframe(
     groups_to_split_into,
@@ -32,7 +35,7 @@ def split_dataframe(
     baseline_patterns,
     use_se=False,
     model=LMO_model(1),
-    ):
+):
     '''
     Disaggregates datapoints and pivots observations into estimates for each group per pop id
 
@@ -56,16 +59,16 @@ def split_dataframe(
     use_se: Boolean, whether or not to report standard errors along with estimates
         if set to True, then observation_group_membership_df must have an obs_se column
     '''
-    splitting_df=observation_group_membership_df.copy()
-    if use_se==False:
+    splitting_df = observation_group_membership_df.copy()
+    if use_se == False:
         def split_row(x):
             return split_datapoint(
-                    x['obs'],
-                    population_sizes.loc[x.name]*x[groups_to_split_into],
-                    baseline_patterns.loc[x['pattern_id']],
-                    model=model
-                )
-        result=(
+                x['obs'],
+                population_sizes.loc[x.name]*x[groups_to_split_into],
+                baseline_patterns.loc[x['pattern_id']],
+                model=model
+            )
+        result = (
             splitting_df
             .set_index('location_id')
             .apply(
@@ -77,26 +80,27 @@ def split_dataframe(
         )
     else:
         def split_row(x):
-            raw_split_result=split_datapoint(
-                    x['obs'],
-                    population_sizes.loc[x.name]*x[groups_to_split_into],
-                    baseline_patterns.loc[x['pattern_id']],
-                    model=model,
-                    measured_count_se=x['obs_se']
-                )
+            raw_split_result = split_datapoint(
+                x['obs'],
+                population_sizes.loc[x.name]*x[groups_to_split_into],
+                baseline_patterns.loc[x['pattern_id']],
+                model=model,
+                measured_count_se=x['obs_se']
+            )
             return pd.Series(
                 [
-                    (estimate,se) for estimate,se in zip(raw_split_result[0],raw_split_result[1])],
+                    (estimate, se) for estimate, se in zip(raw_split_result[0], raw_split_result[1])],
                 index=groups_to_split_into)
-        result_raw=(
+        result_raw = (
             splitting_df
             .set_index('location_id')
             .apply(
                 split_row,
                 axis=1)
         )
-        point_estimates=result_raw.applymap(lambda x:x[0])
-        standard_errors=result_raw.applymap(lambda x:x[1])
-        result=pd.concat([ point_estimates, standard_errors ], keys=['estimate','se'],axis=1)#.groupby(level=0).sum()
+        point_estimates = result_raw.applymap(lambda x: x[0])
+        standard_errors = result_raw.applymap(lambda x: x[1])
+        result = pd.concat([point_estimates, standard_errors], keys=[
+                           'estimate', 'se'], axis=1)  # .groupby(level=0).sum()
 
     return result

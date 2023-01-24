@@ -1,15 +1,14 @@
-from numpy.testing import assert_approx_equal
 import pytest
+from numpy.testing import assert_approx_equal
 
-import splitting.transformations as tr
-
+import pydisagg.transformations as tr
 
 transformations = [
     tr.LogTransformation(),
     tr.LogModifiedOddsTransformation(1),
     tr.LogModifiedOddsTransformation(4),
     tr.LogOddsTransformation(),
-    ]
+]
 
 x_values = [0.02, 0.01, 0.5, 0.98]
 
@@ -29,4 +28,3 @@ def test_approximate_derivative(T, x, h=0.001):
     everything with Jax from the start.
     '''
     assert_approx_equal(T.diff(x), (T(x + h) - T(x - h))/(2*h), 2)
-

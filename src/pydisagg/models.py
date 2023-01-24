@@ -1,5 +1,6 @@
-from splitting.splittingmodel import SplittingModel
-from splitting import transformations
+from pydisagg import transformations
+from pydisagg.splittingmodel import SplittingModel
+
 
 class RateMultiplicativeModel(SplittingModel):
     '''
@@ -8,6 +9,7 @@ class RateMultiplicativeModel(SplittingModel):
     resulting in the current multiplicative model after exponentiating
     Take exp(beta) to recover the multiplier in the model.
     '''
+
     def __init__(
         self,
         baseline_prevalence=None,
@@ -23,10 +25,12 @@ class RateMultiplicativeModel(SplittingModel):
             beta_standard_error=beta_standard_error
         )
 
+
 class LMO_model(SplittingModel):
     '''
     Produces a AgeSplittingModel using the log-modified odds transformation with the exponent m. 
     '''
+
     def __init__(
         self,
         m,
@@ -43,10 +47,12 @@ class LMO_model(SplittingModel):
             beta_standard_error=beta_standard_error
         )
 
+
 class LogOdds_model(SplittingModel):
     '''
     Produces an AgeSplittingModel assuming multiplicativity in the odds
     '''
+
     def __init__(
         self,
         baseline_prevalence=None,
@@ -61,4 +67,3 @@ class LogOdds_model(SplittingModel):
             error_inflation=error_inflation,
             beta_standard_error=beta_standard_error
         )
-
