@@ -6,7 +6,7 @@ from pydisagg.models import LMO_model
 def split_datapoint(
     measured_count,
     bucket_populations,
-    baseline_prevalence,
+    rate_pattern,
     measured_count_se=None,
     model=LMO_model(1),
     CI_method='delta-wald'
@@ -23,7 +23,7 @@ def split_datapoint(
         bucket_populations,
         measured_count,
         measured_count_se,
-        baseline_prevalence,
+        rate_pattern,
         CI_method=CI_method
     )
 
@@ -52,9 +52,8 @@ def split_dataframe(
     population_sizes: dataframe with location_id as the index containing the 
         size of each group within each population (given the location_id)
 
-    baseline_prevalences: dataframe with pattern_id as the index, and columns 
-        for each of the groups_to_split where the entries represent the baseline
-        prevalence in the given group to use for pydisagg. 
+    rate_patterns: dataframe with pattern_id as the index, and columns 
+        for each of the groups_to_split where the entries represent the rate pattern in the given group to use for pydisagg. 
 
     use_se: Boolean, whether or not to report standard errors along with estimates
         if set to True, then observation_group_membership_df must have an obs_se column
