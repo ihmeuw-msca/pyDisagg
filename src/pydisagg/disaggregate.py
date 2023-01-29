@@ -53,8 +53,7 @@ def split_dataframe(
         size of each group within each population (given the location_id)
 
     rate_patterns: dataframe with pattern_id as the index, and columns 
-        for each of the groups_to_split where the entries represent the baseline
-        prevalence in the given group to use for pydisagg. 
+        for each of the groups_to_split where the entries represent the rate pattern in the given group to use for pydisagg. 
 
     use_se: Boolean, whether or not to report standard errors along with estimates
         if set to True, then observation_group_membership_df must have an obs_se column

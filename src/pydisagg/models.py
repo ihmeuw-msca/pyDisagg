@@ -4,8 +4,8 @@ from pydisagg.splittingmodel import SplittingModel
 
 class RateMultiplicativeModel(SplittingModel):
     '''
-    Produces a AgeSplittingModel using the log(prev) transformation with the exponent m.
-    This assumes that log(prev)=log(baseline_prev)+beta
+    Produces a AgeSplittingModel using the log(rate) transformation with the exponent m.
+    This assumes that log(rate)=log(rate_pattern)+beta
     resulting in the current multiplicative model after exponentiating
     Take exp(beta) to recover the multiplier in the model.
     '''

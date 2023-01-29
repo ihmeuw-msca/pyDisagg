@@ -9,7 +9,7 @@ class SplittingModel:
     multiplicativity in some space, but fit an additive parameter beta throughout
 
     We do this because it works better with the delta method calculations, and we assume that we
-    have a log into the transormations so additive factors become multiplicative
+    have a log the transormations so additive factors become multiplicative
     '''
 
     def __init__(
@@ -57,11 +57,11 @@ class SplittingModel:
         elif self.rate_pattern is not None:
             return self.rate_pattern
         else:
-            raise Exception("No Baseline Prevalence Available")
+            raise Exception("No Rate Pattern Available")
 
     def predict_rates(self, beta=None, rate_pattern=None):
         '''
-        Generates a predicted prevalence within each bucket assuming 
+        Generates a predicted rate within each bucket assuming 
             multiplicativity in the T-transformed space with the additive parameter
         '''
         beta_val = self.pull_beta(beta)
@@ -71,7 +71,7 @@ class SplittingModel:
 
     def _predict_rates_SE(self, beta_val, SE_val):
         '''
-        Computes the standard error of the predicted prevalence in each bucket
+        Computes the standard error of the predicted rate in each bucket
             using the delta method, propogating the given standard error on beta
         '''
         return self._rate_derivative(beta_val, self.rate_pattern)*SE_val
@@ -83,12 +83,12 @@ class SplittingModel:
         '''
         return np.sum(bucket_populations*self.predict_rates(beta))
 
-    def _rate_derivative(self, beta, global_rate_value):
+    def _rate_derivative(self, beta, rate_pattern_value):
         '''
         Computes the derivative with respect to beta
-        of the predicted prevalence in a bucket with a fixed global prevalence value
+        of the predicted rate in a bucket with a fixed rate_pattern value
         '''
-        return 1/self.T_diff(self.T_inverse(beta + self.T(global_rate_value)))
+        return 1/self.T_diff(self.T_inverse(beta + self.T(rate_pattern_value)))
 
     def _H_diff(self, beta, bucket_populations):
         '''
@@ -153,7 +153,7 @@ class SplittingModel:
             from the standard error on beta
 
         Method "delta-wald" propogates the standard error on beta through to the
-            predicted rate using delta method of Tinv(beta + T(global_rate))
+            predicted rate using delta method of Tinv(beta + T(rate_pattern))
         This gives a symmetric confidence interval that will be self consistent with 
             any confidence interval on your original measurement
 
@@ -225,7 +225,7 @@ class SplittingModel:
             given an an age density from the standard error on beta
 
         Method "delta-wald" propogates the standard error on beta through to the
-            predicted rate using delta method of Tinv(beta + T(global_rate))
+            predicted rate using delta method of Tinv(beta + T(rate_pattern))
         This gives a symmetric confidence interval that will be self consistent with 
             any confidence interval on your original measurement
 
