@@ -17,10 +17,10 @@ def test_model_consistency(model):
     populations = np.array([2, 5])
     measured_total = 4.8
     measurement_SE = 1
-    baseline_prevalence = np.array([0.2, 0.4])
+    rate_pattern = np.array([0.2, 0.4])
 
     result, SE, CI = split_datapoint(measured_total, populations,
-                                     baseline_prevalence, measurement_SE,
+                                     rate_pattern, measurement_SE,
                                      model)
     assert_approx_equal(measured_total, np.sum(result))
     assert_approx_equal(measurement_SE, np.sum(SE))

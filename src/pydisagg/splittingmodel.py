@@ -15,12 +15,12 @@ class SplittingModel:
     def __init__(
         self,
         parameter_transformation=None,
-        baseline_prevalence=None,
+        rate_pattern=None,
         beta_parameter=None,
         error_inflation=None,
         beta_standard_error=None
     ):
-        self.baseline_prevalence = baseline_prevalence
+        self.rate_pattern = rate_pattern
         self.beta_parameter = beta_parameter
         self.beta_standard_error = beta_standard_error
         self.error_inflation = error_inflation
@@ -43,38 +43,38 @@ class SplittingModel:
         else:
             raise Exception("Not fitted, No Beta Parameter Available")
 
-    def pull_set_baseline_prevalence(self, baseline_prevalence):
+    def pull_set_rate_pattern(self, rate_pattern):
         '''
-        Checks whether baseline_prevalence parameter is available in input, or if it is None
-            if baseline_prevalence is not none, it will return it and set it as self.baseline_prevalence
-        If baseline_prevalence is none, then this will try and return 
-        self.baseline_prevalence. 
+        Checks whether rate_pattern parameter is available in input, or if it is None
+            if rate_pattern is not none, it will return it and set it as self.rate_pattern
+        If rate_pattern is none, then this will try and return 
+        self.rate_pattern. 
         If neither are available, this will raise an exception
         '''
-        if baseline_prevalence is not None:
-            self.baseline_prevalence = baseline_prevalence
-            return baseline_prevalence
-        elif self.baseline_prevalence is not None:
-            return self.baseline_prevalence
+        if rate_pattern is not None:
+            self.rate_pattern = rate_pattern
+            return rate_pattern
+        elif self.rate_pattern is not None:
+            return self.rate_pattern
         else:
             raise Exception("No Baseline Prevalence Available")
 
-    def predict_rates(self, beta=None, baseline_prevalence=None):
+    def predict_rates(self, beta=None, rate_pattern=None):
         '''
         Generates a predicted prevalence within each bucket assuming 
             multiplicativity in the T-transformed space with the additive parameter
         '''
         beta_val = self.pull_beta(beta)
-        baseline_prevalence_val = self.pull_set_baseline_prevalence(baseline_prevalence)
+        rate_pattern_val = self.pull_set_rate_pattern(rate_pattern)
 
-        return self.T_inverse(beta_val + self.T(baseline_prevalence_val))
+        return self.T_inverse(beta_val + self.T(rate_pattern_val))
 
     def _predict_rates_SE(self, beta_val, SE_val):
         '''
         Computes the standard error of the predicted prevalence in each bucket
             using the delta method, propogating the given standard error on beta
         '''
-        return self._rate_derivative(beta_val, self.baseline_prevalence)*SE_val
+        return self._rate_derivative(beta_val, self.rate_pattern)*SE_val
 
     def _H_func(self, beta, bucket_populations):
         '''
@@ -95,7 +95,7 @@ class SplittingModel:
         Function outputs the derivative of the above _H_func with respect to beta
         '''
         return np.sum(bucket_populations *
-                      self._rate_derivative(beta, self.baseline_prevalence)
+                      self._rate_derivative(beta, self.rate_pattern)
                       )
 
     def fit_beta(
@@ -103,7 +103,7 @@ class SplittingModel:
         bucket_populations,
         measured_count,
         measured_count_se=None,
-        baseline_prevalence=None,
+        rate_pattern=None,
         lower_guess=-50,
         upper_guess=50,
         verbose=0
@@ -113,7 +113,7 @@ class SplittingModel:
         Will attempt to generate a standard error using delta method if a standard error for
         for age density is given. 
         '''
-        _ = self.pull_set_baseline_prevalence(baseline_prevalence)
+        _ = self.pull_set_rate_pattern(rate_pattern)
 
         def beta_misfit(beta):
             return self._H_func(beta, bucket_populations)-measured_count
@@ -251,7 +251,7 @@ class SplittingModel:
         bucket_populations,
         measured_count=None,
         measured_count_se=None,
-        baseline_prevalence=None,
+        rate_pattern=None,
         CI_method='delta-wald',
         alpha=0.05
     ):
@@ -260,7 +260,7 @@ class SplittingModel:
         If a measured_count and measured_count_se argument is given, 
         then we refit the model to the bucket_populations and the measured_count first before predicting
         '''
-        _ = self.pull_set_baseline_prevalence(baseline_prevalence)
+        _ = self.pull_set_rate_pattern(rate_pattern)
 
         if measured_count is not None:
             self.fit_beta(bucket_populations, measured_count, measured_count_se, verbose=0)

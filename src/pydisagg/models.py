@@ -12,14 +12,14 @@ class RateMultiplicativeModel(SplittingModel):
 
     def __init__(
         self,
-        baseline_prevalence=None,
+        rate_pattern=None,
         beta_parameter=None,
         error_inflation=None,
         beta_standard_error=None
     ):
         super().__init__(
             parameter_transformation=transformations.LogTransformation(),
-            baseline_prevalence=baseline_prevalence,
+            rate_pattern=rate_pattern,
             beta_parameter=beta_parameter,
             error_inflation=error_inflation,
             beta_standard_error=beta_standard_error
@@ -34,14 +34,14 @@ class LMO_model(SplittingModel):
     def __init__(
         self,
         m,
-        baseline_prevalence=None,
+        rate_pattern=None,
         beta_parameter=None,
         error_inflation=None,
         beta_standard_error=None
     ):
         super().__init__(
             parameter_transformation=transformations.LogModifiedOddsTransformation(m),
-            baseline_prevalence=baseline_prevalence,
+            rate_pattern=rate_pattern,
             beta_parameter=beta_parameter,
             error_inflation=error_inflation,
             beta_standard_error=beta_standard_error
@@ -55,14 +55,14 @@ class LogOdds_model(SplittingModel):
 
     def __init__(
         self,
-        baseline_prevalence=None,
+        rate_pattern=None,
         beta_parameter=None,
         error_inflation=None,
         beta_standard_error=None
     ):
         super().__init__(
             parameter_transformation=transformations.LogOddsTransformation(),
-            baseline_prevalence=baseline_prevalence,
+            rate_pattern=rate_pattern,
             beta_parameter=beta_parameter,
             error_inflation=error_inflation,
             beta_standard_error=beta_standard_error
