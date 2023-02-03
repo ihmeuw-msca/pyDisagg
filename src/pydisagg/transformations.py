@@ -8,7 +8,7 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import root_scalar
 
-float_or_array = Union(float, NDArray)
+float_or_array = Union[float, NDArray]
 
 
 class ParameterTransformation(ABC):
