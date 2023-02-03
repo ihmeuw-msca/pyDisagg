@@ -68,6 +68,7 @@ class LogModifiedOddsTransformation(ParameterTransformation):
     def _inverse_single(self, z):
         def root_func(x):
             return np.exp(z)*(1-x**self.a)-x
+        return root_scalar(root_func, bracket=[0, 1], method='toms748').root
 
     def inverse(self, z):
         return np.vectorize(self._inverse_single)(z)
