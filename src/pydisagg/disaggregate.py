@@ -21,7 +21,7 @@ def split_datapoint(
     Defaults to assuming multiplicativity in the odds ratio
 
     If no measured_count_se is given, returns scalar point estimate
-    If measured_count_se is given, then returns a tuple 
+    If measured_count_se is given, then returns a tuple
         (point_estimate,standard_error,(CI_lower,CI_upper))
     '''
     return model.split_groups(
@@ -46,25 +46,26 @@ def split_dataframe(
 
     groups_to_split_into: list of groups to disaggregate observations into
 
-    observation_group_membership_df: dataframe with columns location_id, pattern_id, obs, 
+    observation_group_membership_df: dataframe with columns location_id, pattern_id, obs,
         and columns for each of the groups_to_split_into
-        with dummy variables that represent whether or not 
-        each group is included in the observations for that row. 
+        with dummy variables that represent whether or not
+        each group is included in the observations for that row.
         This also optionally contains a obs_se column which will be used if use_se is True
         location_id represents the population that the observation comes from
         pattern_id gives the baseline that should be used for splitting
 
-    population_sizes: dataframe with location_id as the index containing the 
+    population_sizes: dataframe with location_id as the index containing the
         size of each group within each population (given the location_id)
 
-    rate_patterns: dataframe with pattern_id as the index, and columns 
-        for each of the groups_to_split where the entries represent the rate pattern in the given group to use for pydisagg. 
+    rate_patterns: dataframe with pattern_id as the index, and columns
+        for each of the groups_to_split where the entries represent the rate pattern
+        in the given group to use for pydisagg.
 
     use_se: Boolean, whether or not to report standard errors along with estimates
         if set to True, then observation_group_membership_df must have an obs_se column
     '''
     splitting_df = observation_group_membership_df.copy()
-    if use_se == False:
+    if use_se is False:
         def split_row(x):
             return split_datapoint(
                 x['obs'],
@@ -93,7 +94,8 @@ def split_dataframe(
             )
             return pd.Series(
                 [
-                    (estimate, se) for estimate, se in zip(raw_split_result[0], raw_split_result[1])],
+                    (estimate, se) for estimate, se in zip(raw_split_result[0], raw_split_result[1])
+                    ],
                 index=groups_to_split_into)
         result_raw = (
             splitting_df

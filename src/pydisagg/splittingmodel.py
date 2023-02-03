@@ -11,7 +11,7 @@ from pydisagg.transformations import ParameterTransformation
 
 class SplittingModel:
     '''
-    A possibly confusing code and notation choice is that we enforce 
+    A possibly confusing code and notation choice is that we enforce
     multiplicativity in some space, but fit an additive parameter beta throughout
 
     We do this because it works better with the delta method calculations, and we assume that we
@@ -42,7 +42,7 @@ class SplittingModel:
     ):
         '''
         Checks whether beta parameter is available in input, or if it is null
-        and returns beta if it is not none. If beta is none, then this will try and return 
+        and returns beta if it is not none. If beta is none, then this will try and return
         self.beta_parameter. If neither are available, this will raise an exception
         '''
         if beta is not None:
@@ -59,8 +59,8 @@ class SplittingModel:
         '''
         Checks whether rate_pattern parameter is available in input, or if it is None
             if rate_pattern is not none, it will return it and set it as self.rate_pattern
-        If rate_pattern is none, then this will try and return 
-        self.rate_pattern. 
+        If rate_pattern is none, then this will try and return
+        self.rate_pattern.
         If neither are available, this will raise an exception
         '''
         if rate_pattern is not None:
@@ -77,7 +77,7 @@ class SplittingModel:
         rate_pattern: Optional[NDArray] = None
     ):
         '''
-        Generates a predicted rate within each bucket assuming 
+        Generates a predicted rate within each bucket assuming
             multiplicativity in the T-transformed space with the additive parameter
         '''
         beta_val = self.pull_beta(beta)
@@ -94,7 +94,7 @@ class SplittingModel:
 
     def _H_func(self, beta, bucket_populations):
         '''
-        Function outputs expected deaths in a population given a value for beta and 
+        Function outputs expected deaths in a population given a value for beta and
             the age density of the population in the form of an array (grid of densities)
         '''
         return np.sum(bucket_populations*self.predict_rates(beta))
@@ -127,7 +127,7 @@ class SplittingModel:
         '''
         Fits a value for beta from the age density of a population and a measured count
         Will attempt to generate a standard error using delta method if a standard error for
-        for age density is given. 
+        for age density is given.
         '''
         _ = self.pull_set_rate_pattern(rate_pattern)
 
@@ -160,9 +160,9 @@ class SplittingModel:
         Computes the standard error of the predicted rate in each bucket
             using the delta method, propogating the given standard error on beta
         '''
-        if (self.beta_parameter is None):
+        if self.beta_parameter is None:
             raise Exception("Not fitted, No Beta Parameter Available")
-        if (self.beta_standard_error is None):
+        if self.beta_standard_error is None:
             raise Exception("No Beta Standard Error is available")
         return self._predict_rates_SE(self.beta_parameter, self.beta_standard_error)
 
@@ -171,24 +171,24 @@ class SplittingModel:
             alpha: Optional[float] = 0.05,
             method: Optional[str] = 'delta-wald'):
         '''
-        Computes a 1-alpha confidence interval on the rate function 
+        Computes a 1-alpha confidence interval on the rate function
             from the standard error on beta
 
         Method "delta-wald" propogates the standard error on beta through to the
             predicted rate using delta method of Tinv(beta + T(rate_pattern))
-        This gives a symmetric confidence interval that will be self consistent with 
+        This gives a symmetric confidence interval that will be self consistent with
             any confidence interval on your original measurement
 
-        Method "pushforward" first computes a confidence interval on beta and then 
+        Method "pushforward" first computes a confidence interval on beta and then
             pushes forward this confidence interval directly into the predicted rate
-        This gives a possibly assymetric confidence interval that may be inconsistent 
+        This gives a possibly assymetric confidence interval that may be inconsistent
             with your measurement's original confidence interval, but which is likely
             more realistic
         '''
-        if (self.beta_parameter is None):
+        if self.beta_parameter is None:
             raise Exception("Not fitted, No Beta Parameter Available")
 
-        if (self.beta_standard_error is None):
+        if self.beta_standard_error is None:
             raise Exception("No Beta Standard Error is available")
 
         l = norm.ppf(alpha/2)
@@ -222,14 +222,14 @@ class SplittingModel:
         Computes the standard error of the total number of events given an age density
         using delta method on H
 
-        This is basically for testing as this should be self consistent with the original 
-        standard error if everything working correctly, since everything 
+        This is basically for testing as this should be self consistent with the original
+        standard error if everything working correctly, since everything
         is just getting expanded out to first order
         '''
-        if (self.beta_parameter is None):
+        if self.beta_parameter is None:
             raise Exception("Not fitted, No Beta Parameter Available")
 
-        if (self.beta_standard_error is None):
+        if self.beta_standard_error is None:
             raise Exception("No Beta Standard Error is available")
 
         return self._H_diff(self.beta_parameter, bucket_populations)*self.beta_standard_error
@@ -242,10 +242,10 @@ class SplittingModel:
         Computes the standard error of the number events in each bucket given an age density
         using delta method on H
         '''
-        if (self.beta_parameter is None):
+        if self.beta_parameter is None:
             raise Exception("Not fitted, No Beta Parameter Available")
 
-        if (self.beta_standard_error is None):
+        if self.beta_standard_error is None:
             raise Exception("No Beta Standard Error is available")
 
         return self.predict_rates_SE()*bucket_populations
@@ -261,18 +261,18 @@ class SplittingModel:
 
         Method "delta-wald" propogates the standard error on beta through to the
             predicted rate using delta method of Tinv(beta + T(rate_pattern))
-        This gives a symmetric confidence interval that will be self consistent with 
+        This gives a symmetric confidence interval that will be self consistent with
             any confidence interval on your original measurement
 
-        Method "pushforward" first computes a confidence interval on beta and then 
+        Method "pushforward" first computes a confidence interval on beta and then
             pushes forward this confidence interval directly into the predicted rate
-        This gives a possibly assymetric confidence interval that may be inconsistent 
+        This gives a possibly assymetric confidence interval that may be inconsistent
             with your measurement's original confidence interval
         '''
-        if (self.beta_parameter is None):
+        if self.beta_parameter is None:
             raise Exception("Not fitted, No Beta Parameter Available")
 
-        if (self.beta_standard_error is None):
+        if self.beta_standard_error is None:
             raise Exception("No Beta Standard Error is available")
 
         lower_rate, upper_rate = self.predict_rates_CI(
@@ -293,8 +293,9 @@ class SplittingModel:
     ):
         '''
         Splits measured_count into the given bucket populations
-        If a measured_count and measured_count_se argument is given, 
-        then we refit the model to the bucket_populations and the measured_count first before predicting
+        If a measured_count and measured_count_se argument is given,
+        then we refit the model to the bucket_populations and
+        the measured_count first before predicting
         '''
         _ = self.pull_set_rate_pattern(rate_pattern)
 
@@ -302,7 +303,7 @@ class SplittingModel:
             self.fit_beta(bucket_populations, measured_count,
                           measured_count_se, verbose=0)
 
-        elif (self.beta_parameter is None):
+        elif self.beta_parameter is None:
             raise Exception("Not fitted, No Beta Parameter Available")
 
         if self.beta_standard_error is not None:
@@ -311,8 +312,7 @@ class SplittingModel:
                 self.predict_count_SE(bucket_populations),
                 self.predict_count_CI(bucket_populations, alpha=alpha, method=CI_method))
 
-        else:
-            return self.predict_count(bucket_populations)
+        return self.predict_count(bucket_populations)
 
     # def summarize(self,CI_method='delta-wald',title=''):
     #     if (self.beta_parameter is None):
