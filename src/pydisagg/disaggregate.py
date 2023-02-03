@@ -5,7 +5,7 @@ import pandas as pd
 from numpy.typing import NDArray
 from pandas import DataFrame
 
-from pydisagg.models import LMO_model, SplittingModel
+from pydisagg.models import LMO_model, DisaggModel
 
 
 def split_datapoint(
@@ -13,7 +13,7 @@ def split_datapoint(
     bucket_populations: NDArray,
     rate_pattern: NDArray,
     measured_count_se: Optional[float] = None,
-    model: Optional[SplittingModel] = LMO_model(1),
+    model: Optional[DisaggModel] = LMO_model(1),
     CI_method: Optional[str] = 'delta-wald'
 ):
     '''
@@ -39,7 +39,7 @@ def split_dataframe(
     population_sizes: DataFrame,
     baseline_patterns: DataFrame,
     use_se: Optional[bool] = False,
-    model: Optional[SplittingModel] = LMO_model(1),
+    model: Optional[DisaggModel] = LMO_model(1),
 ):
     '''
     Disaggregates datapoints and pivots observations into estimates for each group per pop id

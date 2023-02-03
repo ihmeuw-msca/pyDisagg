@@ -4,12 +4,12 @@ from typing import Optional
 from numpy.typing import NDArray
 
 from pydisagg import transformations
-from pydisagg.splittingmodel import SplittingModel
+from pydisagg.DisaggModel import DisaggModel
 
 
-class RateMultiplicativeModel(SplittingModel):
+class RateMultiplicativeModel(DisaggModel):
     '''
-    Produces a AgeSplittingModel using the log(rate) transformation with the exponent m.
+    Produces a AgeDisaggModel using the log(rate) transformation with the exponent m.
     This assumes that log(rate)=log(rate_pattern)+beta
     resulting in the current multiplicative model after exponentiating
     Take exp(beta) to recover the multiplier in the model.
@@ -31,9 +31,9 @@ class RateMultiplicativeModel(SplittingModel):
         )
 
 
-class LMO_model(SplittingModel):
+class LMO_model(DisaggModel):
     '''
-    Produces a AgeSplittingModel using the log-modified odds transformation with the exponent m. 
+    Produces a AgeDisaggModel using the log-modified odds transformation with the exponent m.
     '''
 
     def __init__(
@@ -54,9 +54,9 @@ class LMO_model(SplittingModel):
         )
 
 
-class LogOdds_model(SplittingModel):
+class LogOdds_model(DisaggModel):
     '''
-    Produces an AgeSplittingModel assuming multiplicativity in the odds
+    Produces an AgeDisaggModel assuming multiplicativity in the odds
     '''
 
     def __init__(
