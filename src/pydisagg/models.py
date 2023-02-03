@@ -8,12 +8,12 @@ from pydisagg.DisaggModel import DisaggModel
 
 
 class RateMultiplicativeModel(DisaggModel):
-    '''
-    Produces a AgeDisaggModel using the log(rate) transformation with the exponent m.
+    """
+    Produces a DisaggModel using the log(rate) transformation with the exponent m.
     This assumes that log(rate)=log(rate_pattern)+beta
     resulting in the current multiplicative model after exponentiating
     Take exp(beta) to recover the multiplier in the model.
-    '''
+    """
 
     def __init__(
         self,
@@ -32,9 +32,9 @@ class RateMultiplicativeModel(DisaggModel):
 
 
 class LMO_model(DisaggModel):
-    '''
-    Produces a AgeDisaggModel using the log-modified odds transformation with the exponent m.
-    '''
+    """
+    DisaggModel using the log-modified odds transformation with the exponent m.
+    """
 
     def __init__(
         self,
@@ -56,7 +56,7 @@ class LMO_model(DisaggModel):
 
 class LogOdds_model(DisaggModel):
     '''
-    Produces an AgeDisaggModel assuming multiplicativity in the odds
+    Produces an DisaggModel assuming multiplicativity in the odds
     '''
 
     def __init__(
