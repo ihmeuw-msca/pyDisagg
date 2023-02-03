@@ -1,5 +1,5 @@
 """Module with main DisaggModel class and algorithmic implementation"""
-from typing import Optional
+from typing import Optional,Tuple,Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -184,7 +184,7 @@ class DisaggModel:
         lower_guess: Optional[float] = -50,
         upper_guess: Optional[float] = 50,
         verbose: Optional[int] = 0
-    ):
+    )->None:
         """
         Fit a value for beta from the age density of a population and a measured count
         Will attempt to generate a standard error using delta method if a standard error for
@@ -195,22 +195,23 @@ class DisaggModel:
         bucket_populations : NDArray
             numpy array of population sizes for each bucket
         observed_total : float
-            _description_
+            total of observed quantity across bucket_populations
         observed_total_se : Optional[float], optional
-            _description_, by default None
+            se of observed_total, by default None
         rate_pattern : Optional[NDArray], optional
-            _description_, by default None
+            , by default None
         lower_guess : Optional[float], optional
-            _description_, by default -50
+            Lower bound for rootfinding (we use bracketing), by default -50
         upper_guess : Optional[float], optional
-            _description_, by default 50
+            Upper bound for rootfinding (we use bracketing), by default 50
         verbose : Optional[int], optional
-            _description_, by default 0
+            how much to print, 1 prints the root value,
+            2 prints the entire rootfinding output, by default 0
 
         Returns
         -------
-        _type_
-            _description_
+        None
+            Doesn't return anything, updates model in place.
         """
         _ = self.pull_set_rate_pattern(rate_pattern)
 
@@ -239,10 +240,20 @@ class DisaggModel:
             self.beta_standard_error = None
 
     def predict_rates_SE(self):
-        '''
+        """
         Computes the standard error of the predicted rate in each bucket
-            using the delta method, propogating the given standard error on beta
-        '''
+        using the delta method, propogating the given standard error on beta
+
+        Returns
+        -------
+        NDArray
+            An array of each of the standard errors in each bucket
+
+        Raises
+        ------
+        Exception
+            Raises an exception when the model's not been fitted, or there's not enough info given
+        """
         if self.beta_parameter is None:
             raise Exception("Not fitted, No Beta Parameter Available")
         if self.beta_standard_error is None:
@@ -252,11 +263,31 @@ class DisaggModel:
     def predict_rates_CI(
             self,
             alpha: Optional[float] = 0.05,
-            method: Optional[str] = 'delta-wald'):
-        '''
+            method: Optional[str] = 'delta-wald')->Tuple[NDArray]:
+        """
         Computes a 1-alpha confidence interval on the rate function
-            from the standard error on beta
+        from the standard error on beta
 
+        Parameters
+        ----------
+        alpha : Optional[float], optional
+            1 - confidence level, by default 0.05
+        method : Optional[str], optional
+            method to use, see notes for more details, by default 'delta-wald'
+
+        Returns
+        -------
+        Tuple[float]
+            Returns a tuple (CI_lower_values,CI_upper_values) 
+            where CI_lower_values is a numpy array with the lower end of the confidence interval for each bucket
+
+        Raises
+        ------
+        Exception
+            Raises an exception when not enough info is available
+
+        Notes
+        -----
         Method "delta-wald" propogates the standard error on beta through to the
             predicted rate using delta method of Tinv(beta + T(rate_pattern))
         This gives a symmetric confidence interval that will be self consistent with
@@ -267,7 +298,8 @@ class DisaggModel:
         This gives a possibly assymetric confidence interval that may be inconsistent
             with your measurement's original confidence interval, but which is likely
             more realistic
-        '''
+
+        """
         if self.beta_parameter is None:
             raise Exception("Not fitted, No Beta Parameter Available")
 
@@ -294,21 +326,54 @@ class DisaggModel:
     def predict_count(
         self,
         bucket_populations: NDArray
-    ):
+    )->NDArray:
+        """
+        Predicts the count in each bucket given the population in each bucket
+
+        Parameters
+        ----------
+        bucket_populations : NDArray
+            population size of each bucket
+
+        Returns
+        -------
+        NDArray
+            estimated occurrences in each bucket
+
+        Notes
+        -----
+        This is just taking the size of each bucket, and multiplying it by the predicted rate
+        """
         return self.predict_rates()*bucket_populations
 
     def predict_total_count_SE(
         self,
         bucket_populations: NDArray
-    ):
-        '''
-        Computes the standard error of the total number of events given an age density
+    )->float:
+        """Compute the standard error of the total number of events given an age density
         using delta method on H
 
+        Parameters
+        ----------
+        bucket_populations : NDArray
+            population size of each bucket
+
+        Returns
+        -------
+        float
+            The estimated standard error of the reaggregated estimate
+
+        Raises
+        ------
+        Exception
+            Raises an exception if the model doesn't have enough info
+
+        Notes
+        -----
         This is basically for testing as this should be self consistent with the original
         standard error if everything working correctly, since everything
         is just getting expanded out to first order
-        '''
+        """
         if self.beta_parameter is None:
             raise Exception("Not fitted, No Beta Parameter Available")
 
@@ -320,11 +385,25 @@ class DisaggModel:
     def predict_count_SE(
         self,
         bucket_populations: NDArray
-    ):
-        '''
-        Computes the standard error of the number events in each bucket given an age density
+    )->NDArray:
+        """Compute the standard error of the number of events in each bucket given an age density
         using delta method on H
-        '''
+
+        Parameters
+        ----------
+        bucket_populations : NDArray
+            population size of each bucket
+
+        Returns
+        -------
+        NDArray
+            The standard error of the estimated disaggregated estimate in each bucket
+
+        Raises
+        ------
+        Exception
+            Raises an exception if the model doesn't have enough info
+        """
         if self.beta_parameter is None:
             raise Exception("Not fitted, No Beta Parameter Available")
 
@@ -337,11 +416,33 @@ class DisaggModel:
             self,
             bucket_populations: NDArray,
             alpha: Optional[float] = 0.05,
-            method: Optional[str] = 'delta-wald'):
-        '''
+            method: Optional[str] = 'delta-wald')->Tuple[NDArray]:
+        """
         Computes a (one minus alpha) confidence interval on the events occuring in a population
             given an an age density from the standard error on beta
 
+        Parameters
+        ----------
+        bucket_populations : NDArray
+            population size of each bucket
+        alpha : Optional[float], optional
+            1 - confidence level, by default 0.05
+        method : Optional[str], optional
+            method to use, see Notes for more details, by default 'delta-wald'
+
+        Returns
+        -------
+        Tuple[NDArray]
+            Returns tuple of numpy arrays with the lower and upper confidence bounds in each bucket
+            (CI_lower,CI_upper)
+
+        Raises
+        ------
+        Exception
+            Raises an exception if the model doesn't have enough info
+
+        Notes
+        -----
         Method "delta-wald" propogates the standard error on beta through to the
             predicted rate using delta method of Tinv(beta + T(rate_pattern))
         This gives a symmetric confidence interval that will be self consistent with
@@ -351,7 +452,7 @@ class DisaggModel:
             pushes forward this confidence interval directly into the predicted rate
         This gives a possibly assymetric confidence interval that may be inconsistent
             with your measurement's original confidence interval
-        '''
+        """
         if self.beta_parameter is None:
             raise Exception("Not fitted, No Beta Parameter Available")
 
@@ -373,13 +474,46 @@ class DisaggModel:
         rate_pattern: Optional[NDArray] = None,
         CI_method: Optional[str] = 'delta-wald',
         alpha: Optional[float] = 0.05
-    ):
-        '''
-        Splits observed_total into the given bucket populations
+    )->Union[Tuple,NDArray]:
+        """Splits observed_total into the given bucket populations
         If a observed_total and observed_total_se argument is given,
         then we refit the model to the bucket_populations and
         the observed_total first before predicting
-        '''
+
+        Parameters
+        ----------
+        bucket_populations : NDArray
+            population size of each bucket
+        observed_total : Optional[float], optional
+            total of observed quantity across bucket_populations, by default None
+        observed_total_se : Optional[float], optional
+            se of observed_total, by default None
+        rate_pattern : Optional[NDArray], optional
+            Rate Pattern to use, should be an estimate of the rates in each bucket
+            that we want to rescale. If given, replaces the model's attribute rate pattern, by default None
+            None default uses model's rate pattern attribute
+        CI_method : Optional[str], optional
+            _description_, by default 'delta-wald'
+        alpha : Optional[float], optional
+            _description_, by default 0.05
+
+        Returns
+        -------
+        Union[Tuple,NDArray]
+            If standard errors are available, this will return the tuple
+                (
+                    estimate_in_each_bucket,
+                    se_of_estimate_bucket,
+                    (CI_lower_in_each_bucket,CI_upper_in_each_bucket)
+                )
+            Otherwise, if standard errors are not available, 
+            this will return a numpy array of the disaggregated estimates
+
+        Raises
+        ------
+        Exception
+            Raises an exception if the model doesn't have enough info.
+        """
         _ = self.pull_set_rate_pattern(rate_pattern)
 
         if observed_total is not None:
