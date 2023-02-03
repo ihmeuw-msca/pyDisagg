@@ -493,9 +493,9 @@ class DisaggModel:
             that we want to rescale. If given, replaces the model's attribute rate pattern, by default None
             None default uses model's rate pattern attribute
         CI_method : Optional[str], optional
-            _description_, by default 'delta-wald'
+            method to use for standard errors, by default 'delta-wald'
         alpha : Optional[float], optional
-            _description_, by default 0.05
+            1 - (confidence level) for confidence intervals, by default 0.05
 
         Returns
         -------
