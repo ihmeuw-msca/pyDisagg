@@ -1,3 +1,7 @@
+from typing import Optional,List
+from numpy.typing import NDArray
+from pandas import DataFrame
+
 from pydisagg import transformations
 from pydisagg.splittingmodel import SplittingModel
 
@@ -12,10 +16,10 @@ class RateMultiplicativeModel(SplittingModel):
 
     def __init__(
         self,
-        rate_pattern=None,
-        beta_parameter=None,
-        error_inflation=None,
-        beta_standard_error=None
+        rate_pattern:Optional[NDArray]=None,
+        beta_parameter:Optional[float]=None,
+        error_inflation:Optional[float]=None,
+        beta_standard_error:Optional[float]=None
     ):
         super().__init__(
             parameter_transformation=transformations.LogTransformation(),
@@ -33,11 +37,11 @@ class LMO_model(SplittingModel):
 
     def __init__(
         self,
-        m,
-        rate_pattern=None,
-        beta_parameter=None,
-        error_inflation=None,
-        beta_standard_error=None
+        m:float,
+        rate_pattern:Optional[NDArray]=None,
+        beta_parameter:Optional[float]=None,
+        error_inflation:Optional[float]=None,
+        beta_standard_error:Optional[float]=None
     ):
         super().__init__(
             parameter_transformation=transformations.LogModifiedOddsTransformation(m),
@@ -55,10 +59,10 @@ class LogOdds_model(SplittingModel):
 
     def __init__(
         self,
-        rate_pattern=None,
-        beta_parameter=None,
-        error_inflation=None,
-        beta_standard_error=None
+        rate_pattern:Optional[NDArray]=None,
+        beta_parameter:Optional[float]=None,
+        error_inflation:Optional[float]=None,
+        beta_standard_error:Optional[float]=None
     ):
         super().__init__(
             parameter_transformation=transformations.LogOddsTransformation(),
