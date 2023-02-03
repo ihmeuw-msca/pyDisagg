@@ -1,20 +1,19 @@
-from typing import Optional,List
+from typing import Optional
+
+import pandas as pd
 from numpy.typing import NDArray
 from pandas import DataFrame
 
-
-import pandas as pd
-from pydisagg.models import SplittingModel
-from pydisagg.models import LMO_model
+from pydisagg.models import LMO_model, SplittingModel
 
 
 def split_datapoint(
-    measured_count:float,
-    bucket_populations:NDArray,
-    rate_pattern:NDArray,
-    measured_count_se:Optional[float]=None,
-    model:Optional[SplittingModel]=LMO_model(1),
-    CI_method:Optional[str]='delta-wald'
+    measured_count: float,
+    bucket_populations: NDArray,
+    rate_pattern: NDArray,
+    measured_count_se: Optional[float] = None,
+    model: Optional[SplittingModel] = LMO_model(1),
+    CI_method: Optional[str] = 'delta-wald'
 ):
     '''
     Disaggregates a datapoint using the model given as input.
@@ -34,12 +33,12 @@ def split_datapoint(
 
 
 def split_dataframe(
-    groups_to_split_into:list,
-    observation_group_membership_df:DataFrame,
-    population_sizes:DataFrame,
-    baseline_patterns:DataFrame,
-    use_se:Optional[bool]=False,
-    model:Optional[SplittingModel]=LMO_model(1),
+    groups_to_split_into: list,
+    observation_group_membership_df: DataFrame,
+    population_sizes: DataFrame,
+    baseline_patterns: DataFrame,
+    use_se: Optional[bool] = False,
+    model: Optional[SplittingModel] = LMO_model(1),
 ):
     '''
     Disaggregates datapoints and pivots observations into estimates for each group per pop id

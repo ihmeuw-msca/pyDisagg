@@ -1,6 +1,6 @@
-from typing import Optional,List
+from typing import Optional
+
 from numpy.typing import NDArray
-from pandas import DataFrame
 
 from pydisagg import transformations
 from pydisagg.splittingmodel import SplittingModel
@@ -16,10 +16,10 @@ class RateMultiplicativeModel(SplittingModel):
 
     def __init__(
         self,
-        rate_pattern:Optional[NDArray]=None,
-        beta_parameter:Optional[float]=None,
-        error_inflation:Optional[float]=None,
-        beta_standard_error:Optional[float]=None
+        rate_pattern: Optional[NDArray] = None,
+        beta_parameter: Optional[float] = None,
+        error_inflation: Optional[float] = None,
+        beta_standard_error: Optional[float] = None
     ):
         super().__init__(
             parameter_transformation=transformations.LogTransformation(),
@@ -37,14 +37,15 @@ class LMO_model(SplittingModel):
 
     def __init__(
         self,
-        m:float,
-        rate_pattern:Optional[NDArray]=None,
-        beta_parameter:Optional[float]=None,
-        error_inflation:Optional[float]=None,
-        beta_standard_error:Optional[float]=None
+        m: float,
+        rate_pattern: Optional[NDArray] = None,
+        beta_parameter: Optional[float] = None,
+        error_inflation: Optional[float] = None,
+        beta_standard_error: Optional[float] = None
     ):
         super().__init__(
-            parameter_transformation=transformations.LogModifiedOddsTransformation(m),
+            parameter_transformation=transformations.LogModifiedOddsTransformation(
+                m),
             rate_pattern=rate_pattern,
             beta_parameter=beta_parameter,
             error_inflation=error_inflation,
@@ -59,10 +60,10 @@ class LogOdds_model(SplittingModel):
 
     def __init__(
         self,
-        rate_pattern:Optional[NDArray]=None,
-        beta_parameter:Optional[float]=None,
-        error_inflation:Optional[float]=None,
-        beta_standard_error:Optional[float]=None
+        rate_pattern: Optional[NDArray] = None,
+        beta_parameter: Optional[float] = None,
+        error_inflation: Optional[float] = None,
+        beta_standard_error: Optional[float] = None
     ):
         super().__init__(
             parameter_transformation=transformations.LogOddsTransformation(),

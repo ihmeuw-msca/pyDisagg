@@ -1,11 +1,11 @@
-import numpy as np
-from typing import Optional,List
-from numpy.typing import NDArray
-from pandas import DataFrame
-from pydisagg.transformations import ParameterTransformation
+from typing import Optional
 
+import numpy as np
+from numpy.typing import NDArray
 from scipy.optimize import root_scalar
 from scipy.stats import norm
+
+from pydisagg.transformations import ParameterTransformation
 
 
 class SplittingModel:
@@ -19,11 +19,11 @@ class SplittingModel:
 
     def __init__(
         self,
-        parameter_transformation:ParameterTransformation,
-        rate_pattern:Optional[NDArray]=None,
-        beta_parameter:Optional[float]=None,
-        error_inflation:Optional[float]=None,
-        beta_standard_error:Optional[float]=None
+        parameter_transformation: ParameterTransformation,
+        rate_pattern: Optional[NDArray] = None,
+        beta_parameter: Optional[float] = None,
+        error_inflation: Optional[float] = None,
+        beta_standard_error: Optional[float] = None
     ):
         self.rate_pattern = rate_pattern
         self.beta_parameter = beta_parameter
@@ -36,9 +36,9 @@ class SplittingModel:
         self.T_diff = self.parameter_transformation.diff
 
     def pull_beta(
-        self, 
+        self,
         beta
-        ):
+    ):
         '''
         Checks whether beta parameter is available in input, or if it is null
         and returns beta if it is not none. If beta is none, then this will try and return 
@@ -52,9 +52,9 @@ class SplittingModel:
             raise Exception("Not fitted, No Beta Parameter Available")
 
     def pull_set_rate_pattern(
-        self, 
-        rate_pattern:NDArray
-        ):
+        self,
+        rate_pattern: NDArray
+    ):
         '''
         Checks whether rate_pattern parameter is available in input, or if it is None
             if rate_pattern is not none, it will return it and set it as self.rate_pattern
@@ -71,10 +71,10 @@ class SplittingModel:
             raise Exception("No Rate Pattern Available")
 
     def predict_rates(
-        self, 
-        beta:Optional[float]=None, 
-        rate_pattern:Optional[NDArray]=None
-        ):
+        self,
+        beta: Optional[float] = None,
+        rate_pattern: Optional[NDArray] = None
+    ):
         '''
         Generates a predicted rate within each bucket assuming 
             multiplicativity in the T-transformed space with the additive parameter
@@ -115,13 +115,13 @@ class SplittingModel:
 
     def fit_beta(
         self,
-        bucket_populations:NDArray,
-        measured_count:float,
-        measured_count_se:Optional[float]=None,
-        rate_pattern:Optional[NDArray]=None,
-        lower_guess:Optional[float]=-50,
-        upper_guess:Optional[float]=50,
-        verbose:Optional[int]=0
+        bucket_populations: NDArray,
+        measured_count: float,
+        measured_count_se: Optional[float] = None,
+        rate_pattern: Optional[NDArray] = None,
+        lower_guess: Optional[float] = -50,
+        upper_guess: Optional[float] = 50,
+        verbose: Optional[int] = 0
     ):
         '''
         Fits a value for beta from the age density of a population and a measured count
@@ -133,7 +133,8 @@ class SplittingModel:
         def beta_misfit(beta):
             return self._H_func(beta, bucket_populations)-measured_count
 
-        beta_results = root_scalar(beta_misfit, bracket=[lower_guess, upper_guess], method='toms748')
+        beta_results = root_scalar(beta_misfit, bracket=[
+                                   lower_guess, upper_guess], method='toms748')
 
         if verbose == 2:
             print(beta_results)
@@ -141,11 +142,13 @@ class SplittingModel:
             print(f'beta={beta_results.root}')
 
         self.beta_parameter = beta_results.root
-        self.error_inflation = 1/self._H_diff(self.beta_parameter, bucket_populations)
+        self.error_inflation = 1 / \
+            self._H_diff(self.beta_parameter, bucket_populations)
         if measured_count_se is not None:
             self.beta_standard_error = measured_count_se*self.error_inflation
             if verbose >= 1:
-                print(f"Delta Method Standard Error for Beta: {self.beta_standard_error}")
+                print(
+                    f"Delta Method Standard Error for Beta: {self.beta_standard_error}")
         else:
             # Reset beta_standard_error to none if we refit
             # Old SE is no longer relevant
@@ -163,9 +166,9 @@ class SplittingModel:
         return self._predict_rates_SE(self.beta_parameter, self.beta_standard_error)
 
     def predict_rates_CI(
-        self, 
-        alpha:Optional[float]=0.05, 
-        method:Optional[str]='delta-wald'):
+            self,
+            alpha: Optional[float] = 0.05,
+            method: Optional[str] = 'delta-wald'):
         '''
         Computes a 1-alpha confidence interval on the rate function 
             from the standard error on beta
@@ -205,15 +208,15 @@ class SplittingModel:
         return (lower_rate, upper_rate)
 
     def predict_count(
-        self, 
-        bucket_populations:NDArray
-        ):
+        self,
+        bucket_populations: NDArray
+    ):
         return self.predict_rates()*bucket_populations
 
     def predict_total_count_SE(
-        self, 
-        bucket_populations:NDArray
-        ):
+        self,
+        bucket_populations: NDArray
+    ):
         '''
         Computes the standard error of the total number of events given an age density
         using delta method on H
@@ -231,9 +234,9 @@ class SplittingModel:
         return self._H_diff(self.beta_parameter, bucket_populations)*self.beta_standard_error
 
     def predict_count_SE(
-        self, 
-        bucket_populations:NDArray
-        ):
+        self,
+        bucket_populations: NDArray
+    ):
         '''
         Computes the standard error of the number events in each bucket given an age density
         using delta method on H
@@ -247,10 +250,10 @@ class SplittingModel:
         return self.predict_rates_SE()*bucket_populations
 
     def predict_count_CI(
-        self, 
-        bucket_populations:NDArray, 
-        alpha:Optional[float]=0.05, 
-        method:Optional[str]='delta-wald'):
+            self,
+            bucket_populations: NDArray,
+            alpha: Optional[float] = 0.05,
+            method: Optional[str] = 'delta-wald'):
         '''
         Computes a (one minus alpha) confidence interval on the events occuring in a population
             given an an age density from the standard error on beta
@@ -271,7 +274,8 @@ class SplittingModel:
         if (self.beta_standard_error is None):
             raise Exception("No Beta Standard Error is available")
 
-        lower_rate, upper_rate = self.predict_rates_CI(alpha=alpha, method=method)
+        lower_rate, upper_rate = self.predict_rates_CI(
+            alpha=alpha, method=method)
         return (
             bucket_populations*lower_rate,
             bucket_populations*upper_rate
@@ -279,12 +283,12 @@ class SplittingModel:
 
     def split_groups(
         self,
-        bucket_populations:NDArray,
-        measured_count:Optional[float]=None,
-        measured_count_se:Optional[float]=None,
-        rate_pattern:Optional[NDArray]=None,
-        CI_method:Optional[str]='delta-wald',
-        alpha:Optional[float]=0.05
+        bucket_populations: NDArray,
+        measured_count: Optional[float] = None,
+        measured_count_se: Optional[float] = None,
+        rate_pattern: Optional[NDArray] = None,
+        CI_method: Optional[str] = 'delta-wald',
+        alpha: Optional[float] = 0.05
     ):
         '''
         Splits measured_count into the given bucket populations
@@ -294,7 +298,8 @@ class SplittingModel:
         _ = self.pull_set_rate_pattern(rate_pattern)
 
         if measured_count is not None:
-            self.fit_beta(bucket_populations, measured_count, measured_count_se, verbose=0)
+            self.fit_beta(bucket_populations, measured_count,
+                          measured_count_se, verbose=0)
 
         elif (self.beta_parameter is None):
             raise Exception("Not fitted, No Beta Parameter Available")
