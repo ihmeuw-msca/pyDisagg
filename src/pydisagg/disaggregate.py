@@ -9,10 +9,10 @@ from pydisagg.models import LMO_model, DisaggModel
 
 
 def split_datapoint(
-    measured_count: float,
+    observed_total: float,
     bucket_populations: NDArray,
     rate_pattern: NDArray,
-    measured_count_se: Optional[float] = None,
+    observed_total_se: Optional[float] = None,
     model: Optional[DisaggModel] = LMO_model(1),
     CI_method: Optional[str] = 'delta-wald'
 ):
@@ -20,14 +20,14 @@ def split_datapoint(
     Disaggregates a datapoint using the model given as input.
     Defaults to assuming multiplicativity in the odds ratio
 
-    If no measured_count_se is given, returns scalar point estimate
-    If measured_count_se is given, then returns a tuple
+    If no observed_total_se is given, returns scalar point estimate
+    If observed_total_se is given, then returns a tuple
         (point_estimate,standard_error,(CI_lower,CI_upper))
     '''
     return model.split_groups(
         bucket_populations,
-        measured_count,
-        measured_count_se,
+        observed_total,
+        observed_total_se,
         rate_pattern,
         CI_method=CI_method
     )
@@ -90,7 +90,7 @@ def split_dataframe(
                 population_sizes.loc[x.name]*x[groups_to_split_into],
                 baseline_patterns.loc[x['pattern_id']],
                 model=model,
-                measured_count_se=x['obs_se']
+                observed_total_se=x['obs_se']
             )
             return pd.Series(
                 [

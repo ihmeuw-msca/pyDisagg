@@ -178,8 +178,8 @@ class DisaggModel:
     def fit_beta(
         self,
         bucket_populations: NDArray,
-        measured_count: float,
-        measured_count_se: Optional[float] = None,
+        observed_total: float,
+        observed_total_se: Optional[float] = None,
         rate_pattern: Optional[NDArray] = None,
         lower_guess: Optional[float] = -50,
         upper_guess: Optional[float] = 50,
@@ -194,9 +194,9 @@ class DisaggModel:
         ----------
         bucket_populations : NDArray
             numpy array of population sizes for each bucket
-        measured_count : float
+        observed_total : float
             _description_
-        measured_count_se : Optional[float], optional
+        observed_total_se : Optional[float], optional
             _description_, by default None
         rate_pattern : Optional[NDArray], optional
             _description_, by default None
@@ -215,7 +215,7 @@ class DisaggModel:
         _ = self.pull_set_rate_pattern(rate_pattern)
 
         def beta_misfit(beta):
-            return self._H_func(beta, bucket_populations)-measured_count
+            return self._H_func(beta, bucket_populations)-observed_total
 
         beta_results = root_scalar(beta_misfit, bracket=[
                                    lower_guess, upper_guess], method='toms748')
@@ -228,8 +228,8 @@ class DisaggModel:
         self.beta_parameter = beta_results.root
         self.error_inflation = 1 / \
             self._H_diff(self.beta_parameter, bucket_populations)
-        if measured_count_se is not None:
-            self.beta_standard_error = measured_count_se*self.error_inflation
+        if observed_total_se is not None:
+            self.beta_standard_error = observed_total_se*self.error_inflation
             if verbose >= 1:
                 print(
                     f"Delta Method Standard Error for Beta: {self.beta_standard_error}")
@@ -368,23 +368,23 @@ class DisaggModel:
     def split_groups(
         self,
         bucket_populations: NDArray,
-        measured_count: Optional[float] = None,
-        measured_count_se: Optional[float] = None,
+        observed_total: Optional[float] = None,
+        observed_total_se: Optional[float] = None,
         rate_pattern: Optional[NDArray] = None,
         CI_method: Optional[str] = 'delta-wald',
         alpha: Optional[float] = 0.05
     ):
         '''
-        Splits measured_count into the given bucket populations
-        If a measured_count and measured_count_se argument is given,
+        Splits observed_total into the given bucket populations
+        If a observed_total and observed_total_se argument is given,
         then we refit the model to the bucket_populations and
-        the measured_count first before predicting
+        the observed_total first before predicting
         '''
         _ = self.pull_set_rate_pattern(rate_pattern)
 
-        if measured_count is not None:
-            self.fit_beta(bucket_populations, measured_count,
-                          measured_count_se, verbose=0)
+        if observed_total is not None:
+            self.fit_beta(bucket_populations, observed_total,
+                          observed_total_se, verbose=0)
 
         elif self.beta_parameter is None:
             raise Exception("Not fitted, No Beta Parameter Available")
