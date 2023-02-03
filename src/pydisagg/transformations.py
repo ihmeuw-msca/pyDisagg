@@ -1,3 +1,6 @@
+"""
+Module containing abstract ParameterTransformation class and some ParameterTransformation subclasses
+"""
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -10,25 +13,22 @@ class ParameterTransformation(ABC):
     """
 
     @abstractmethod
-    def __call__(self, x):
+    def __call__(self, x: float):
         '''
         Calls transformation function
         '''
-        pass
 
     @abstractmethod
-    def inverse(self, x):
+    def inverse(self, z):
         '''
         Calls inverse of transformation function
         '''
-        pass
 
     @abstractmethod
     def diff(self, x):
         '''
         Calls derivative of transformation
         '''
-        pass
 
 
 class LogTransformation(ParameterTransformation):
@@ -65,16 +65,12 @@ class LogModifiedOddsTransformation(ParameterTransformation):
         '''
         return np.log(x/(1-(x**self.a)))
 
-    def inverse_single(self, z):
+    def _inverse_single(self, z):
         def root_func(x):
             return np.exp(z)*(1-x**self.a)-x
-        try:
-            return root_scalar(root_func, bracket=[0, 1], method='toms748').root
-        except:
-            print(z)
 
     def inverse(self, z):
-        return np.vectorize(self.inverse_single)(z)
+        return np.vectorize(self._inverse_single)(z)
 
     def diff(self, x):
         numerator = (self.a-1)*(x**self.a)+1

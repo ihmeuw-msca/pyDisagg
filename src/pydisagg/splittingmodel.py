@@ -1,3 +1,4 @@
+"""Module with main SplittingModel class and algorithmic implementation"""
 from typing import Optional
 
 import numpy as np

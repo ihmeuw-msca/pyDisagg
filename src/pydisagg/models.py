@@ -1,3 +1,4 @@
+"""Module containing specific splitting models with transformations built in"""
 from typing import Optional
 
 from numpy.typing import NDArray

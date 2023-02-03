@@ -1,3 +1,4 @@
+"""Module containing high level api for splitting"""
 from typing import Optional
 
 import pandas as pd
