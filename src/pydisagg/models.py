@@ -1,25 +1,26 @@
-from typing import Optional,List
+"""Module containing specific splitting models with transformations built in"""
+from typing import Optional
+
 from numpy.typing import NDArray
-from pandas import DataFrame
 
 from pydisagg import transformations
-from pydisagg.splittingmodel import SplittingModel
+from pydisagg.DisaggModel import DisaggModel
 
 
-class RateMultiplicativeModel(SplittingModel):
-    '''
-    Produces a AgeSplittingModel using the log(rate) transformation with the exponent m.
+class RateMultiplicativeModel(DisaggModel):
+    """
+    Produces a DisaggModel using the log(rate) transformation with the exponent m.
     This assumes that log(rate)=log(rate_pattern)+beta
     resulting in the current multiplicative model after exponentiating
     Take exp(beta) to recover the multiplier in the model.
-    '''
+    """
 
     def __init__(
         self,
-        rate_pattern:Optional[NDArray]=None,
-        beta_parameter:Optional[float]=None,
-        error_inflation:Optional[float]=None,
-        beta_standard_error:Optional[float]=None
+        rate_pattern: Optional[NDArray] = None,
+        beta_parameter: Optional[float] = None,
+        error_inflation: Optional[float] = None,
+        beta_standard_error: Optional[float] = None
     ):
         super().__init__(
             parameter_transformation=transformations.LogTransformation(),
@@ -30,21 +31,22 @@ class RateMultiplicativeModel(SplittingModel):
         )
 
 
-class LMO_model(SplittingModel):
-    '''
-    Produces a AgeSplittingModel using the log-modified odds transformation with the exponent m. 
-    '''
+class LMO_model(DisaggModel):
+    """
+    DisaggModel using the log-modified odds transformation with the exponent m.
+    """
 
     def __init__(
         self,
-        m:float,
-        rate_pattern:Optional[NDArray]=None,
-        beta_parameter:Optional[float]=None,
-        error_inflation:Optional[float]=None,
-        beta_standard_error:Optional[float]=None
+        m: float,
+        rate_pattern: Optional[NDArray] = None,
+        beta_parameter: Optional[float] = None,
+        error_inflation: Optional[float] = None,
+        beta_standard_error: Optional[float] = None
     ):
         super().__init__(
-            parameter_transformation=transformations.LogModifiedOddsTransformation(m),
+            parameter_transformation=transformations.LogModifiedOddsTransformation(
+                m),
             rate_pattern=rate_pattern,
             beta_parameter=beta_parameter,
             error_inflation=error_inflation,
@@ -52,17 +54,17 @@ class LMO_model(SplittingModel):
         )
 
 
-class LogOdds_model(SplittingModel):
+class LogOdds_model(DisaggModel):
     '''
-    Produces an AgeSplittingModel assuming multiplicativity in the odds
+    Produces an DisaggModel assuming multiplicativity in the odds
     '''
 
     def __init__(
         self,
-        rate_pattern:Optional[NDArray]=None,
-        beta_parameter:Optional[float]=None,
-        error_inflation:Optional[float]=None,
-        beta_standard_error:Optional[float]=None
+        rate_pattern: Optional[NDArray] = None,
+        beta_parameter: Optional[float] = None,
+        error_inflation: Optional[float] = None,
+        beta_standard_error: Optional[float] = None
     ):
         super().__init__(
             parameter_transformation=transformations.LogOddsTransformation(),
