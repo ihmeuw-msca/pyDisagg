@@ -227,8 +227,8 @@ class DisaggModel:
             print(f'beta={beta_results.root}')
 
         self.beta_parameter = beta_results.root
-        self.error_inflation = 1 / \
-            self._H_diff(self.beta_parameter, bucket_populations)
+        self.error_inflation = (1 / \
+            self._H_diff(self.beta_parameter, bucket_populations))
         if observed_total_se is not None:
             self.beta_standard_error = observed_total_se*self.error_inflation
             if verbose >= 1:
