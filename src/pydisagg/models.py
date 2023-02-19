@@ -1,6 +1,7 @@
 """Module containing specific splitting models with transformations built in"""
 from typing import Optional
 
+import numpy as np
 from numpy.typing import NDArray
 
 from pydisagg import transformations
@@ -29,6 +30,41 @@ class RateMultiplicativeModel(DisaggModel):
             error_inflation=error_inflation,
             beta_standard_error=beta_standard_error
         )
+    
+    def fit_beta(
+        self,
+        bucket_populations: NDArray,
+        observed_total: float,
+        observed_total_se: Optional[float] = None,
+        rate_pattern: Optional[NDArray] = None,
+        lower_guess: Optional[float] = -50,
+        upper_guess: Optional[float] = 50,
+        verbose: Optional[int] = 0
+    )->None:
+        """
+        Custom fit_beta for this model, as we can do it without rootfinding. 
+        """
+        _ = self.pull_set_rate_pattern(rate_pattern)
+
+
+        beta_val = np.log(observed_total/np.sum(bucket_populations*self.rate_pattern))
+
+        if verbose>0:
+            print(beta_val)
+
+        self.beta_parameter = beta_val
+        self.error_inflation = (1 / \
+            self._H_diff(self.beta_parameter, bucket_populations))
+        if observed_total_se is not None:
+            self.beta_standard_error = observed_total_se*self.error_inflation
+            if verbose >= 1:
+                print(
+                    f"Delta Method Standard Error for Beta: {self.beta_standard_error}")
+        else:
+            # Reset beta_standard_error to none if we refit
+            # Old SE is no longer relevant
+            self.beta_standard_error = None
+
 
 
 class LMO_model(DisaggModel):
