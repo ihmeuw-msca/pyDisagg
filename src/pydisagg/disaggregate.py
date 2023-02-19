@@ -79,16 +79,16 @@ def split_dataframe(
     groups_to_split_into : list
         list of groups to disaggregate observations into
     observation_group_membership_df : DataFrame
-        Dataframe with columns location_id, pattern_id, obs,
+        Dataframe with columns demographic_id, pattern_id, obs,
         and columns for each of the groups_to_split_into
         with dummy variables that represent whether or not
         each group is included in the observations for that row.
         This also optionally contains a obs_se column which will be used if use_se is True
-        location_id represents the population that the observation comes from
+        demographic_id represents the population that the observation comes from
         pattern_id gives the baseline that should be used for splitting
     population_sizes : DataFrame
-        Dataframe with location_id as the index containing the
-        size of each group within each population (given the location_id)
+        Dataframe with demographic_id as the index containing the
+        size of each group within each population (given the demographic_id)
     rate_patterns : DataFrame
         dataframe with pattern_id as the index, and columns
         for each of the groups_to_split where the entries represent the rate pattern
@@ -119,12 +119,12 @@ def split_dataframe(
             )
         result = (
             splitting_df
-            .set_index('location_id')
+            .set_index('demographic_id')
             .apply(
                 split_row,
                 axis=1)
             .reset_index()
-            # .groupby('location_id')
+            # .groupby('demographic_id')
             # .sum()
         )
     else:
@@ -143,7 +143,7 @@ def split_dataframe(
                 index=groups_to_split_into)
         result_raw = (
             splitting_df
-            .set_index('location_id')
+            .set_index('demographic_id')
             .apply(
                 split_row,
                 axis=1)

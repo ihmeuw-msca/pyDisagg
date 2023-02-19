@@ -20,11 +20,11 @@ pop_group_sizes={
     3:[5,40,30,20]
 }
 population_sizes=pd.DataFrame.from_dict(pop_group_sizes,orient='index',columns=groups_to_split_into)
-population_sizes.index.name='location_id'
+population_sizes.index.name='demographic_id'
 
 pop_df=pd.DataFrame(
     {
-        'location_id':[0,1,2,3],
+        'demographic_id':[0,1,2,3],
         'pattern_id':[0,0,1,1]
     }
 )
@@ -48,7 +48,7 @@ def build_dummy_df(dummies,id,groups_to_split_into):
         dummies,
         columns=groups_to_split_into
    )
-   df['location_id']=id
+   df['demographic_id']=id
    return df
 
 splitting_df=pd.concat([
@@ -78,7 +78,7 @@ SE_vals=[
     3
 ]
 
-data_df=pop_df.merge(splitting_df,on='location_id')
+data_df=pop_df.merge(splitting_df,on='demographic_id')
 
 data_df['obs']=observations
 data_df['obs_se']=SE_vals
