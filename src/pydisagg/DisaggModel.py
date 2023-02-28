@@ -530,6 +530,73 @@ class DisaggModel:
                 self.predict_count_CI(bucket_populations, alpha=alpha, method=CI_method))
 
         return self.predict_count(bucket_populations)
+    
+    def split_groups_rate(
+        self,
+        bucket_populations: NDArray,
+        observed_total: Optional[float] = None,
+        observed_total_se: Optional[float] = None,
+        rate_pattern: Optional[NDArray] = None,
+        CI_method: Optional[str] = 'delta-wald',
+        alpha: Optional[float] = 0.05
+    )->Union[Tuple,NDArray]:
+        """Splits observed_total into the given bucket populations
+        and returns the estimated rate in each bucket (instead of the estimated count)
+        If a observed_total and observed_total_se argument is given,
+        then we refit the model to the bucket_populations and
+        the observed_total first before predicting
+
+        Parameters
+        ----------
+        bucket_populations : NDArray
+            population size of each bucket
+        observed_total : Optional[float], optional
+            total of observed quantity across bucket_populations, by default None
+        observed_total_se : Optional[float], optional
+            se of observed_total, by default None
+        rate_pattern : Optional[NDArray], optional
+            Rate Pattern to use, should be an estimate of the rates in each bucket
+            that we want to rescale. If given, replaces the model's attribute rate pattern, by default None
+            None default uses model's rate pattern attribute
+        CI_method : Optional[str], optional
+            method to use for standard errors, by default 'delta-wald'
+        alpha : Optional[float], optional
+            1 - (confidence level) for confidence intervals, by default 0.05
+
+        Returns
+        -------
+        Union[Tuple,NDArray]
+            If standard errors are available, this will return the tuple
+                (
+                    rate_estimate_in_each_bucket,
+                    se_of_rate_estimate_bucket,
+                    (CI_lower_in_each_bucket,CI_upper_in_each_bucket)
+                )
+            Otherwise, if standard errors are not available, 
+            this will return a numpy array of the disaggregated estimates
+
+        Raises
+        ------
+        Exception
+            Raises an exception if the model doesn't have enough info.
+        """
+        _ = self.pull_set_rate_pattern(rate_pattern)
+
+        if observed_total is not None:
+            self.fit_beta(bucket_populations, observed_total,
+                          observed_total_se, verbose=0)
+
+        elif self.beta_parameter is None:
+            raise Exception("Not fitted, No Beta Parameter Available")
+
+        if self.beta_standard_error is not None:
+            return (
+                self.predict_rates(),
+                self.predict_rates_SE(),
+                self.predict_rates_CI(alpha=alpha, method=CI_method))
+
+        return self.predict_rates()
+
 
     # def summarize(self,CI_method='delta-wald',title=''):
     #     if (self.beta_parameter is None):
