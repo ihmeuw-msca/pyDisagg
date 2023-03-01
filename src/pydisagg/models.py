@@ -44,7 +44,7 @@ class RateMultiplicativeModel(DisaggModel):
         """
         Custom fit_beta for this model, as we can do it without rootfinding. 
         """
-        _ = self.pull_set_rate_pattern(rate_pattern)
+        self.rate_pattern = rate_pattern
 
 
         beta_val = np.log(observed_total/np.sum(bucket_populations*self.rate_pattern))

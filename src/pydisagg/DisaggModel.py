@@ -47,7 +47,6 @@ class DisaggModel:
             Standard error of beta parameter, by default None
         """
 
-        self.rate_pattern = rate_pattern
         self.beta_parameter = beta_parameter
         self.beta_standard_error = beta_standard_error
         self.error_inflation = error_inflation
@@ -56,6 +55,18 @@ class DisaggModel:
         self.T = self.parameter_transformation
         self.T_inverse = self.parameter_transformation.inverse
         self.T_diff = self.parameter_transformation.diff
+        self._rate_pattern = rate_pattern
+
+    @property
+    def rate_pattern(self) -> NDArray:
+        if self._rate_pattern is None:
+            raise ValueError("No Rate Pattern Available")
+        return self._rate_pattern
+
+    @rate_pattern.setter
+    def rate_pattern(self, rate_pattern: Optional[NDArray]):
+        if rate_pattern is not None:
+            self._rate_pattern = rate_pattern
 
     def pull_beta(
         self,
@@ -86,40 +97,6 @@ class DisaggModel:
             return self.beta_parameter
         raise Exception("Not fitted, No Beta Parameter Available")
 
-    def pull_set_rate_pattern(
-        self,
-        rate_pattern: NDArray
-    )->NDArray:
-        """
-        Check whether rate_pattern parameter is available in input, or if it is None
-            if rate_pattern is not none, it will return it and set it as self.rate_pattern
-        If rate_pattern is none, then this will try and return
-            self.rate_pattern.
-        If neither are available, this will raise an exception
-
-        Parameters
-        ----------
-        rate_pattern : NDArray
-            Rate Pattern to use, should be an estimate of the rates in each bucket
-            that we want to rescale
-
-        Returns
-        -------
-        NDArray
-            The rate pattern attribute of the model, or the same rate pattern that was inputted.
-
-        Raises
-        ------
-        Exception
-            "No Rate Pattern Available" if no rate pattern is available
-        """
-        if rate_pattern is not None:
-            self.rate_pattern = rate_pattern
-            return rate_pattern
-        if self.rate_pattern is not None:
-            return self.rate_pattern
-        raise Exception("No Rate Pattern Available")
-
     def predict_rates(
         self,
         beta: Optional[float] = None,
@@ -142,9 +119,9 @@ class DisaggModel:
             Predicted rates in each bucket
         """
         beta_val = self.pull_beta(beta)
-        rate_pattern_val = self.pull_set_rate_pattern(rate_pattern)
+        self.rate_pattern = rate_pattern
 
-        return self.T_inverse(beta_val + self.T(rate_pattern_val))
+        return self.T_inverse(beta_val + self.T(self.rate_pattern))
 
     def _predict_rates_SE(self, beta_val, SE_val):
         '''
@@ -213,7 +190,8 @@ class DisaggModel:
         None
             Doesn't return anything, updates model in place.
         """
-        _ = self.pull_set_rate_pattern(rate_pattern)
+        
+        self.rate_pattern = rate_pattern
 
         def beta_misfit(beta):
             return self._H_func(beta, bucket_populations)-observed_total
@@ -514,7 +492,7 @@ class DisaggModel:
         Exception
             Raises an exception if the model doesn't have enough info.
         """
-        _ = self.pull_set_rate_pattern(rate_pattern)
+        self.rate_pattern = rate_pattern
 
         if observed_total is not None:
             self.fit_beta(bucket_populations, observed_total,
@@ -580,7 +558,7 @@ class DisaggModel:
         Exception
             Raises an exception if the model doesn't have enough info.
         """
-        _ = self.pull_set_rate_pattern(rate_pattern)
+        self.rate_pattern = rate_pattern
 
         if observed_total is not None:
             self.fit_beta(bucket_populations, observed_total,
