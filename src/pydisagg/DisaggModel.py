@@ -558,7 +558,7 @@ class DisaggModel:
         Exception
             Raises an exception if the model doesn't have enough info.
         """
-        _ = self.pull_set_rate_pattern(rate_pattern)
+        self.rate_pattern = rate_pattern
 
         if observed_total is not None:
             self.fit_beta(bucket_populations, observed_total,
