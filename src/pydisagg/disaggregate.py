@@ -83,7 +83,7 @@ def split_datapoint(
             CI_method=CI_method
         )
     else:
-        raise("Output type must be one of either 'total' or 'rate'")
+        raise("ERROR:output_type must be one of either 'total' or 'rate'")
 
 
 
