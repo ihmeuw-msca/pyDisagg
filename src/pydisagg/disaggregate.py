@@ -5,7 +5,7 @@ import pandas as pd
 from numpy.typing import NDArray
 from pandas import DataFrame
 
-from pydisagg.models import LMO_model, LogOdds_model
+from pydisagg.models import LogOdds_model
 from pydisagg.DisaggModel import DisaggModel
 
 
@@ -95,6 +95,7 @@ def split_dataframe(
     use_se: Optional[bool] = False,
     model: Optional[DisaggModel] = LogOdds_model(),
     output_type: str = 'total',
+    demographic_id_columns : Optional[list] = None,
 ) -> DataFrame:
     """Disaggregate datapoints and pivots observations into estimates for each group per demographic id
 
@@ -118,6 +119,7 @@ def split_dataframe(
     population_sizes : DataFrame
         Dataframe with demographic_id as the index containing the
         size of each group within each population (given the demographic_id)
+        INDEX FOR THIS DATAFRAME MUST BE DEMOGRAPHIC ID(PANDAS MULTIINDEX OK)
     rate_patterns : DataFrame
         dataframe with pattern_id as the index, and columns
         for each of the groups_to_split where the entries represent the rate pattern
@@ -127,7 +129,12 @@ def split_dataframe(
         if set to True, then observation_group_membership_df must have an obs_se column
         , by default False
     model : Optional[DisaggModel], optional
-        DisaggModel to use for splitting, by default LMO_model(1)
+        DisaggModel to use for splitting, by default LogOdds_model()
+    demographic_id_columns : Optional[list]
+        Columns to use as demographic_id
+        Defaults to None. If None is given, then we assume 
+        that there is a already a demographic id column that matches the index in population_sizes. 
+        Otherwise, we create a new demographic_id column, zipping the columns chosen into tuples
 
     Returns
     -------
@@ -138,6 +145,13 @@ def split_dataframe(
             point estimate and standard error for the estimate for each group is given.
     """
     splitting_df = observation_group_membership_df.copy()
+    if demographic_id_columns is not None:
+        splitting_df['demographic_id']=list(
+            zip(
+                *[splitting_df[id_col] for id_col in demographic_id_columns]
+            )
+        )
+
     if use_se is False:
         def split_row(x):
             return split_datapoint(
@@ -154,8 +168,6 @@ def split_dataframe(
                 split_row,
                 axis=1)
             .reset_index()
-            # .groupby('demographic_id')
-            # .sum()
         )
     else:
         def split_row(x):
@@ -182,6 +194,13 @@ def split_dataframe(
         point_estimates = result_raw.applymap(lambda x: x[0])
         standard_errors = result_raw.applymap(lambda x: x[1])
         result = pd.concat([point_estimates, standard_errors], keys=[
-                           'estimate', 'se'], axis=1)  # .groupby(level=0).sum()
+                           'estimate', 'se'], axis=1).reset_index()  # .groupby(level=0).sum()
+        
+    if demographic_id_columns is not None:
+        demographic_id_df=pd.DataFrame(
+        dict(zip(demographic_id_columns, zip(*result['demographic_id']))),
+        index=result.index
+        )
+        result=pd.concat([demographic_id_df,result]).drop('demographic_id',axis=1)
 
     return result
