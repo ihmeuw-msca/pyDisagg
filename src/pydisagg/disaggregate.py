@@ -1,5 +1,5 @@
 """Module containing high level api for splitting"""
-from typing import Optional, Union
+from typing import Optional, Union, Literal
 
 import pandas as pd
 from numpy.typing import NDArray
@@ -15,7 +15,7 @@ def split_datapoint(
     rate_pattern: NDArray,
     observed_total_se: Optional[float] = None,
     model: Optional[DisaggModel] = LogOdds_model(),
-    output_type: str = 'total',
+    output_type: Literal['total','rate'] = 'total',
     CI_method: Optional[str] = 'delta-wald'
 ) -> Union[tuple,NDArray]:
     """Disaggregate a datapoint using the model given as input.
@@ -38,7 +38,7 @@ def split_datapoint(
             that we want to rescale
     observed_total_se : Optional[float], optional
         standard error of observed_total, by default None
-    output_type : str, optional
+    output_type: Literal['total','rate'], optional
         One of 'total' or 'rate'
         Type of splitting to perform, whether to disaggregate and return the estimated total
         in each group, or estimate the rate per population unit. 
@@ -86,7 +86,6 @@ def split_datapoint(
         raise("ERROR:output_type must be one of either 'total' or 'rate'")
 
 
-
 def split_dataframe(
     groups_to_split_into: list,
     observation_group_membership_df: DataFrame,
@@ -94,7 +93,7 @@ def split_dataframe(
     rate_patterns: DataFrame,
     use_se: Optional[bool] = False,
     model: Optional[DisaggModel] = LogOdds_model(),
-    output_type: str = 'total',
+    output_type: Literal['total','rate'] = 'total',
     demographic_id_columns : Optional[list] = None,
 ) -> DataFrame:
     """Disaggregate datapoints and pivots observations into estimates for each group per demographic id
@@ -130,6 +129,10 @@ def split_dataframe(
         , by default False
     model : Optional[DisaggModel], optional
         DisaggModel to use for splitting, by default LogOdds_model()
+    output_type: Literal['total','rate'], optional
+        One of 'total' or 'rate'
+        Type of splitting to perform, whether to disaggregate and return the estimated total
+        in each group, or estimate the rate per population unit. 
     demographic_id_columns : Optional[list]
         Columns to use as demographic_id
         Defaults to None. If None is given, then we assume 
@@ -201,6 +204,6 @@ def split_dataframe(
         dict(zip(demographic_id_columns, zip(*result['demographic_id']))),
         index=result.index
         )
-        result=pd.concat([demographic_id_df,result]).drop('demographic_id',axis=1)
+        result=pd.concat([demographic_id_df,result],axis=1).drop('demographic_id',axis=1)
 
     return result
