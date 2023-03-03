@@ -14,11 +14,18 @@ def split_datapoint(
     bucket_populations: NDArray,
     rate_pattern: NDArray,
     observed_total_se: Optional[float] = None,
+    output_type: str = 'total',
     model: Optional[DisaggModel] = LogOdds_model(),
     CI_method: Optional[str] = 'delta-wald'
 ) -> Union[tuple,NDArray]:
     """Disaggregate a datapoint using the model given as input.
     Defaults to assuming multiplicativity in the odds ratio
+
+    If output_type=='total', then this outputs estimates for the observed amount in each group
+        such that the sum of the point estimates equals the original total
+    If output_type=='rate', then this estimates rates for each group 
+        (and doesn't multiply the rates out by the population)
+
 
     Parameters
     ----------
@@ -31,6 +38,10 @@ def split_datapoint(
             that we want to rescale
     observed_total_se : Optional[float], optional
         standard error of observed_total, by default None
+    output_type : str, optional
+        One of 'total' or 'rate'
+        Type of splitting to perform, whether to disaggregate and return the estimated total
+        in each group, or estimate the rate per population unit. 
     model : Optional[DisaggModel], optional
         DisaggModel to use, by default LMO_model(1)
     CI_method : Optional[str], optional
@@ -55,67 +66,24 @@ def split_datapoint(
     If observed_total_se is given, then returns a tuple
         (point_estimate,standard_error,(CI_lower,CI_upper))
     """
-    return model.split_groups(
-        bucket_populations,
-        observed_total,
-        observed_total_se,
-        rate_pattern,
-        CI_method=CI_method
-    )
-
-def split_datapoint_rate(
-    observed_total: float,
-    bucket_populations: NDArray,
-    rate_pattern: NDArray,
-    observed_total_se: Optional[float] = None,
-    model: Optional[DisaggModel] = LogOdds_model(),
-    CI_method: Optional[str] = 'delta-wald'
-) -> Union[tuple,NDArray]:
-    """Disaggregate a datapoint using the model given as input.
-    Returns the estimated rate in each bucket instead of an estimated count
-    Defaults to assuming multiplicativity in the odds ratio
-
-    Parameters
-    ----------
-    observed_total : float
-        aggregated observed_total across all buckets, value to be split
-    bucket_populations : NDArray
-        population size in each bucket
-    rate_pattern : NDArray
-        Rate Pattern to use, should be an estimate of the rates in each bucket
-            that we want to rescale
-    observed_total_se : Optional[float], optional
-        standard error of observed_total, by default None
-    model : Optional[DisaggModel], optional
-        DisaggModel to use, by default LMO_model(1)
-    CI_method : Optional[str], optional
-        method to use for confidence intervals,
-        see documentation for standard error methods in DisaggModel, by default 'delta-wald'
-
-    Returns
-    -------
-    Union[Tuple,NDArray]
-        If standard errors are available, this will return the tuple
-            (
-                rate_estimate_in_each_bucket,
-                se_of_rate_estimate_bucket,
-                (CI_lower_in_each_bucket,CI_upper_in_each_bucket)
-            )
-        Otherwise, if standard errors are not available, 
-        this will return a numpy array of the disaggregated estimates
-
-    Raises
-    ------
-    Exception
-        Raises an exception if the model doesn't have enough info.
-    """
-    return model.split_groups_rate(
-        bucket_populations,
-        observed_total,
-        observed_total_se,
-        rate_pattern,
-        CI_method=CI_method
-    )
+    if output_type=='total':
+        return model.split_groups(
+            bucket_populations,
+            observed_total,
+            observed_total_se,
+            rate_pattern,
+            CI_method=CI_method
+        )
+    elif output_type=='rate':
+        return model.split_groups_rate(
+            bucket_populations,
+            observed_total,
+            observed_total_se,
+            rate_pattern,
+            CI_method=CI_method
+        )
+    else:
+        raise("Output type must be one of either 'total' or 'rate'")
 
 
 
@@ -124,10 +92,16 @@ def split_dataframe(
     observation_group_membership_df: DataFrame,
     population_sizes: DataFrame,
     rate_patterns: DataFrame,
+    output_type: str = 'total',
     use_se: Optional[bool] = False,
     model: Optional[DisaggModel] = LMO_model(1),
 ) -> DataFrame:
-    """Disaggregate datapoints and pivots observations into estimates for each group per pop id
+    """Disaggregate datapoints and pivots observations into estimates for each group per demographic id
+
+    If output_type=='total', then this outputs estimates for the observed amount in each group
+        such that the sum of the point estimates equals the original total
+    If output_type=='rate', then this estimates rates for each group 
+        (and doesn't multiply the rates out by the population)
 
     Parameters
     ----------
@@ -170,7 +144,8 @@ def split_dataframe(
                 x['obs'],
                 population_sizes.loc[x.name]*x[groups_to_split_into],
                 rate_patterns.loc[x['pattern_id']],
-                model=model
+                model=model,
+                output_type=output_type
             )
         result = (
             splitting_df
@@ -189,7 +164,8 @@ def split_dataframe(
                 population_sizes.loc[x.name]*x[groups_to_split_into],
                 rate_patterns.loc[x['pattern_id']],
                 model=model,
-                observed_total_se=x['obs_se']
+                observed_total_se=x['obs_se'],
+                output_type=output_type
             )
             return pd.Series(
                 [
@@ -218,7 +194,7 @@ def split_dataframe_rate(
     use_se: Optional[bool] = False,
     model: Optional[DisaggModel] = LMO_model(1),
 ) -> DataFrame:
-    """Disaggregate datapoints and pivots observations into rate estimates for each group per pop id
+    """Disaggregate datapoints and pivots observations into rate estimates for each group per demographic id
 
     Parameters
     ----------
