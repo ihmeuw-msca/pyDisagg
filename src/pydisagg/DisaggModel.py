@@ -169,8 +169,14 @@ class DisaggModel:
         '''
         Computes the gradient of H with respect to the pattern, at the point beta, self.rate_pattern
         '''
+        self.beta_parameter = beta
         self.rate_pattern = rate_pattern
-        return bucket_populations*self.T_diff(self.rate_pattern)/self.T_diff(self.beta_parameter + self.T(self.rate_pattern))
+        return (
+            (bucket_populations*self.T_diff(self.rate_pattern))/
+            (
+                self.T_diff(self.T_inverse(self.beta_parameter + self.T(self.rate_pattern)))
+            )
+            )
     
 
     def _fgrad_Hinv(self,beta,bucket_populations,rate_pattern=None):
@@ -222,6 +228,46 @@ class DisaggModel:
         )
         self.full_parameter_cov = full_parameter_cov
         return full_parameter_cov
+    
+    def _compute_beta(
+        self,
+        bucket_populations:NDArray,
+        observed_total:float,
+        rate_pattern: Optional[NDArray] = None,
+        lower_guess: Optional[float] = -50,
+        upper_guess: Optional[float] = 50,
+        verbose: Optional[int] = 0
+
+    ):
+        """Computes the beta solution to match total
+
+        Parameters
+        ----------
+        bucket_populations : NDArray
+            populations in each group
+        observed_total : float
+            total observed count
+        rate_pattern : NDArray, optional
+            rate pattern to use for fitting, by default None
+        """
+        self.rate_pattern = rate_pattern
+        def beta_misfit(beta):
+            return self._H_func(beta, bucket_populations)-observed_total
+
+        beta_results = root_scalar(beta_misfit, bracket=[
+                                   lower_guess, upper_guess], method='toms748')
+        if beta_results.flag!='converged':
+            raise("Rootfinding didn't converge!")
+
+        if verbose == 2:
+            print(beta_results)
+        elif verbose == 1:
+            print(f'beta={beta_results.root}')
+
+        return beta_results.root
+
+
+
 
     def fit_beta(
         self,
@@ -261,19 +307,16 @@ class DisaggModel:
         None
             Doesn't return anything, updates model in place.
         """
-        self.rate_pattern = rate_pattern
-        def beta_misfit(beta):
-            return self._H_func(beta, bucket_populations)-observed_total
+        beta = self._compute_beta(
+            bucket_populations=bucket_populations,
+            observed_total=observed_total,
+            rate_pattern=rate_pattern,
+            lower_guess=lower_guess,
+            upper_guess=upper_guess,
+            verbose=verbose
+            )
 
-        beta_results = root_scalar(beta_misfit, bracket=[
-                                   lower_guess, upper_guess], method='toms748')
-
-        if verbose == 2:
-            print(beta_results)
-        elif verbose == 1:
-            print(f'beta={beta_results.root}')
-
-        self.beta_parameter = beta_results.root
+        self.beta_parameter = beta
 
         if observed_total_se is not None:
             error_inflation = (1 / \
