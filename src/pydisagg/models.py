@@ -20,14 +20,12 @@ class RateMultiplicativeModel(DisaggModel):
         self,
         rate_pattern: Optional[NDArray] = None,
         beta_parameter: Optional[float] = None,
-        error_inflation: Optional[float] = None,
         beta_standard_error: Optional[float] = None
     ):
         super().__init__(
             parameter_transformation=transformations.LogTransformation(),
             rate_pattern=rate_pattern,
             beta_parameter=beta_parameter,
-            error_inflation=error_inflation,
             beta_standard_error=beta_standard_error
         )
     
@@ -53,10 +51,10 @@ class RateMultiplicativeModel(DisaggModel):
             print(beta_val)
 
         self.beta_parameter = beta_val
-        self.error_inflation = (1 / \
+        error_inflation = (1 / \
             self._H_diff(self.beta_parameter, bucket_populations))
         if observed_total_se is not None:
-            self.beta_standard_error = observed_total_se*self.error_inflation
+            self.beta_standard_error = observed_total_se*error_inflation
             if verbose >= 1:
                 print(
                     f"Delta Method Standard Error for Beta: {self.beta_standard_error}")
@@ -77,7 +75,6 @@ class LMO_model(DisaggModel):
         m: float,
         rate_pattern: Optional[NDArray] = None,
         beta_parameter: Optional[float] = None,
-        error_inflation: Optional[float] = None,
         beta_standard_error: Optional[float] = None
     ):
         super().__init__(
@@ -85,7 +82,6 @@ class LMO_model(DisaggModel):
                 m),
             rate_pattern=rate_pattern,
             beta_parameter=beta_parameter,
-            error_inflation=error_inflation,
             beta_standard_error=beta_standard_error
         )
 
@@ -99,13 +95,11 @@ class LogOdds_model(DisaggModel):
         self,
         rate_pattern: Optional[NDArray] = None,
         beta_parameter: Optional[float] = None,
-        error_inflation: Optional[float] = None,
         beta_standard_error: Optional[float] = None
     ):
         super().__init__(
             parameter_transformation=transformations.LogOddsTransformation(),
             rate_pattern=rate_pattern,
             beta_parameter=beta_parameter,
-            error_inflation=error_inflation,
             beta_standard_error=beta_standard_error
         )
