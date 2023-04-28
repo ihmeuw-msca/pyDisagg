@@ -266,9 +266,6 @@ class DisaggModel:
 
         return beta_results.root
 
-
-
-
     def fit_beta(
         self,
         bucket_populations: NDArray,
@@ -330,6 +327,36 @@ class DisaggModel:
             # Reset beta_standard_error to none if we refit
             # Old SE is no longer relevant
             self.beta_standard_error = None
+
+    def rate_jacobian(self,beta,rate_pattern):
+        """Computes the jacobian of the output rate with respect to beta and the parameters
+
+        Parameters
+        ----------
+        beta : float, optional
+            fitted beta parameter, by default None
+        rate_pattern : _type_, optional
+            point estimate rate pattern, by default None
+        """
+
+        diag_scaling = np.diag(1/self.T_diff(self.T_inverse(beta + self.T(rate_pattern))))
+        d = len(rate_pattern)
+        right_portion = np.block([np.ones((d,1)),np.diag(self.T_diff(rate_pattern))])
+        print(right_portion)
+        return diag_scaling@right_portion
+    
+    def rate_output_cov(self,beta,rate_pattern):
+        """Outputs the overall covarance of predicted rates
+
+        Parameters
+        ----------
+        beta : float
+            fitted log-rescaling beta
+        rate_pattern : ndarray
+            point estimate of pattern
+        """
+        J=self.rate_jacobian(beta,rate_pattern)
+        return J@self.full_parameter_cov@J.T
 
     def predict_rates_SE(self):
         """
