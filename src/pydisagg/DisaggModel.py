@@ -379,13 +379,13 @@ class DisaggModel:
         return self.predict_count(fitted_beta,rate_pattern,bucket_populations)
     
     def parameter_covariance(
-            self,
-            fitted_beta,
-            rate_pattern,
-            bucket_populations,
-            observed_total_se,
-            rate_pattern_cov,
-            ):
+        self,
+        fitted_beta:float,
+        rate_pattern:NDArray,
+        bucket_populations:NDArray,
+        observed_total_se:float,
+        rate_pattern_cov:NDArray,
+        )->NDArray:
         """Computes covariance matrix of beta and rate_pattern together
 
         Parameters
@@ -406,28 +406,64 @@ class DisaggModel:
         NDArray
             Joint covariance matrix with beta and rate_pattern
         """
-        
+        rate_grad = self.Hinv_rate_grad(fitted_beta,rate_pattern,bucket_populations)
         beta_pattern_cov = (
-            rate_pattern_cov @
-            self.Hinv_rate_grad(fitted_beta,rate_pattern,bucket_populations)
+            rate_pattern_cov@rate_grad
         ).reshape(-1,1)
 
         beta_var = np.array(
             [[
                 self.beta_standard_error(
                     fitted_beta,rate_pattern,bucket_populations,observed_total_se
-                    )
+                    )**2
                 ]]
             )
         
         full_parameter_cov = np.block(
             [
-            [beta_var,beta_pattern_cov.T],
+            [beta_var+rate_grad.T@rate_pattern_cov@rate_grad,beta_pattern_cov.T],
             [beta_pattern_cov,rate_pattern_cov]
             ]
         )
 
         return full_parameter_cov
+    
+    def parameter_fit_jacobian(
+        self,
+        fitted_beta:float,
+        rate_pattern:NDArray,
+        bucket_populations:NDArray,
+        )->NDArray:
+        """Computes jacobian matrix of H_inv with respect to beta and rate_pattern together
+
+        Parameters
+        ----------
+        fitted_beta : float
+            fitted value of beta. This being fitted is why we don't need what the original observation actually was
+        rate_pattern : NDArray
+            rate pattern
+        bucket_populations : NDArray
+            populations in each bucket
+
+        Returns
+        -------
+        NDArray
+            Joint covariance matrix with beta and rate_pattern
+        """
+        
+        rate_grad = self.Hinv_rate_grad(fitted_beta,rate_pattern,bucket_populations).reshape(-1,1)
+        beta_diff = np.array([[(1 / \
+                    self.H_diff_beta(fitted_beta,rate_pattern, bucket_populations))]]
+                    )
+        full_parameter_jac = np.block(
+            [
+            [beta_diff,rate_grad.T],
+            [np.zeros((len(rate_pattern),1)),np.identity(len(rate_pattern))]
+            ]
+        )
+
+        return full_parameter_jac
+
 
     def Hinv_rate_grad(
             self,
@@ -457,7 +493,7 @@ class DisaggModel:
         ## Call this at the fitted beta for the inverse derivative of H at the observed_total 
         # assuming that the observed_total is H(beta), the total that beta would give!
 
-        return self.H_rate_grad(beta,rate_pattern,bucket_populations)/denominator
+        return -1*self.H_rate_grad(beta,rate_pattern,bucket_populations)/denominator
     
     def H_rate_grad(
             self,
@@ -500,8 +536,6 @@ class DisaggModel:
             fitted beta parameter, by default None
         rate_pattern : _type_, optional
             point estimate rate pattern, by default None
-        bucket_populations :NDArray
-            Populations in each bucket
 
         Returns
         -------
@@ -538,4 +572,126 @@ class DisaggModel:
             Jacobian, shaped d x (d+1)
         """
 
-        rate_jac = self.rate_jacobian(beta,rate_pattern,bucket_populations)
+        rate_jac = self.rate_jacobian(beta,rate_pattern)
+        diag_pops = np.diag(bucket_populations)
+        return diag_pops@rate_jac
+
+    def rate_split_covariance_uncertainty(
+        self,
+        fitted_beta:float,
+        rate_pattern:NDArray,
+        bucket_populations:NDArray,
+        observed_total_se:float,
+        rate_pattern_cov:NDArray,
+        )->NDArray:
+        """Computes covariance matrix of predicted rate outputs
+        Pushes forward uncertainty in both observed total, and in the rate pattern
+
+        Parameters
+        ----------
+        fitted_beta : float
+            fitted value of beta. This being fitted is why we don't need what the original observation actually was
+        rate_pattern : NDArray
+            rate pattern
+        bucket_populations : NDArray
+            populations in each bucket
+        observed_total_se : float
+            standard error of the total observed quantity
+        rate_pattern_cov : NDArray
+            Covariance matrix of rate pattern estimates
+
+        Returns
+        -------
+        NDArray
+            Covariance matrix of errors in splitting rate
+        """
+        param_covariance = self.parameter_covariance(
+            fitted_beta=fitted_beta,
+            rate_pattern=rate_pattern,
+            bucket_populations = bucket_populations,
+            observed_total_se=observed_total_se,
+            rate_pattern_cov=rate_pattern_cov
+        )
+        out_jac = self.rate_jacobian(
+            fitted_beta,
+            rate_pattern,
+        )
+        return out_jac@param_covariance@out_jac.T
+
+
+    def count_split_covariance_uncertainty(
+        self,
+        fitted_beta:float,
+        rate_pattern:NDArray,
+        bucket_populations:NDArray,
+        observed_total_se:float,
+        rate_pattern_cov:NDArray,
+        )->NDArray:
+        """Computes covariance matrix of predicted splitting count outputs
+        Pushes forward uncertainty in both observed total, and in the rate pattern
+
+        Parameters
+        ----------
+        fitted_beta : float
+            fitted value of beta. This being fitted is why we don't need what the original observation actually was
+        rate_pattern : NDArray
+            rate pattern
+        bucket_populations : NDArray
+            populations in each bucket
+        observed_total_se : float
+            standard error of the total observed quantity
+        rate_pattern_cov : NDArray
+            Covariance matrix of rate pattern estimates
+
+        Returns
+        -------
+        NDArray
+            Covariance matrix of errors in splitting counts
+        """
+        param_covariance = self.parameter_covariance(
+            fitted_beta=fitted_beta,
+            rate_pattern=rate_pattern,
+            bucket_populations = bucket_populations,
+            observed_total_se=observed_total_se,
+            rate_pattern_cov=rate_pattern_cov
+        )
+        out_jac = self.count_jacobian(
+            fitted_beta,
+            rate_pattern,
+            bucket_populations
+        )
+        return out_jac@param_covariance@out_jac.T
+
+    def rate_split_full_jac(
+        self,
+        observed_total: float,
+        rate_pattern: NDArray,
+        bucket_populations: NDArray,
+        lower_guess: Optional[float] = -50,
+        upper_guess: Optional[float] = 50,
+    ) -> NDArray:
+        """
+
+        Parameters
+        ----------
+        observed_total : float
+            aggregated observation
+        rate_pattern : NDArray
+            rate pattern to assume (generalized) proportionality to
+        bucket_populations : NDArray
+            populations in each bucket
+        lower_guess : Optional[float], optional
+            Lower bound for rootfinding (we use bracketing), by default -50
+        upper_guess : Optional[float], optional
+            Upper bound for rootfinding, by default 50
+        verbose : Optional[int], optional
+            how much to print, 1 prints the root value,
+            2 prints the entire rootfinding output, by default 0
+
+        Returns
+        -------
+        NDArray
+            jacobian of prediction output
+        """
+        beta = self.fit_beta(observed_total,rate_pattern,bucket_populations)
+        #denominator = self.T_diff(self.T_inverse(self.))
