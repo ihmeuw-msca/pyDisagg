@@ -1,4 +1,4 @@
 import pydisagg.DisaggModel
 import pydisagg.disaggregate
 import pydisagg.models
-import pydisagg.transformations
+import pydisagg.ParameterTransformation

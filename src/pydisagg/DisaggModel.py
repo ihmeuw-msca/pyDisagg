@@ -6,7 +6,7 @@ from numpy.typing import NDArray
 from scipy.optimize import root_scalar
 from scipy.stats import norm
 
-from pydisagg.transformations import ParameterTransformation
+from pydisagg.ParameterTransformation import ParameterTransformation
 
 
 class DisaggModel:

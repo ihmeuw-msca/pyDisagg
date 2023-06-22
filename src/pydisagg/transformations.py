@@ -1,7 +1,8 @@
 """
-Module containing abstract ParameterTransformation class and some ParameterTransformation subclasses
+Module containing classes of ParameterTransformations
 """
-from abc import ABC, abstractmethod
+from pydisagg import ParameterTransformation
+
 from typing import Union
 
 import numpy as np
@@ -9,30 +10,6 @@ from numpy.typing import NDArray
 from scipy.optimize import root_scalar
 
 float_or_array = Union[float, NDArray]
-
-
-class ParameterTransformation(ABC):
-    """
-    Transformation that contains function, first order and inverse information
-    """
-
-    @abstractmethod
-    def __call__(self, x: float_or_array):
-        '''
-        Calls transformation function
-        '''
-
-    @abstractmethod
-    def inverse(self, z: float_or_array):
-        '''
-        Calls inverse of transformation function
-        '''
-
-    @abstractmethod
-    def diff(self, x: float_or_array):
-        '''
-        Calls derivative of transformation
-        '''
 
 
 class LogTransformation(ParameterTransformation):
