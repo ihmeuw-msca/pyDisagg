@@ -1,7 +1,7 @@
 """
 Module containing classes of ParameterTransformations
 """
-from pydisagg import ParameterTransformation
+from pydisagg.ParameterTransformation import ParameterTransformation
 
 from typing import Union
 
