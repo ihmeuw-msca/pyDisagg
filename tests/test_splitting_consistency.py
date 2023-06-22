@@ -36,10 +36,5 @@ def test_model_consistency(model:DisaggModel):
         populations,
         measurement_SE,
     )
-
-    
-    (measured_total, populations,
-                                     rate_pattern, measurement_SE,
-                                     model)
     assert_approx_equal(measured_total, np.sum(split_result))
     assert_approx_equal(measurement_SE, np.sum(split_SE_vals))
