@@ -8,7 +8,7 @@ from pydisagg.DisaggModel import DisaggModel
 
 model_list = [
     models.RateMultiplicativeModel(),
-    models.LMO_model(1),
+    models.LogOdds_model(),
     models.LMO_model(5)
 ]
 
