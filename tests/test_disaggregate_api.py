@@ -1,4 +1,4 @@
-#TODO Fix the dissaggregate.py file and then fill this in to make this work
+#TODO Fix the disaggregate.py file and then fill this in to make this work
 #TODO Also add dataframe splitting stuff
 import numpy as np
 import pytest
