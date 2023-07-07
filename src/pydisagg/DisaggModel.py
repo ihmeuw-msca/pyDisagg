@@ -401,7 +401,7 @@ class DisaggModel:
         fitted_beta = self.fit_beta(
             observed_total,rate_pattern,bucket_populations,lower_guess,upper_guess
             )
-        count_point_estimates = self.predict_count(fitted_beta,rate_pattern)
+        count_point_estimates = self.predict_count(fitted_beta,rate_pattern,bucket_populations)
         if observed_total_se is not None:
             standard_errors = self.count_split_standard_errors(fitted_beta,rate_pattern,bucket_populations,observed_total_se)
             return count_point_estimates,standard_errors
