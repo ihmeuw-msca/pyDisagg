@@ -67,20 +67,19 @@ def split_datapoint(
         (point_estimate,standard_error,(CI_lower,CI_upper))
     """
     if output_type=='total':
-        return model.split_groups(
-            bucket_populations,
+        point_estimates = model.split_to_counts(
             observed_total,
-            observed_total_se,
             rate_pattern,
-            CI_method=CI_method
+            bucket_populations
         )
+        if observed_total_se is not None:
+            standard_errors = model.count_split_standard_errors()
+
     if output_type=='rate':
-        return model.split_groups_rate(
-            bucket_populations,
+        return model.split_to_rates(
             observed_total,
-            observed_total_se,
             rate_pattern,
-            CI_method=CI_method
+            bucket_populations
         )
     else:
         raise("ERROR:output_type must be one of either 'total' or 'rate'")

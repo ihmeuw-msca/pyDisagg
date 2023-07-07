@@ -262,10 +262,11 @@ class DisaggModel:
         observed_total: float,
         rate_pattern: NDArray,
         bucket_populations: NDArray,
+        observed_total_se: Optional[float] = None,
         lower_guess: Optional[float] = -50,
         upper_guess: Optional[float] = 50,
     ) -> NDArray:
-        """Fits the parameter beta to the data
+        """Splits the given total to rates
 
         Parameters
         ----------
@@ -275,6 +276,8 @@ class DisaggModel:
             rate pattern to assume (generalized) proportionality to
         bucket_populations : NDArray
             populations in each bucket
+        observed_total_se: Optional[float], by default None
+            standard error of the observed total
         lower_guess : Optional[float], optional
             Lower bound for rootfinding (we use bracketing), by default -50
         upper_guess : Optional[float], optional
@@ -285,13 +288,23 @@ class DisaggModel:
 
         Returns
         -------
-        NDArray
-            predicted counts
+        if observed_total_se is not given, we return
+            NDArray
+                predicted counts
+        Otherwise we return 
+            NDArray
+                predicted counts
+            NDArray
+                standard error estimates
         """
         fitted_beta = self.fit_beta(
             observed_total,rate_pattern,bucket_populations,lower_guess,upper_guess
             )
-        return self.predict_rate(fitted_beta,rate_pattern)
+        rate_point_estimates = self.predict_rate(fitted_beta,rate_pattern)
+        if observed_total_se is not None:
+            standard_errors = self.rate_standard_errors(fitted_beta,rate_pattern,bucket_populations,observed_total_se)
+            return rate_point_estimates,standard_errors
+        return rate_point_estimates
     
     def rate_standard_errors(
         self,
@@ -346,10 +359,11 @@ class DisaggModel:
         observed_total: float,
         rate_pattern: NDArray,
         bucket_populations: NDArray,
+        observed_total_se: Optional[float] = None,
         lower_guess: Optional[float] = -50,
         upper_guess: Optional[float] = 50,
     ) -> NDArray:
-        """Fits the parameter beta to the data
+        """Splits given total to counts
 
         Parameters
         ----------
@@ -359,6 +373,8 @@ class DisaggModel:
             rate pattern to assume (generalized) proportionality to
         bucket_populations : NDArray
             populations in each bucket
+        observed_total_se: Optional[float], by default None
+            standard error of the observed total
         lower_guess : Optional[float], optional
             Lower bound for rootfinding (we use bracketing), by default -50
         upper_guess : Optional[float], optional
@@ -369,14 +385,27 @@ class DisaggModel:
 
         Returns
         -------
-        NDArray
-            predicted counts
+        if observed_total_se is not given, we return
+            NDArray
+                predicted rates
+        Otherwise we return 
+            NDArray
+                predicted rates
+            NDArray
+                standard error estimates
         """
         fitted_beta = self.fit_beta(
             observed_total,rate_pattern,bucket_populations,lower_guess,upper_guess
             )
-
-        return self.predict_count(fitted_beta,rate_pattern,bucket_populations)
+        
+        fitted_beta = self.fit_beta(
+            observed_total,rate_pattern,bucket_populations,lower_guess,upper_guess
+            )
+        count_point_estimates = self.predict_count(fitted_beta,rate_pattern)
+        if observed_total_se is not None:
+            standard_errors = self.count_split_standard_errors(fitted_beta,rate_pattern,bucket_populations,observed_total_se)
+            return count_point_estimates,standard_errors
+        return count_point_estimates
     
     def parameter_covariance(
         self,
@@ -532,10 +561,10 @@ class DisaggModel:
         """Computes the jacobian of the predicted output rates with respect to both beta and the pattern
         Parameters
         ----------
-        beta : float, optional
-            fitted beta parameter, by default None
-        rate_pattern : _type_, optional
-            point estimate rate pattern, by default None
+        beta : float
+            fitted beta parameter
+        rate_pattern : NDArray
+            point estimate rate pattern
 
         Returns
         -------
@@ -559,10 +588,10 @@ class DisaggModel:
         """Computes the jacobian of the predicted output counts with respect to both beta and the pattern
         Parameters
         ----------
-        beta : float, optional
-            fitted beta parameter, by default None
-        rate_pattern : NDArray, optional
-            point estimate rate pattern, by default None
+        beta : float
+            fitted beta parameter
+        rate_pattern : NDArray
+            point estimate rate pattern
         bucket_populations :NDArray
             Populations in each bucket
 
