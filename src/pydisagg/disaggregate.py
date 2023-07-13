@@ -66,6 +66,9 @@ def split_datapoint(
     If observed_total_se is given, then returns a tuple
         (point_estimate,standard_error,(CI_lower,CI_upper))
     """
+    if output_type not in ['total','rate']:
+        raise ValueError("output_type must be one of either 'total' or 'rate'")
+    
     if output_type=='total':
         point_estimates = model.split_to_counts(
             observed_total,
@@ -73,16 +76,34 @@ def split_datapoint(
             bucket_populations
         )
         if observed_total_se is not None:
-            standard_errors = model.count_split_standard_errors()
+            fitted_beta = model.fit_beta(observed_total,rate_pattern,bucket_populations)
+            standard_errors = model.count_split_standard_errors(
+                fitted_beta,
+                rate_pattern,
+                bucket_populations,
+                observed_total_se
+            )
+            return point_estimates,standard_errors
+        return point_estimates
 
     if output_type=='rate':
-        return model.split_to_rates(
+        point_estimates=model.split_to_rates(
             observed_total,
             rate_pattern,
             bucket_populations
         )
-    else:
-        raise("ERROR:output_type must be one of either 'total' or 'rate'")
+        if observed_total_se is not None:
+            fitted_beta = model.fit_beta(observed_total,rate_pattern,bucket_populations)
+            standard_errors = model.rate_standard_errors(
+                fitted_beta,
+                rate_pattern,
+                bucket_populations,
+                observed_total_se
+            )
+            return point_estimates,standard_errors
+        return point_estimates
+
+
 
 
 def split_dataframe(
