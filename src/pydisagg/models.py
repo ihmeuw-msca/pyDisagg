@@ -22,7 +22,7 @@ class RateMultiplicativeModel(DisaggModel):
         super().__init__(
             parameter_transformation=transformations.LogTransformation(),
         )
-    
+
     def fit_beta(
         self,
         observed_total: float,
@@ -31,11 +31,12 @@ class RateMultiplicativeModel(DisaggModel):
         lower_guess: Optional[float] = -50,
         upper_guess: Optional[float] = 50,
         verbose: Optional[int] = 0
-    )->None:
+    ) -> None:
         """
         Custom fit_beta for this model, as we can do it without rootfinding. 
         """
-        beta_val = np.log(observed_total/np.sum(bucket_populations*rate_pattern))
+        beta_val = np.log(
+            observed_total/np.sum(bucket_populations*rate_pattern))
         return beta_val
 
 

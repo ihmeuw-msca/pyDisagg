@@ -31,4 +31,3 @@ class ParameterTransformation(ABC):
         """
         Calls derivative of transformation
         """
-

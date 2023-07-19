@@ -15,9 +15,9 @@ def split_datapoint(
     rate_pattern: NDArray,
     observed_total_se: Optional[float] = None,
     model: Optional[DisaggModel] = LogOdds_model(),
-    output_type: Literal['total','rate'] = 'total',
+    output_type: Literal['total', 'rate'] = 'total',
     CI_method: Optional[str] = 'delta-wald'
-) -> Union[tuple,NDArray]:
+) -> Union[tuple, NDArray]:
     """Disaggregate a datapoint using the model given as input.
     Defaults to assuming multiplicativity in the odds ratio
 
@@ -66,44 +66,44 @@ def split_datapoint(
     If observed_total_se is given, then returns a tuple
         (point_estimate,standard_error,(CI_lower,CI_upper))
     """
-    if output_type not in ['total','rate']:
+    if output_type not in ['total', 'rate']:
         raise ValueError("output_type must be one of either 'total' or 'rate'")
-    
-    if output_type=='total':
+
+    if output_type == 'total':
         point_estimates = model.split_to_counts(
             observed_total,
             rate_pattern,
             bucket_populations
         )
         if observed_total_se is not None:
-            fitted_beta = model.fit_beta(observed_total,rate_pattern,bucket_populations)
+            fitted_beta = model.fit_beta(
+                observed_total, rate_pattern, bucket_populations)
             standard_errors = model.count_split_standard_errors(
                 fitted_beta,
                 rate_pattern,
                 bucket_populations,
                 observed_total_se
             )
-            return point_estimates,standard_errors
+            return point_estimates, standard_errors
         return point_estimates
 
-    if output_type=='rate':
-        point_estimates=model.split_to_rates(
+    if output_type == 'rate':
+        point_estimates = model.split_to_rates(
             observed_total,
             rate_pattern,
             bucket_populations
         )
         if observed_total_se is not None:
-            fitted_beta = model.fit_beta(observed_total,rate_pattern,bucket_populations)
+            fitted_beta = model.fit_beta(
+                observed_total, rate_pattern, bucket_populations)
             standard_errors = model.rate_standard_errors(
                 fitted_beta,
                 rate_pattern,
                 bucket_populations,
                 observed_total_se
             )
-            return point_estimates,standard_errors
+            return point_estimates, standard_errors
         return point_estimates
-
-
 
 
 def split_dataframe(
@@ -113,8 +113,8 @@ def split_dataframe(
     rate_patterns: DataFrame,
     use_se: Optional[bool] = False,
     model: Optional[DisaggModel] = LogOdds_model(),
-    output_type: Literal['total','rate'] = 'total',
-    demographic_id_columns : Optional[list] = None,
+    output_type: Literal['total', 'rate'] = 'total',
+    demographic_id_columns: Optional[list] = None,
 ) -> DataFrame:
     """Disaggregate datapoints and pivots observations into estimates for each group per demographic id
 
@@ -169,7 +169,7 @@ def split_dataframe(
     """
     splitting_df = observation_group_membership_df.copy()
     if demographic_id_columns is not None:
-        splitting_df['demographic_id']=list(
+        splitting_df['demographic_id'] = list(
             zip(
                 *[splitting_df[id_col] for id_col in demographic_id_columns]
             )
@@ -218,12 +218,13 @@ def split_dataframe(
         standard_errors = result_raw.applymap(lambda x: x[1])
         result = pd.concat([point_estimates, standard_errors], keys=[
                            'estimate', 'se'], axis=1).reset_index()  # .groupby(level=0).sum()
-        
+
     if demographic_id_columns is not None:
-        demographic_id_df=pd.DataFrame(
-        dict(zip(demographic_id_columns, zip(*result['demographic_id']))),
-        index=result.index
+        demographic_id_df = pd.DataFrame(
+            dict(zip(demographic_id_columns, zip(*result['demographic_id']))),
+            index=result.index
         )
-        result=pd.concat([demographic_id_df,result],axis=1).drop('demographic_id',axis=1)
+        result = pd.concat([demographic_id_df, result],
+                           axis=1).drop('demographic_id', axis=1)
 
     return result

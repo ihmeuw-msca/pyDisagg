@@ -25,10 +25,11 @@ class DisaggModel:
     have a log in the transormations so additive factors become multiplicative
 
     """
+
     def __init__(
         self,
         parameter_transformation: ParameterTransformation
-        ):
+    ):
         """Initializes a dissaggregation model
 
         Parameters
@@ -40,12 +41,12 @@ class DisaggModel:
         self.T = parameter_transformation
         self.T_inverse = parameter_transformation.inverse
         self.T_diff = parameter_transformation.diff
-        
+
     def predict_rate(
         self,
         beta: float,
         rate_pattern: NDArray
-    )->NDArray:
+    ) -> NDArray:
         """
         Predicts the rate in each bucket
 
@@ -64,12 +65,12 @@ class DisaggModel:
 
         """
         return self.T_inverse(beta + self.T(rate_pattern))
-    
+
     def rate_diff_beta(
         self,
-        beta:float,
-        rate_pattern:NDArray
-    )->NDArray:
+        beta: float,
+        rate_pattern: NDArray
+    ) -> NDArray:
         """Computes the derivative of the predicted rates with respect to beta
 
         Parameters
@@ -87,13 +88,12 @@ class DisaggModel:
         """
         return 1/self.T_diff(self.T_inverse(beta + self.T(rate_pattern)))
 
-    
     def predict_count(
         self,
         beta: float,
         rate_pattern: NDArray,
         bucket_populations: NDArray,
-    )->NDArray:
+    ) -> NDArray:
         """
         Generate a predicted count in each bucket assuming
             multiplicativity in the T-transformed space with the additive parameter beta
@@ -111,14 +111,14 @@ class DisaggModel:
         NDArray
             Predicted rates in each bucket
         """
-        return self.predict_rate(beta,rate_pattern)*bucket_populations
-    
+        return self.predict_rate(beta, rate_pattern)*bucket_populations
+
     def count_diff_beta(
         self,
         beta: float,
         rate_pattern: NDArray,
         bucket_populations: NDArray,
-    )->NDArray:
+    ) -> NDArray:
         """
         Computes the derivative of the predicted count in each bucket with respect to beta
 
@@ -135,8 +135,8 @@ class DisaggModel:
         NDArray
             Derivative of predicted counts in each bucket with respect to beta
         """
-        return self.rate_diff_beta(beta,rate_pattern)*bucket_populations
-    
+        return self.rate_diff_beta(beta, rate_pattern)*bucket_populations
+
     def fit_beta(
         self,
         observed_total: float,
@@ -170,7 +170,7 @@ class DisaggModel:
             computed value for beta
         """
         def beta_misfit(beta):
-            return self.H_func(beta,rate_pattern = rate_pattern,bucket_populations=bucket_populations) -observed_total
+            return self.H_func(beta, rate_pattern=rate_pattern, bucket_populations=bucket_populations) - observed_total
         beta_results = root_scalar(beta_misfit, bracket=[
                                    lower_guess, upper_guess], method='toms748')
         if verbose == 2:
@@ -178,14 +178,14 @@ class DisaggModel:
         elif verbose == 1:
             print(f'beta={beta_results.root}')
         fitted_beta = beta_results.root
-        return fitted_beta        
-    
+        return fitted_beta
+
     def H_func(
         self,
-        beta:float,
-        rate_pattern:NDArray,
-        bucket_populations:NDArray,
-        )->float:
+        beta: float,
+        rate_pattern: NDArray,
+        bucket_populations: NDArray,
+    ) -> float:
         """Returns the predicted total function
 
         Parameters
@@ -202,15 +202,14 @@ class DisaggModel:
             Predicted total given beta, bucket populations, and rate pattern
             This is matched to observed_total with rootfinding to fit beta
         """
-        return np.sum(self.predict_count(beta,rate_pattern, bucket_populations))
-
+        return np.sum(self.predict_count(beta, rate_pattern, bucket_populations))
 
     def H_diff_beta(
         self,
-        beta:float,
-        rate_pattern:NDArray,
-        bucket_populations:NDArray,
-        )->float:
+        beta: float,
+        rate_pattern: NDArray,
+        bucket_populations: NDArray,
+    ) -> float:
         """Returns the derivative of the predicted total function with respect to beta
 
         Parameters
@@ -227,14 +226,14 @@ class DisaggModel:
         float
             derivative of H_func with respect to beta
         """
-        return np.sum(self.count_diff_beta(beta,rate_pattern,bucket_populations))
+        return np.sum(self.count_diff_beta(beta, rate_pattern, bucket_populations))
 
     def beta_standard_error(
         self,
         fitted_beta: float,
         rate_pattern: NDArray,
         bucket_populations: NDArray,
-        observed_total_se:float,
+        observed_total_se: float,
 
     ) -> float:
         """Computes delta-method standard error estimate for beta
@@ -255,11 +254,11 @@ class DisaggModel:
         float
             standard error of beta
         """
-        error_inflation = (1 / \
-            self.H_diff_beta(fitted_beta,rate_pattern, bucket_populations))
+        error_inflation = (1 /
+                           self.H_diff_beta(fitted_beta, rate_pattern, bucket_populations))
         beta_standard_error = observed_total_se*error_inflation
         return beta_standard_error
-    
+
     def split_to_rates(
         self,
         observed_total: float,
@@ -301,14 +300,15 @@ class DisaggModel:
                 standard error estimates
         """
         fitted_beta = self.fit_beta(
-            observed_total,rate_pattern,bucket_populations,lower_guess,upper_guess
-            )
-        rate_point_estimates = self.predict_rate(fitted_beta,rate_pattern)
+            observed_total, rate_pattern, bucket_populations, lower_guess, upper_guess
+        )
+        rate_point_estimates = self.predict_rate(fitted_beta, rate_pattern)
         if observed_total_se is not None:
-            standard_errors = self.rate_standard_errors(fitted_beta,rate_pattern,bucket_populations,observed_total_se)
-            return rate_point_estimates,standard_errors
+            standard_errors = self.rate_standard_errors(
+                fitted_beta, rate_pattern, bucket_populations, observed_total_se)
+            return rate_point_estimates, standard_errors
         return rate_point_estimates
-    
+
     def rate_standard_errors(
         self,
         fitted_beta,
@@ -329,10 +329,12 @@ class DisaggModel:
         observed_total_se : float
             standard error of the total observed quantity
         """
-        beta_SE=self.beta_standard_error(fitted_beta,rate_pattern,bucket_populations,observed_total_se)
-        rate_standard_errors = self.rate_diff_beta(fitted_beta,rate_pattern)*beta_SE
+        beta_SE = self.beta_standard_error(
+            fitted_beta, rate_pattern, bucket_populations, observed_total_se)
+        rate_standard_errors = self.rate_diff_beta(
+            fitted_beta, rate_pattern)*beta_SE
         return rate_standard_errors
-    
+
     def count_split_standard_errors(
         self,
         fitted_beta,
@@ -353,10 +355,10 @@ class DisaggModel:
         observed_total_se : float
             standard error of the total observed quantity
         """
-        rate_se=self.rate_standard_errors(fitted_beta,rate_pattern,bucket_populations=bucket_populations,observed_total_se=observed_total_se)
+        rate_se = self.rate_standard_errors(
+            fitted_beta, rate_pattern, bucket_populations=bucket_populations, observed_total_se=observed_total_se)
         return rate_se*bucket_populations
 
-    
     def split_to_counts(
         self,
         observed_total: float,
@@ -398,26 +400,28 @@ class DisaggModel:
                 standard error estimates
         """
         fitted_beta = self.fit_beta(
-            observed_total,rate_pattern,bucket_populations,lower_guess,upper_guess
-            )
-        
+            observed_total, rate_pattern, bucket_populations, lower_guess, upper_guess
+        )
+
         fitted_beta = self.fit_beta(
-            observed_total,rate_pattern,bucket_populations,lower_guess,upper_guess
-            )
-        count_point_estimates = self.predict_count(fitted_beta,rate_pattern,bucket_populations)
+            observed_total, rate_pattern, bucket_populations, lower_guess, upper_guess
+        )
+        count_point_estimates = self.predict_count(
+            fitted_beta, rate_pattern, bucket_populations)
         if observed_total_se is not None:
-            standard_errors = self.count_split_standard_errors(fitted_beta,rate_pattern,bucket_populations,observed_total_se)
-            return count_point_estimates,standard_errors
+            standard_errors = self.count_split_standard_errors(
+                fitted_beta, rate_pattern, bucket_populations, observed_total_se)
+            return count_point_estimates, standard_errors
         return count_point_estimates
-    
+
     def parameter_covariance(
         self,
-        fitted_beta:float,
-        rate_pattern:NDArray,
-        bucket_populations:NDArray,
-        observed_total_se:float,
-        rate_pattern_cov:NDArray,
-        )->NDArray:
+        fitted_beta: float,
+        rate_pattern: NDArray,
+        bucket_populations: NDArray,
+        observed_total_se: float,
+        rate_pattern_cov: NDArray,
+    ) -> NDArray:
         """Computes covariance matrix of beta and rate_pattern together
 
         Parameters
@@ -438,34 +442,36 @@ class DisaggModel:
         NDArray
             Joint covariance matrix with beta and rate_pattern
         """
-        rate_grad = self.Hinv_rate_grad(fitted_beta,rate_pattern,bucket_populations)
+        rate_grad = self.Hinv_rate_grad(
+            fitted_beta, rate_pattern, bucket_populations)
         beta_pattern_cov = (
             rate_pattern_cov@rate_grad
-        ).reshape(-1,1)
+        ).reshape(-1, 1)
 
         beta_var = np.array(
             [[
                 self.beta_standard_error(
-                    fitted_beta,rate_pattern,bucket_populations,observed_total_se
-                    )**2
-                ]]
-            )
-        
+                    fitted_beta, rate_pattern, bucket_populations, observed_total_se
+                )**2
+            ]]
+        )
+
         full_parameter_cov = np.block(
             [
-            [beta_var+rate_grad.T@rate_pattern_cov@rate_grad,beta_pattern_cov.T],
-            [beta_pattern_cov,rate_pattern_cov]
+                [beta_var+rate_grad.T@rate_pattern_cov @
+                    rate_grad, beta_pattern_cov.T],
+                [beta_pattern_cov, rate_pattern_cov]
             ]
         )
 
         return full_parameter_cov
-    
+
     def parameter_fit_jacobian(
         self,
-        fitted_beta:float,
-        rate_pattern:NDArray,
-        bucket_populations:NDArray,
-        )->NDArray:
+        fitted_beta: float,
+        rate_pattern: NDArray,
+        bucket_populations: NDArray,
+    ) -> NDArray:
         """Computes jacobian matrix of H_inv with respect to beta and rate_pattern together
 
         Parameters
@@ -482,27 +488,28 @@ class DisaggModel:
         NDArray
             Joint covariance matrix with beta and rate_pattern
         """
-        
-        rate_grad = self.Hinv_rate_grad(fitted_beta,rate_pattern,bucket_populations).reshape(-1,1)
-        beta_diff = np.array([[(1 / \
-                    self.H_diff_beta(fitted_beta,rate_pattern, bucket_populations))]]
-                    )
+
+        rate_grad = self.Hinv_rate_grad(
+            fitted_beta, rate_pattern, bucket_populations).reshape(-1, 1)
+        beta_diff = np.array([[(1 /
+                                self.H_diff_beta(fitted_beta, rate_pattern, bucket_populations))]]
+                             )
         full_parameter_jac = np.block(
             [
-            [beta_diff,rate_grad.T],
-            [np.zeros((len(rate_pattern),1)),np.identity(len(rate_pattern))]
+                [beta_diff, rate_grad.T],
+                [np.zeros((len(rate_pattern), 1)),
+                 np.identity(len(rate_pattern))]
             ]
         )
 
         return full_parameter_jac
 
-
     def Hinv_rate_grad(
-            self,
-            beta,
-            rate_pattern,
-            bucket_populations
-        )->NDArray:
+        self,
+        beta,
+        rate_pattern,
+        bucket_populations
+    ) -> NDArray:
         """Gradient of H inverse (inverted with respect to beta) with respect to rate_pattern
 
         The inverse is handled implicitly, as beta is the input, not the total.
@@ -521,20 +528,20 @@ class DisaggModel:
         NDArray
             gradient
         """
-        denominator = self.H_diff_beta(beta,rate_pattern,bucket_populations)
-        ## Call this at the fitted beta for the inverse derivative of H at the observed_total 
+        denominator = self.H_diff_beta(beta, rate_pattern, bucket_populations)
+        # Call this at the fitted beta for the inverse derivative of H at the observed_total
         # assuming that the observed_total is H(beta), the total that beta would give!
 
-        return -1*self.H_rate_grad(beta,rate_pattern,bucket_populations)/denominator
-    
+        return -1*self.H_rate_grad(beta, rate_pattern, bucket_populations)/denominator
+
     def H_rate_grad(
-            self,
-            beta,
-            rate_pattern,
-            bucket_populations
-        )->NDArray:
+        self,
+        beta,
+        rate_pattern,
+        bucket_populations
+    ) -> NDArray:
         """Gradient of H (inverted with respect to beta) with respect to rate_pattern
-        
+
         Parameters
         ----------
         beta : float
@@ -550,17 +557,17 @@ class DisaggModel:
             gradient
         """
         return (
-            (bucket_populations*self.T_diff(rate_pattern))/
+            (bucket_populations*self.T_diff(rate_pattern)) /
             (
                 self.T_diff(self.T_inverse(beta + self.T(rate_pattern)))
             )
-            )
-    
+        )
+
     def rate_jacobian(
         self,
-        beta:float,
-        rate_pattern:NDArray,
-        )->NDArray:
+        beta: float,
+        rate_pattern: NDArray,
+    ) -> NDArray:
         """Computes the jacobian of the predicted output rates with respect to both beta and the pattern
         Parameters
         ----------
@@ -576,18 +583,19 @@ class DisaggModel:
 
         """
 
-        diag_scaling = np.diag(1/self.T_diff(self.T_inverse(beta + self.T(rate_pattern))))
+        diag_scaling = np.diag(
+            1/self.T_diff(self.T_inverse(beta + self.T(rate_pattern))))
         dim = len(rate_pattern)
-        right_portion = np.block([np.ones((dim,1)),np.diag(self.T_diff(rate_pattern))])
+        right_portion = np.block(
+            [np.ones((dim, 1)), np.diag(self.T_diff(rate_pattern))])
         return diag_scaling@right_portion
-
 
     def count_jacobian(
         self,
-        beta:float,
-        rate_pattern:NDArray,
-        bucket_populations:NDArray
-        ):
+        beta: float,
+        rate_pattern: NDArray,
+        bucket_populations: NDArray
+    ):
         """Computes the jacobian of the predicted output counts with respect to both beta and the pattern
         Parameters
         ----------
@@ -604,18 +612,18 @@ class DisaggModel:
             Jacobian, shaped d x (d+1)
         """
 
-        rate_jac = self.rate_jacobian(beta,rate_pattern)
+        rate_jac = self.rate_jacobian(beta, rate_pattern)
         diag_pops = np.diag(bucket_populations)
         return diag_pops@rate_jac
 
     def rate_split_covariance_uncertainty(
         self,
-        fitted_beta:float,
-        rate_pattern:NDArray,
-        bucket_populations:NDArray,
-        observed_total_se:float,
-        rate_pattern_cov:NDArray,
-        )->NDArray:
+        fitted_beta: float,
+        rate_pattern: NDArray,
+        bucket_populations: NDArray,
+        observed_total_se: float,
+        rate_pattern_cov: NDArray,
+    ) -> NDArray:
         """Computes covariance matrix of predicted rate outputs
         Pushes forward uncertainty in both observed total, and in the rate pattern
 
@@ -640,7 +648,7 @@ class DisaggModel:
         param_covariance = self.parameter_covariance(
             fitted_beta=fitted_beta,
             rate_pattern=rate_pattern,
-            bucket_populations = bucket_populations,
+            bucket_populations=bucket_populations,
             observed_total_se=observed_total_se,
             rate_pattern_cov=rate_pattern_cov
         )
@@ -650,15 +658,14 @@ class DisaggModel:
         )
         return out_jac@param_covariance@out_jac.T
 
-
     def count_split_covariance_uncertainty(
         self,
-        fitted_beta:float,
-        rate_pattern:NDArray,
-        bucket_populations:NDArray,
-        observed_total_se:float,
-        rate_pattern_cov:NDArray,
-        )->NDArray:
+        fitted_beta: float,
+        rate_pattern: NDArray,
+        bucket_populations: NDArray,
+        observed_total_se: float,
+        rate_pattern_cov: NDArray,
+    ) -> NDArray:
         """Computes covariance matrix of predicted splitting count outputs
         Pushes forward uncertainty in both observed total, and in the rate pattern
 
@@ -683,7 +690,7 @@ class DisaggModel:
         param_covariance = self.parameter_covariance(
             fitted_beta=fitted_beta,
             rate_pattern=rate_pattern,
-            bucket_populations = bucket_populations,
+            bucket_populations=bucket_populations,
             observed_total_se=observed_total_se,
             rate_pattern_cov=rate_pattern_cov
         )
@@ -725,5 +732,5 @@ class DisaggModel:
         NDArray
             jacobian of prediction output
         """
-        beta = self.fit_beta(observed_total,rate_pattern,bucket_populations)
-        #denominator = self.T_diff(self.T_inverse(self.))
+        beta = self.fit_beta(observed_total, rate_pattern, bucket_populations)
+        # denominator = self.T_diff(self.T_inverse(self.))

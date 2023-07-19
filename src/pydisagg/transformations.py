@@ -34,7 +34,7 @@ class LogModifiedOddsTransformation(ParameterTransformation):
     T(x)=log(x/(1-x**a))
     """
 
-    def __init__(self, a:float):
+    def __init__(self, a: float):
         self.a = a
 
     def __call__(self, x: float_or_array):
@@ -43,7 +43,7 @@ class LogModifiedOddsTransformation(ParameterTransformation):
         """
         return np.log(x/(1-(x**self.a)))
 
-    def _inverse_single(self, z:float):
+    def _inverse_single(self, z: float):
         def root_func(x):
             return np.exp(z)*(1-x**self.a)-x
         return root_scalar(root_func, bracket=[0, 1], method='toms748').root
