@@ -16,19 +16,19 @@ class ParameterTransformation(ABC):
 
     @abstractmethod
     def __call__(self, x: float_or_array):
-        '''
+        """
         Calls transformation function
-        '''
+        """
 
     @abstractmethod
     def inverse(self, z: float_or_array):
-        '''
+        """
         Calls inverse of transformation function
-        '''
+        """
 
     @abstractmethod
     def diff(self, x: float_or_array):
-        '''
+        """
         Calls derivative of transformation
-        '''
+        """
 

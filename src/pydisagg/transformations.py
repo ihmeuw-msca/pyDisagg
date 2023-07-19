@@ -13,10 +13,10 @@ float_or_array = Union[float, NDArray]
 
 
 class LogTransformation(ParameterTransformation):
-    '''
+    """
     Logarithmic transformation of parameter
     Since we fit models additively in beta the log makes it multiplicative
-    '''
+    """
 
     def __call__(self, x: float_or_array):
         return np.log(x)
@@ -29,18 +29,18 @@ class LogTransformation(ParameterTransformation):
 
 
 class LogModifiedOddsTransformation(ParameterTransformation):
-    '''
+    """
     Log Modified odds transformation
     T(x)=log(x/(1-x**a))
-    '''
+    """
 
     def __init__(self, a:float):
         self.a = a
 
     def __call__(self, x: float_or_array):
-        '''
+        """
         Calls transformation function
-        '''
+        """
         return np.log(x/(1-(x**self.a)))
 
     def _inverse_single(self, z:float):
@@ -58,15 +58,15 @@ class LogModifiedOddsTransformation(ParameterTransformation):
 
 
 class LogOddsTransformation(ParameterTransformation):
-    '''
+    """
     Log-odds transformation
     T(x)=log(x/(1-x))
-    '''
+    """
 
     def __call__(self, x: float_or_array):
-        '''
+        """
         Calls transformation function
-        '''
+        """
         return np.log(x/(1-x))
 
     def inverse(self, z: float_or_array):

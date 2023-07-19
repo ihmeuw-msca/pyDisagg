@@ -10,8 +10,11 @@ from pydisagg.ParameterTransformation import ParameterTransformation
 
 
 class DisaggModel:
-    '''
+    """
     Model for solving splitting/disaggregation problems
+
+    parameter_transformation is a class attribute that defines the generalized proportionality assumption that we want to make
+    It should be a ParameterTransformation object which is callable, has an inverse function, and has a derivative. 
 
     Notes
     -----
@@ -20,7 +23,8 @@ class DisaggModel:
 
     We do this because it works better with the delta method calculations, and we assume that we
     have a log in the transormations so additive factors become multiplicative
-    '''
+
+    """
     def __init__(
         self,
         parameter_transformation: ParameterTransformation
