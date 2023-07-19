@@ -142,8 +142,8 @@ class DisaggModel:
         observed_total: float,
         rate_pattern: NDArray,
         bucket_populations: NDArray,
-        lower_guess: Optional[float] = -50,
-        upper_guess: Optional[float] = 50,
+        lower_guess: float = -50,
+        upper_guess: float = 50,
         verbose: Optional[int] = 0
     ) -> float:
         """Fits the parameter beta to the data
@@ -156,9 +156,9 @@ class DisaggModel:
             rate pattern to assume (generalized) proportionality to
         bucket_populations : NDArray
             populations in each bucket
-        lower_guess : Optional[float], optional
+        lower_guess : float, optional
             Lower bound for rootfinding (we use bracketing), by default -50
-        upper_guess : Optional[float], optional
+        upper_guess : float, optional
             Upper bound for rootfinding, by default 50
         verbose : Optional[int], optional
             how much to print, 1 prints the root value,
@@ -266,8 +266,8 @@ class DisaggModel:
         rate_pattern: NDArray,
         bucket_populations: NDArray,
         observed_total_se: Optional[float] = None,
-        lower_guess: Optional[float] = -50,
-        upper_guess: Optional[float] = 50,
+        lower_guess: float = -50,
+        upper_guess: float = 50,
     ) -> NDArray:
         """Splits the given total to rates
 
@@ -279,11 +279,11 @@ class DisaggModel:
             rate pattern to assume (generalized) proportionality to
         bucket_populations : NDArray
             populations in each bucket
-        observed_total_se: Optional[float], by default None
+        observed_total_se: float, by default None
             standard error of the observed total
-        lower_guess : Optional[float], optional
+        lower_guess : float, optional
             Lower bound for rootfinding (we use bracketing), by default -50
-        upper_guess : Optional[float], optional
+        upper_guess : float, optional
             Upper bound for rootfinding, by default 50
         verbose : Optional[int], optional
             how much to print, 1 prints the root value,
@@ -363,8 +363,8 @@ class DisaggModel:
         rate_pattern: NDArray,
         bucket_populations: NDArray,
         observed_total_se: Optional[float] = None,
-        lower_guess: Optional[float] = -50,
-        upper_guess: Optional[float] = 50,
+        lower_guess: float = -50,
+        upper_guess: float = 50,
     ) -> NDArray:
         """Splits given total to counts
 
@@ -376,13 +376,13 @@ class DisaggModel:
             rate pattern to assume (generalized) proportionality to
         bucket_populations : NDArray
             populations in each bucket
-        observed_total_se: Optional[float], by default None
+        observed_total_se: float, by default None
             standard error of the observed total
-        lower_guess : Optional[float], optional
+        lower_guess : float, optional
             Lower bound for rootfinding (we use bracketing), by default -50
-        upper_guess : Optional[float], optional
+        upper_guess : float, optional
             Upper bound for rootfinding, by default 50
-        verbose : Optional[int], optional
+        verbose : int, optional
             how much to print, 1 prints the root value,
             2 prints the entire rootfinding output, by default 0
 
@@ -699,8 +699,8 @@ class DisaggModel:
         observed_total: float,
         rate_pattern: NDArray,
         bucket_populations: NDArray,
-        lower_guess: Optional[float] = -50,
-        upper_guess: Optional[float] = 50,
+        lower_guess: float = -50,
+        upper_guess: float = 50,
     ) -> NDArray:
         """
 
@@ -712,9 +712,9 @@ class DisaggModel:
             rate pattern to assume (generalized) proportionality to
         bucket_populations : NDArray
             populations in each bucket
-        lower_guess : Optional[float], optional
+        lower_guess : float, optional
             Lower bound for rootfinding (we use bracketing), by default -50
-        upper_guess : Optional[float], optional
+        upper_guess : float, optional
             Upper bound for rootfinding, by default 50
         verbose : Optional[int], optional
             how much to print, 1 prints the root value,
