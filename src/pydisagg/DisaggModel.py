@@ -33,10 +33,9 @@ class DisaggModel:
             Transformation to apply to rate pattern values
         """
 
-        self.parameter_transformation = parameter_transformation
-        self.T = self.parameter_transformation
-        self.T_inverse = self.parameter_transformation.inverse
-        self.T_diff = self.parameter_transformation.diff
+        self.T = parameter_transformation
+        self.T_inverse = parameter_transformation.inverse
+        self.T_diff = parameter_transformation.diff
         
     def predict_rate(
         self,
