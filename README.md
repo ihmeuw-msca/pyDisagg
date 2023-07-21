@@ -4,7 +4,7 @@
 [![GitHub](https://img.shields.io/github/license/ihmeuw-msca/pyDisagg)](./LICENSE)
 
 ## Dissaggregation under Generalized Proportionality Assumptions
-This package dissaggregates an estimated count observation into buckets based on the assumption that the rate (in a suitably transformed space) is proportional to some baseline rate. 
+This package disaggregates an estimated count observation into buckets based on the assumption that the rate (in a suitably transformed space) is proportional to some baseline rate. 
 
 The most basic functionality is to perform disaggregation under the rate multiplicative model that is currently in use. 
 
