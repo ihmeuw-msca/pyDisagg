@@ -86,7 +86,8 @@ def split_datapoint(
         point_estimates = model.split_to_rates(
             observed_total,
             rate_pattern,
-            bucket_populations
+            bucket_populations,
+            reduce_output=True
         )
         if observed_total_se is not None:
             fitted_beta = model.fit_beta(
