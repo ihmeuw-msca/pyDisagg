@@ -16,7 +16,6 @@ def split_datapoint(
     observed_total_se: Optional[float] = None,
     model: Optional[DisaggModel] = LogOdds_model(),
     output_type: Literal['total', 'rate'] = 'total',
-    CI_method: Optional[str] = 'delta-wald'
 ) -> Union[tuple, NDArray]:
     """Disaggregate a datapoint using the model given as input.
     Defaults to assuming multiplicativity in the odds ratio
@@ -44,9 +43,6 @@ def split_datapoint(
         in each group, or estimate the rate per population unit. 
     model : Optional[DisaggModel], optional
         DisaggModel to use, by default LMO_model(1)
-    CI_method : Optional[str], optional
-        method to use for confidence intervals,
-        see documentation for standard error methods in DisaggModel, by default 'delta-wald'
 
     Returns
     -------
