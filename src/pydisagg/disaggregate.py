@@ -55,7 +55,6 @@ def split_datapoint(
             (
                 estimate_in_each_bucket,
                 se_of_estimate_bucket,
-                (CI_lower_in_each_bucket,CI_upper_in_each_bucket)
             )
         Otherwise, if standard errors are not available, 
         this will return a numpy array of the disaggregated estimates
@@ -64,7 +63,7 @@ def split_datapoint(
     -----
     If no observed_total_se is given, returns point estimates
     If observed_total_se is given, then returns a tuple
-        (point_estimate,standard_error,(CI_lower,CI_upper))
+        (point_estimate,standard_error)
     """
     if output_type not in ['total', 'rate']:
         raise ValueError("output_type must be one of either 'total' or 'rate'")
