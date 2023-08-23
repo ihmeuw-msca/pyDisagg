@@ -267,6 +267,7 @@ class DisaggModel:
         observed_total_se: Optional[float] = None,
         lower_guess: float = -50,
         upper_guess: float = 50,
+        reduce_output: bool = False,
     ) -> NDArray:
         """Splits the given total to rates
 
@@ -287,7 +288,8 @@ class DisaggModel:
         verbose : Optional[int], optional
             how much to print, 1 prints the root value,
             2 prints the entire rootfinding output, by default 0
-
+        reduce_output : bool, by default False
+            boolean for whether or not to set groups with zero population to have zero rate
         Returns
         -------
         if observed_total_se is not given, we return
@@ -303,11 +305,16 @@ class DisaggModel:
             observed_total, rate_pattern, bucket_populations, lower_guess, upper_guess
         )
         rate_point_estimates = self.predict_rate(fitted_beta, rate_pattern)
+        
+        #This is some dirty type casting, if reduce output, we set all groups with population 0 to 0
+        #Otherwise, we're multiplying everything True, which gets casted to 1
+        output_multiplier = ((1-1*reduce_output)+bucket_populations)>0
+
         if observed_total_se is not None:
             standard_errors = self.rate_standard_errors(
                 fitted_beta, rate_pattern, bucket_populations, observed_total_se)
-            return rate_point_estimates, standard_errors
-        return rate_point_estimates
+            return rate_point_estimates*output_multiplier, standard_errors*output_multiplier
+        return rate_point_estimates*output_multiplier
 
     def rate_standard_errors(
         self,

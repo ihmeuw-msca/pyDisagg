@@ -16,7 +16,6 @@ def split_datapoint(
     observed_total_se: Optional[float] = None,
     model: Optional[DisaggModel] = LogOdds_model(),
     output_type: Literal['total', 'rate'] = 'total',
-    CI_method: Optional[str] = 'delta-wald'
 ) -> Union[tuple, NDArray]:
     """Disaggregate a datapoint using the model given as input.
     Defaults to assuming multiplicativity in the odds ratio
@@ -44,9 +43,6 @@ def split_datapoint(
         in each group, or estimate the rate per population unit. 
     model : Optional[DisaggModel], optional
         DisaggModel to use, by default LMO_model(1)
-    CI_method : Optional[str], optional
-        method to use for confidence intervals,
-        see documentation for standard error methods in DisaggModel, by default 'delta-wald'
 
     Returns
     -------
@@ -55,7 +51,6 @@ def split_datapoint(
             (
                 estimate_in_each_bucket,
                 se_of_estimate_bucket,
-                (CI_lower_in_each_bucket,CI_upper_in_each_bucket)
             )
         Otherwise, if standard errors are not available, 
         this will return a numpy array of the disaggregated estimates
@@ -64,7 +59,7 @@ def split_datapoint(
     -----
     If no observed_total_se is given, returns point estimates
     If observed_total_se is given, then returns a tuple
-        (point_estimate,standard_error,(CI_lower,CI_upper))
+        (point_estimate,standard_error)
     """
     if output_type not in ['total', 'rate']:
         raise ValueError("output_type must be one of either 'total' or 'rate'")
@@ -91,7 +86,8 @@ def split_datapoint(
         point_estimates = model.split_to_rates(
             observed_total,
             rate_pattern,
-            bucket_populations
+            bucket_populations,
+            reduce_output=True
         )
         if observed_total_se is not None:
             fitted_beta = model.fit_beta(
