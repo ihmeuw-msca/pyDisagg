@@ -196,7 +196,8 @@ def split_dataframe(
                 population_sizes.loc[x.name]*x[groups_to_split_into],
                 rate_patterns.loc[x['pattern_id']],
                 model=model,
-                output_type=output_type
+                output_type=output_type,
+                normalize_pop_for_average_type_obs=normalize_pop_for_average_type_obs
             )
         result = (
             splitting_df
@@ -214,7 +215,8 @@ def split_dataframe(
                 rate_patterns.loc[x['pattern_id']],
                 model=model,
                 observed_total_se=x['obs_se'],
-                output_type=output_type
+                output_type=output_type,
+                normalize_pop_for_average_type_obs=normalize_pop_for_average_type_obs
             )
             return pd.Series(
                 [
