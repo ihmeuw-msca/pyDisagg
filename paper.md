@@ -92,6 +92,7 @@ uncertainty intervals for the multiplicative factors within the transforms $T$. 
 
 # Ongoing Research and Dissemination
 
-Age- and sex- splitting is currently widely used to support ongoing work for the Global Burden of Disease (GBD) study. 
+Age- and sex- splitting is currently widely used to support ongoing work for the Global Burden of Disease (GBD) study. For example, the GBD capstones on Diseases and Injuries [@vos2020global], 
+Risk Factors [@murray2020global], and AntiMicrobial Resistance [@murray2022global] all heavily use age- and sex-splitting. 
 
 # References
