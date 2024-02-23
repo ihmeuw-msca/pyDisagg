@@ -1,18 +1,25 @@
 ---
-title: 'pysr3: A Python Package for Sparse Relaxed Regularized Regression'
+title: 'pyDisagg: A Python Package for Data Disaggregation'
 
 tags:
   - Python
-  - Splines
-  - Derivatives
-  - Integrals 
-  - Flexible Extraploation
-  - Design matrix 
+  - Age/Sex Splitting
+  - Inverse Problems
+  - Uncertainty Propagation 
 
 authors:
+  - name: Alexander Hsu
+    orcid: 0000-0002-8198-945X
+    affiliation: 1,2
+  - name: Sameer Ali 
+    orcid: 
+    affiliation: 1
   - name: Peng Zheng
     orcid: 0000-0003-3313-215X
     affiliation: 1
+  - name: Kelsey Maass 
+    orcid: 0000-0002-9534-8901
+    affiliation: 1    
   - name: Aleksandr Aravkin
     orcid: 0000-0002-1875-1801
     affiliation: "1, 2"
@@ -23,49 +30,68 @@ affiliations:
  - name: Department of Applied Mathematics, University of Washington
    index: 2
 
-date: 08.21.2023
+date: 02.23.2024
 bibliography: paper.bib
 
 ---
 
 # Summary
 
-Splines are a fundamental tool for describing and estimating nonlinear relationships [@de1978practical]. They allow nonlinear functions to be represented as linear combinations of spline basis elements. Researchers in physical, biological, and health sciences rely on spline models in conjunction with statistical software packages to fit and describe a vast range of nonlinear relationships. 
+Data sources  report aggregated data for many reasons. Aggregating data may assuage privacy concerns, may be cheaper to tabulate, and easier to release. In global health applications, many data sources report data that is aggregated across age (for example, all-age prevalence of a disease), across sex (both-sex incidence of a disease), and across location (national estimates of mortality from a particular disease). 
 
-A wide range of tools and packages exist to support modeling with splines. These tools include 
-- Splipy [https://pypi.org/project/Splipy/] [@johannessen2020splipy]
-- splines [https://pypi.org/project/splines/]
-- spline support in scipy [https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.BSpline.html]
-- pyspline [https://mdolab-pyspline.readthedocs-hosted.com/en/latest/index.html]
-- splinter [https://github.com/bgrimstad/splinter]  
+When building processing workflows for analyzing and modeling the data, the user must either incorporate the aggregation mechanism into the model, or somehow disaggregate the data. While the former option is feasible in some contexts, the latter option significantly simplifies processing and modeling in large-scale analyses. 
+Many data sources used by the Institute for Health Metrics and Evaluation report aggregated data that is split, for example 
+into age-specific and sex-specific bins, for futher processing, using additional information. 
 
-Several important gaps remain in python packages for spline modeling.  `xspline` is not a comprehensive tool that generalizes existing software. Instead, it provides key functionality that undergirds flexible interpolation and fitting, closing existing gaps in the available tools.  `xspline` is currently widely used in global health applications [@murray2020global], undergidring the majority of spline modeling at the Institute of Health metrics and Evaluation (IHME).
-
+The `pyDisagg` package implements simple methods for data splitting into any set of categories. Given 
+- An aggregated observation and uncertainty (for example, all-age prevalence with associated uncertainty)
+- Set of categories that were `aggregated' by the datapoint (e.g. which age categories were aggregated to get the prevalence)
+- Frequency pattern most relevant to the datapoint (e.g. age distribution of study or location relevant to the datapoint)
+- Global pattern for observable of intereset (e.g. global prevalence by age)
+the `pyDisagg` package produces split estimates into the specified bins for futher processing. 
 
 # Statement of Need
 
-Current spline packages offer broad functionality in spline fitting, including: 
-- Manipulating and estimating curves (scipy, splines), surfaces and volumes (splipy, pySpline)
-- Numerical derivatives (splipy, splines, scipy, pyspline, splinter)
-- Interpolation (splipy, splines, scipy, pyspline, splinter)
-- Spline derivatives, antiderivaties and numerical integrals (scipy)
-- Extrapolation (scipy, limited)     
+Nearly all groups within the Institute of Health Metrics and Evaluation (IHME) currently use some form of splitting, with age and sex-splitting being the most common. 
+Typical assumptions are that 
+- split datapoints should follow the global pattern up to a multiplicative constant
+- uncertainty is propagated by draws, i.e. performing the computation for different realizations of the datapoint and the global pattern (if uncertain).
 
-From this list, its apparent that `scipy` offers the most comprehensive features related to derivaties, integrals, and extrapolation. However, key limitations remain. First, while `scipy` provides derivative and anti-derivative spline objects, it still evaluates definite integrals numerically. In addition, while the first and last segments of the b-spline in `scipy` can be extrapolated, there is no option for the user to extrapolate a simpler functional form, e.g. a quadratic polynomial given a cubic spline. 
+The `pyDisagg` package provides this functionality, along with additional technical solutions that allow
+- splitting of fundamentally bounded quantities, such as prevalence, which has to lie between 0 and 1
+- allowing draw-free uncertainty propagation using the multivariate delta method
+- guarantees that uncertainty estimates are consistent with bounds for bounded quantities
 
-This functionality is essential to risk modeling. For example, data reported by all studies focusing on risk-outcome pairs are ratios of definite integrals across different exposure intervals. Prior packages do not offer a direct way to fit spline functions to these nonlinear data, because they do not provide definite integrals of splines as spline objects. Spline derivatives are also needed to impose shape constraints on risk curves of interest. Finally, extrapolations are often required to areas with little to no data, while maintaining high-fidelity fits for regions with dense data. Theoretically, it is straightforward to extrapolate any fit of degree less than or equal to the degree of the ultimate segments (for example, using slope matching for first order, slope and curvature for second order, etc.) However, this functinoality is not available in other packages. 
 
+# Core idea and structure of `pyDisagg`
 
-# Core idea and structure of `xpsline`
+Let $D_{1,...,k}$ be an aggregated measurement across groups ${g_1,...,g_k}$, where the population of each is $p_i,...,p_k$. Let $f_1,...,f_k$ be the baseline pattern of the rates across groups, potentially available with uncertainty. Using these data, we generate estimates for $D_i$, the number of events in group $g_i$ and $\hat{f_{i}}$, the rate in each group in the population of interest by combining $D_{1,...,k}$ with $f_1,...,f_k$ to make the estimates self consistent. 
 
-- Peng to write 
+Mathematically, in the simpler rate multiplicative model, we find $\beta$ such that 
+$$D_{1,...,k} = \sum_{i=1}^{k}\hat{f}_i \cdot p_i $$
+where
+$$\hat{f_i} = T^{-1}(\beta + T(f_i)) $$
+This yields the estimates for the per-group event count, 
+$$D_i = \hat f_i \cdot p_i $$
 
-More information about the structure of the library can be found in [documentation](https://zhengp0.github.io/xspline/api_reference/), 
-while the mathematical use cases are extensively discussed in [@zheng2021trimmed] and [@zheng2022burden] in the context of fitting risks. 
+When 
+$$T(x) = \log(x),$$
+the log transform, each rate is a constant muliplied by the overall rate pattern level. 
 
+When 
+$$T(x) = \log(x/1-x),$$
+the log-odds transform, multiplicativity is assumed in the associated odds, rather than the rate, and restricts the estimated rates to lie within a reasonable interval. 
+
+## Current Package Capabilities and Models
+Currently, the multiplicative-in-rate model RateMultiplicativeModel with $T(x)=\log(x)$ and the Log Modified Odds model with $T(x)=\log(\frac{x}{1-x^{m}})$ are implemented. 
+The LMO_model with m=1 gives the multiplicative odds model described above. Higer $m$ give results that are more similar to the multiplicative-in-rate model, while preserving the property that rate estimates are bounded by 1. 
+
+## Uncertainty Propagation
+The `pyDisagg` packages uses the multivariate delta method to propagate unceratinty. Given a variance for the observation and for the global rate, the package produces asymptotically valid 
+uncertainty intervals for the multiplicative factors within the transforms $T$. The confidence intervals for the factors are then used to obtain confidence intervals for the split datapoints using the transforms, which guarantees that final estimates respect the bounds imposed by the transforms. 
 
 # Ongoing Research and Dissemination
 
-The `xspline` package is widely used in all spline modeling done at IHME. In paricular, the new functionality described above enabled a new set of dose-response analyses recently published by the institue, including analyses of chewing tobacco [@gil2024health], education [@balaj2024effects], second-hand smoke [@flor2024health], intimate partner violence [@spencer2023health], smoking [@dai2022health], blood pressure [@razo2022effects], vegetable consumption [@stanaway2022health], and red meat consumption [@lescinsky2022health]. The results of all of these analyses are now publicly available at https://vizhub.healthdata.org/burden-of-proof/.  
+Age- and sex- splitting is currently widely used to support ongoing work for the Global Burden of Disease (GBD) study. 
 
 # References
