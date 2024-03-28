@@ -28,9 +28,6 @@ class RateMultiplicativeModel(DisaggModel):
         observed_total: float,
         rate_pattern: NDArray,
         bucket_populations: NDArray,
-        lower_guess: Optional[float] = -50,
-        upper_guess: Optional[float] = 50,
-        verbose: Optional[int] = 0
     ) -> None:
         """
         Custom fit_beta for this model, as we can do it without rootfinding. 
