@@ -1,4 +1,5 @@
 """Module containing specific splitting models with transformations built in"""
+
 from typing import Optional
 
 import numpy as np
@@ -28,15 +29,14 @@ class RateMultiplicativeModel(DisaggModel):
         observed_total: float,
         rate_pattern: NDArray,
         bucket_populations: NDArray,
-        lower_guess: Optional[float] = -50,
-        upper_guess: Optional[float] = 50,
+        lower_guess: float = -50,
+        upper_guess: float = 50,
         verbose: Optional[int] = 0
     ) -> None:
         """
-        Custom fit_beta for this model, as we can do it without rootfinding. 
+        Custom fit_beta for this model, as we can do it without rootfinding.
         """
-        beta_val = np.log(
-            observed_total/np.sum(bucket_populations*rate_pattern))
+        beta_val = np.log(observed_total / np.sum(bucket_populations * rate_pattern))
         return beta_val
 
 
@@ -50,15 +50,14 @@ class LMO_model(DisaggModel):
         m: float,
     ):
         super().__init__(
-            parameter_transformation=transformations.LogModifiedOddsTransformation(
-                m),
+            parameter_transformation=transformations.LogModifiedOddsTransformation(m),
         )
 
 
 class LogOdds_model(DisaggModel):
-    '''
+    """
     Produces an DisaggModel assuming multiplicativity in the odds
-    '''
+    """
 
     def __init__(
         self,
