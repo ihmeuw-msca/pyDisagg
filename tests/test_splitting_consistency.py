@@ -6,16 +6,16 @@ from pydisagg import models
 from pydisagg.DisaggModel import DisaggModel
 
 # Need to test
-#from pydisagg.disaggregate import split_datapoint
+# from pydisagg.disaggregate import split_datapoint
 
 model_list = [
     models.RateMultiplicativeModel(),
     models.LogOdds_model(),
-    models.LMO_model(5)
+    models.LMO_model(5),
 ]
 
 
-@pytest.mark.parametrize('model', model_list)
+@pytest.mark.parametrize("model", model_list)
 def test_model_consistency(model: DisaggModel):
     populations = np.array([2, 5])
     measured_total = 4.8
@@ -27,11 +27,7 @@ def test_model_consistency(model: DisaggModel):
         rate_pattern,
         populations,
     )
-    beta = model.fit_beta(
-        measured_total,
-        rate_pattern,
-        populations
-    )
+    beta = model.fit_beta(measured_total, rate_pattern, populations)
     split_SE_vals = model.count_split_standard_errors(
         beta,
         rate_pattern,

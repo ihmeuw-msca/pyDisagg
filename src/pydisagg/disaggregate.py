@@ -1,12 +1,14 @@
 """Module containing high level api for splitting"""
-from typing import Optional, Union, Literal
+
+from typing import Literal, Optional, Union
+
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 from pandas import DataFrame
 
-from pydisagg.models import LogOdds_model
 from pydisagg.DisaggModel import DisaggModel
+from pydisagg.models import LogOdds_model
 
 
 def split_datapoint(
@@ -15,15 +17,15 @@ def split_datapoint(
     rate_pattern: NDArray,
     observed_total_se: Optional[float] = None,
     model: Optional[DisaggModel] = LogOdds_model(),
-    output_type: Literal['total', 'rate'] = 'total',
-    normalize_pop_for_average_type_obs:bool = False,
+    output_type: Literal["total", "rate"] = "total",
+    normalize_pop_for_average_type_obs: bool = False,
 ) -> Union[tuple, NDArray]:
     """Disaggregate a datapoint using the model given as input.
     Defaults to assuming multiplicativity in the odds ratio
 
     If output_type=='total', then this outputs estimates for the observed amount in each group
         such that the sum of the point estimates equals the original total
-    If output_type=='rate', then this estimates rates for each group 
+    If output_type=='rate', then this estimates rates for each group
         (and doesn't multiply the rates out by the population)
 
 
@@ -41,12 +43,12 @@ def split_datapoint(
     output_type: Literal['total','rate'], optional
         One of 'total' or 'rate'
         Type of splitting to perform, whether to disaggregate and return the estimated total
-        in each group, or estimate the rate per population unit. 
+        in each group, or estimate the rate per population unit.
     model : Optional[DisaggModel], optional
         DisaggModel to use, by default LMO_model(1)
     normalize_pop_for_average_type_obs: bool = True
         Whether or not to normalize populations to sum to 1, this is appropriate when the output_type is rate
-        and when the aggregated observation is an average--whether an aggregated rate 
+        and when the aggregated observation is an average--whether an aggregated rate
         or a mean of a continuous measure over different groups
 
     Returns
@@ -57,7 +59,7 @@ def split_datapoint(
                 estimate_in_each_bucket,
                 se_of_estimate_bucket,
             )
-        Otherwise, if standard errors are not available, 
+        Otherwise, if standard errors are not available,
         this will return a numpy array of the disaggregated estimates
 
     Notes
@@ -66,47 +68,49 @@ def split_datapoint(
     If observed_total_se is given, then returns a tuple
         (point_estimate,standard_error)
     """
-    if output_type not in ['total', 'rate']:
+    if output_type not in ["total", "rate"]:
         raise ValueError("output_type must be one of either 'total' or 'rate'")
 
     if normalize_pop_for_average_type_obs is True:
-        processed_bucket_populations = bucket_populations/np.sum(bucket_populations)
+        processed_bucket_populations = bucket_populations / np.sum(
+            bucket_populations
+        )
     else:
         processed_bucket_populations = bucket_populations.copy()
 
-    if output_type == 'total':
+    if output_type == "total":
         point_estimates = model.split_to_counts(
-            observed_total,
-            rate_pattern,
-            processed_bucket_populations
+            observed_total, rate_pattern, processed_bucket_populations
         )
         if observed_total_se is not None:
             fitted_beta = model.fit_beta(
-                observed_total, rate_pattern, processed_bucket_populations)
+                observed_total, rate_pattern, processed_bucket_populations
+            )
             standard_errors = model.count_split_standard_errors(
                 fitted_beta,
                 rate_pattern,
                 processed_bucket_populations,
-                observed_total_se
+                observed_total_se,
             )
             return point_estimates, standard_errors
         return point_estimates
 
-    if output_type == 'rate':
+    if output_type == "rate":
         point_estimates = model.split_to_rates(
             observed_total,
             rate_pattern,
             processed_bucket_populations,
-            reduce_output=True
+            reduce_output=True,
         )
         if observed_total_se is not None:
             fitted_beta = model.fit_beta(
-                observed_total, rate_pattern, processed_bucket_populations)
+                observed_total, rate_pattern, processed_bucket_populations
+            )
             standard_errors = model.rate_standard_errors(
                 fitted_beta,
                 rate_pattern,
                 processed_bucket_populations,
-                observed_total_se
+                observed_total_se,
             )
             return point_estimates, standard_errors
         return point_estimates
@@ -119,15 +123,15 @@ def split_dataframe(
     rate_patterns: DataFrame,
     use_se: Optional[bool] = False,
     model: Optional[DisaggModel] = LogOdds_model(),
-    output_type: Literal['total', 'rate'] = 'total',
+    output_type: Literal["total", "rate"] = "total",
     demographic_id_columns: Optional[list] = None,
-    normalize_pop_for_average_type_obs:bool = False,
+    normalize_pop_for_average_type_obs: bool = False,
 ) -> DataFrame:
     """Disaggregate datapoints and pivots observations into estimates for each group per demographic id
 
     If output_type=='total', then this outputs estimates for the observed amount in each group
         such that the sum of the point estimates equals the original total
-    If output_type=='rate', then this estimates rates for each group 
+    If output_type=='rate', then this estimates rates for each group
         (and doesn't multiply the rates out by the population)
 
     Parameters
@@ -159,15 +163,15 @@ def split_dataframe(
     output_type: Literal['total','rate'], optional
         One of 'total' or 'rate'
         Type of splitting to perform, whether to disaggregate and return the estimated total
-        in each group, or estimate the rate per population unit. 
+        in each group, or estimate the rate per population unit.
     demographic_id_columns : Optional[list]
         Columns to use as demographic_id
-        Defaults to None. If None is given, then we assume 
-        that there is a already a demographic id column that matches the index in population_sizes. 
+        Defaults to None. If None is given, then we assume
+        that there is a already a demographic id column that matches the index in population_sizes.
         Otherwise, we create a new demographic_id column, zipping the columns chosen into tuples
     normalize_pop_for_average_type_obs: bool = True
         Whether or not to normalize populations to sum to 1, this is appropriate when the output_type is rate
-        and when the aggregated observation is an average--whether an aggregated rate 
+        and when the aggregated observation is an average--whether an aggregated rate
         or a mean of a continuous measure over different groups
 
     Returns
@@ -178,69 +182,75 @@ def split_dataframe(
         If use_se==True, then has a nested column indexing, where both the
             point estimate and standard error for the estimate for each group is given.
     """
-    if (normalize_pop_for_average_type_obs is True) and (output_type=='total'):
-        raise Warning("Normalizing populations may not be appropriate here, as we are working with a total")
-    
+    if (normalize_pop_for_average_type_obs is True) and (
+        output_type == "total"
+    ):
+        raise Warning(
+            "Normalizing populations may not be appropriate here, as we are working with a total"
+        )
+
     splitting_df = observation_group_membership_df.copy()
     if demographic_id_columns is not None:
-        splitting_df['demographic_id'] = list(
-            zip(
-                *[splitting_df[id_col] for id_col in demographic_id_columns]
-            )
+        splitting_df["demographic_id"] = list(
+            zip(*[splitting_df[id_col] for id_col in demographic_id_columns])
         )
 
     if use_se is False:
+
         def split_row(x):
             return split_datapoint(
-                x['obs'],
-                population_sizes.loc[x.name]*x[groups_to_split_into],
-                rate_patterns.loc[x['pattern_id']],
+                x["obs"],
+                population_sizes.loc[x.name] * x[groups_to_split_into],
+                rate_patterns.loc[x["pattern_id"]],
                 model=model,
                 output_type=output_type,
-                normalize_pop_for_average_type_obs=normalize_pop_for_average_type_obs
+                normalize_pop_for_average_type_obs=normalize_pop_for_average_type_obs,
             )
+
         result = (
-            splitting_df
-            .set_index('demographic_id')
-            .apply(
-                split_row,
-                axis=1)
+            splitting_df.set_index("demographic_id")
+            .apply(split_row, axis=1)
             .reset_index()
         )
     else:
+
         def split_row(x):
             raw_split_result = split_datapoint(
-                x['obs'],
-                population_sizes.loc[x.name]*x[groups_to_split_into],
-                rate_patterns.loc[x['pattern_id']],
+                x["obs"],
+                population_sizes.loc[x.name] * x[groups_to_split_into],
+                rate_patterns.loc[x["pattern_id"]],
                 model=model,
-                observed_total_se=x['obs_se'],
+                observed_total_se=x["obs_se"],
                 output_type=output_type,
-                normalize_pop_for_average_type_obs=normalize_pop_for_average_type_obs
+                normalize_pop_for_average_type_obs=normalize_pop_for_average_type_obs,
             )
             return pd.Series(
                 [
-                    (estimate, se) for estimate, se in zip(raw_split_result[0], raw_split_result[1])
+                    (estimate, se)
+                    for estimate, se in zip(
+                        raw_split_result[0], raw_split_result[1]
+                    )
                 ],
-                index=groups_to_split_into)
-        result_raw = (
-            splitting_df
-            .set_index('demographic_id')
-            .apply(
-                split_row,
-                axis=1)
+                index=groups_to_split_into,
+            )
+
+        result_raw = splitting_df.set_index("demographic_id").apply(
+            split_row, axis=1
         )
         point_estimates = result_raw.applymap(lambda x: x[0])
         standard_errors = result_raw.applymap(lambda x: x[1])
-        result = pd.concat([point_estimates, standard_errors], keys=[
-                           'estimate', 'se'], axis=1).reset_index()  # .groupby(level=0).sum()
+        result = pd.concat(
+            [point_estimates, standard_errors], keys=["estimate", "se"], axis=1
+        ).reset_index()  # .groupby(level=0).sum()
 
     if demographic_id_columns is not None:
         demographic_id_df = pd.DataFrame(
-            dict(zip(demographic_id_columns, zip(*result['demographic_id']))),
-            index=result.index
+            dict(zip(demographic_id_columns, zip(*result["demographic_id"]))),
+            index=result.index,
         )
-        result = pd.concat([demographic_id_df, result],
-                           axis=1).drop('demographic_id', axis=1)
+        result = pd.concat([demographic_id_df, result], axis=1).drop(
+            "demographic_id", axis=1
+        )
 
+    return result
     return result

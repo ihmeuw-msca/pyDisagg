@@ -41,7 +41,9 @@ def glue_back(df, frozen_df):
     Returns:
         DataFrame: The merged dataframe
     """
-    merged_df = df.merge(frozen_df, on="row_id", how="left", suffixes=("", "_frozen"))
+    merged_df = df.merge(
+        frozen_df, on="row_id", how="left", suffixes=("", "_frozen")
+    )
     merged_df = merged_df.filter(regex="^(?!.*_frozen)")
 
     return merged_df

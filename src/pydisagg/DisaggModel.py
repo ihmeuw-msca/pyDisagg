@@ -5,7 +5,6 @@ from typing import Optional
 import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import root_scalar
-from scipy.stats import norm
 
 from pydisagg.ParameterTransformation import ParameterTransformation
 

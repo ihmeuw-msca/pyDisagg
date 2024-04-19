@@ -31,12 +31,14 @@ class RateMultiplicativeModel(DisaggModel):
         bucket_populations: NDArray,
         lower_guess: float = -50,
         upper_guess: float = 50,
-        verbose: Optional[int] = 0
+        verbose: Optional[int] = 0,
     ) -> None:
         """
         Custom fit_beta for this model, as we can do it without rootfinding.
         """
-        beta_val = np.log(observed_total / np.sum(bucket_populations * rate_pattern))
+        beta_val = np.log(
+            observed_total / np.sum(bucket_populations * rate_pattern)
+        )
         return beta_val
 
 
@@ -50,7 +52,9 @@ class LMO_model(DisaggModel):
         m: float,
     ):
         super().__init__(
-            parameter_transformation=transformations.LogModifiedOddsTransformation(m),
+            parameter_transformation=transformations.LogModifiedOddsTransformation(
+                m
+            ),
         )
 
 
