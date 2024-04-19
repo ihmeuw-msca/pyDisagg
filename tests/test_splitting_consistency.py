@@ -3,8 +3,10 @@ import pytest
 from numpy.testing import assert_approx_equal
 
 from pydisagg import models
-from pydisagg.disaggregate import split_datapoint
 from pydisagg.DisaggModel import DisaggModel
+
+# Need to test
+#from pydisagg.disaggregate import split_datapoint
 
 model_list = [
     models.RateMultiplicativeModel(),

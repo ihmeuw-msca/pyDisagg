@@ -1,9 +1,20 @@
-import pydisagg.DisaggModel
-import pydisagg.disaggregate
-import pydisagg.models
-import pydisagg.ParameterTransformation
-import pydisagg.preprocess
+# pydisagg/__init__.py
+from . import DisaggModel
+from . import disaggregate
+from . import models
+from . import ParameterTransformation
+from . import preprocess
+from .age_split import age_split
+from .age_split import age_var
+from .age_split import helper
 
-import pydisagg.age_split.age_split
-import pydisagg.age_split.age_var
-import pydisagg.age_split.helper
+__all__ = [
+    "DisaggModel",
+    "disaggregate",
+    "models",
+    "ParameterTransformation",
+    "preprocess",
+    "age_split",
+    "age_var",
+    "helper",
+]

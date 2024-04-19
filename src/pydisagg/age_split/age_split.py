@@ -133,12 +133,12 @@ def split_row(
     split_results = [
         split_result_df[
             split_result_df["age_val"].between(
-                max(l, row["original_data_age_start"]),
-                min(u, row["original_data_age_end"]),
+                max(low, row["original_data_age_start"]),
+                min(up, row["original_data_age_end"]),
                 inclusive="left",
             )
         ]
-        for l, u in zip(
+        for low, up in zip(
             output_subset["age_group_years_start"], output_subset["age_group_years_end"]
         )
     ]
