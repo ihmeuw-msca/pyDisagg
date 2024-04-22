@@ -1,3 +1,31 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "pydisagg"
+version = "0.3.3"
+authors = [{ name = "IHME Math Sciences", email = "ihme.math.sciences@gmail.com" }]
+description = ""
+readme = "README.md"
+license = { text = "BSD 2-Clause License" }
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: BSD 2-Clause License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "matplotlib",
+    "numpy",
+    "pandas",
+    "scipy",
+]
+requires-python = ">=3.6"
+
+[project.urls]
+homepage = "https://github.com/ihmeuw-msca/splitting-python-package"
+
+[tool.setuptools.packages]
+find = {} 
