@@ -19,7 +19,7 @@ jobs:
           pip install pytest
     - name: Test with pytest
       run: |
-          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          export PYTHONPATH=$PYTHONPATH:$(pwd)/src
           pytest
     - name: Build package distribution
       if: startsWith(github.ref, 'refs/tags')
