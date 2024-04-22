@@ -29,3 +29,11 @@ homepage = "https://github.com/ihmeuw-msca/splitting-python-package"
 
 [tool.setuptools.packages]
 find = {} 
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+    "integration",
+]
