@@ -15,15 +15,23 @@ def validate_data(df, pop_df, age_id_map=age_id_map):
     """
     Validates the input dataframe by checking for NaN values, invalid sex_id, invalid location_ids, and invalid year_ids.
 
-    Args:
-        df (pandas.DataFrame): The input dataframe to be validated.
-        age_id_map (dict): A dictionary mapping age_ids to their corresponding values.
-        pop_df (pandas.DataFrame): The population dataframe used for validation.
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The input dataframe to be validated.
+    age_id_map : dict
+        A dictionary mapping age_ids to their corresponding values.
+    pop_df : pandas.DataFrame
+        The population dataframe used for validation.
 
-    Returns:
-        valid_df (pandas.DataFrame): The validated dataframe with invalid rows removed.
-        nan_df (pandas.DataFrame): A dataframe containing the rows with validation errors and their corresponding error reasons.
+    Returns
+    -------
+    valid_df : pandas.DataFrame
+        The validated dataframe with invalid rows removed.
+    nan_df : pandas.DataFrame
+        A dataframe containing the rows with validation errors and their corresponding error reasons.
     """
+
     if "year_id" in df.columns:
         df["input_year_id"] = df["year_id"]
 

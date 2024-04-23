@@ -47,10 +47,7 @@ class LMO_model(DisaggModel):
     DisaggModel using the log-modified odds transformation with the exponent m.
     """
 
-    def __init__(
-        self,
-        m: float,
-    ):
+    def __init__(self, m: float):
         super().__init__(
             parameter_transformation=transformations.LogModifiedOddsTransformation(
                 m
