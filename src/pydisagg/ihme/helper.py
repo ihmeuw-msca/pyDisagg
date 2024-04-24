@@ -1,4 +1,4 @@
-from pydisagg.age_split.age_var import rename_dict_dis
+from .age_var import rename_dict_dis
 
 
 def rename_df(frozen_df, rename_dict=rename_dict_dis, drop=True):

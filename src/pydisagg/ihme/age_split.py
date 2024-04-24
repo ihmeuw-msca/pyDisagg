@@ -17,9 +17,10 @@ TODO:
 import numpy as np
 import pandas as pd
 
-from pydisagg.age_split.age_var import match_cols
-from pydisagg.disaggregate import split_datapoint
-from pydisagg.models import LogOdds_model, RateMultiplicativeModel
+from .age_var import match_cols
+from ..disaggregate import split_datapoint
+from ..models import LogOdds_model, RateMultiplicativeModel
+from typing import Optional
 
 
 def split_row(
