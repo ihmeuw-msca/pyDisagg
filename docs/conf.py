@@ -13,25 +13,23 @@
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath("."))
-from pathlib import Path
+import datetime
 
-import pydisagg
+import tomllib
 
-base_dir = Path(pydisagg.__file__).parent
-
-about = {}
-with (base_dir / "__about__.py").open() as f:
-    exec(f.read(), about)
+with open("../pyproject.toml", "rb") as f:
+    about = tomllib.load(f)["project"]
 
 
 # -- Project information -----------------------------------------------------
 
-project = about["__title__"]
-copyright = about["__copyright__"]
-author = about["__author__"]
+project = about["name"]
+author = ", ".join([info["name"] for info in about["authors"]])
+copyright = f"2019-{datetime.datetime.today().year}, {author}"
+
 
 # The full version, including alpha/beta/rc tags
-version = about["__version__"]
+version = about["version"]
 
 
 # -- General configuration ---------------------------------------------------
@@ -88,11 +86,21 @@ html_theme_options = {
         "color-brand-content": "#008080",
         "color-problematic": "#BF5844",
         "color-background-secondary": "#F8F8F8",
+        "color-admonition-title--note": "#008080",
+        "color-admonition-title-background--note": "#00808033",
     },
     "dark_css_variables": {
         "color-brand-primary": "#6FD8D1",
         "color-brand-content": "#6FD8D1",
         "color-problematic": "#FA9F50",
-        "color-background-secondary": "#202020"
+        "color-background-secondary": "#202020",
+        "color-admonition-title--note": "#6FD8D1",
+        "color-admonition-title-background--note": "#6FD8D133",
     },
+}
+# get versions
+with open("meta.toml", "rb") as f:
+    versions = tomllib.load(f)["versions"]
+html_context = {
+    "versions": versions,
 }

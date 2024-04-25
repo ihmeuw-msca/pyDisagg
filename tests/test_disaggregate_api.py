@@ -10,11 +10,11 @@ from pydisagg.disaggregate import split_datapoint
 model_list = [
     models.RateMultiplicativeModel(),
     models.LogOdds_model(),
-    models.LMO_model(5)
+    models.LMO_model(5),
 ]
 
 
-@pytest.mark.parametrize('model', model_list)
+@pytest.mark.parametrize("model", model_list)
 def test_count_model_consistency(model):
     populations = np.array([2, 5])
     measured_total = 4.8
@@ -27,13 +27,13 @@ def test_count_model_consistency(model):
         rate_pattern,
         measurement_SE,
         model,
-        output_type='total'
+        output_type="total",
     )
     assert_approx_equal(measured_total, np.sum(result))
     assert_approx_equal(measurement_SE, np.sum(SE))
 
 
-@pytest.mark.parametrize('model', model_list)
+@pytest.mark.parametrize("model", model_list)
 def test_rate_model_consistency(model):
     populations = np.array([2, 5])
     measured_total = 4.8
@@ -46,6 +46,6 @@ def test_rate_model_consistency(model):
         rate_pattern,
         measurement_SE,
         model,
-        output_type='rate'
+        output_type="rate",
     )
-    assert_approx_equal(measured_total, np.sum(result*populations))
+    assert_approx_equal(measured_total, np.sum(result * populations))

@@ -1,5 +1,5 @@
 """
-TODO: 
+TODO:
     ## Move this into pyDisagg ##
     ## Refactor to not change things in place ##
     Wrap up preprocessing into one function (that can call the others)
@@ -14,16 +14,20 @@ TODO:
     TODO Handle low age groups more elegantly, we're just doing 1 year buckets for now, we should have an exception for age groups under 1, and explicitly model those as single
 """
 
-import pandas as pd
 import numpy as np
-from pydisagg.models import RateMultiplicativeModel
-from pydisagg.models import LogOdds_model
-from pydisagg.disaggregate import split_datapoint
+import pandas as pd
+
 from pydisagg.age_split.age_var import match_cols
+from pydisagg.disaggregate import split_datapoint
+from pydisagg.models import LogOdds_model, RateMultiplicativeModel
 
 
 def split_row(
-    row, df_expanded, match_cols=match_cols, model="Rate", pattern_col="mean_draw"
+    row,
+    df_expanded,
+    match_cols=match_cols,
+    model="Rate",
+    pattern_col="mean_draw",
 ):
     """
     Splits a row of data based on age groups and performs interpolation.
@@ -133,13 +137,14 @@ def split_row(
     split_results = [
         split_result_df[
             split_result_df["age_val"].between(
-                max(l, row["original_data_age_start"]),
-                min(u, row["original_data_age_end"]),
+                max(low, row["original_data_age_start"]),
+                min(up, row["original_data_age_end"]),
                 inclusive="left",
             )
         ]
-        for l, u in zip(
-            output_subset["age_group_years_start"], output_subset["age_group_years_end"]
+        for low, up in zip(
+            output_subset["age_group_years_start"],
+            output_subset["age_group_years_end"],
         )
     ]
 
@@ -215,11 +220,14 @@ def split_df(
     obs_to_split = df_expanded[match_cols].drop_duplicates()
 
     def row_split_func(x):
-        return split_row(x, df_expanded, match_cols=match_cols, model=model.lower())
+        return split_row(
+            x, df_expanded, match_cols=match_cols, model=model.lower()
+        )
 
     try:
         result = pd.concat(
-            obs_to_split.apply(row_split_func, axis=1).tolist(), ignore_index=True
+            obs_to_split.apply(row_split_func, axis=1).tolist(),
+            ignore_index=True,
         )
     except Exception as e:
         print("Error occurred:", e)

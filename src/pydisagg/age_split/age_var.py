@@ -124,4 +124,7 @@ match_cols = [
 
 match_pops = ["age_group_id", "location_id", "year_id", "sex_id", "population"]
 
-match_pats = ["sex_id", "age_group_id"]  # , "location_id", "year_id" in the future
+match_pats = [
+    "sex_id",
+    "age_group_id",
+]  # , "location_id", "year_id" in the future

@@ -1,6 +1,7 @@
 """
 Module containing abstract ParameterTransformation class
 """
+
 from abc import ABC, abstractmethod
 from typing import Union
 

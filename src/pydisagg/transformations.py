@@ -1,13 +1,14 @@
 """
 Module containing classes of ParameterTransformations
 """
-from pydisagg.ParameterTransformation import ParameterTransformation
 
 from typing import Union
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import root_scalar
+
+from pydisagg.ParameterTransformation import ParameterTransformation
 
 float_or_array = Union[float, NDArray]
 
@@ -25,7 +26,7 @@ class LogTransformation(ParameterTransformation):
         return np.exp(z)
 
     def diff(self, x: float_or_array):
-        return 1/x
+        return 1 / x
 
 
 class LogModifiedOddsTransformation(ParameterTransformation):
@@ -41,20 +42,21 @@ class LogModifiedOddsTransformation(ParameterTransformation):
         """
         Calls transformation function
         """
-        return np.log(x/(1-(x**self.a)))
+        return np.log(x / (1 - (x**self.a)))
 
     def _inverse_single(self, z: float):
         def root_func(x):
-            return np.exp(z)*(1-x**self.a)-x
-        return root_scalar(root_func, bracket=[0, 1], method='toms748').root
+            return np.exp(z) * (1 - x**self.a) - x
+
+        return root_scalar(root_func, bracket=[0, 1], method="toms748").root
 
     def inverse(self, z: float_or_array):
         return np.vectorize(self._inverse_single)(z)
 
     def diff(self, x: float_or_array):
-        numerator = (self.a-1)*(x**self.a)+1
-        denominator = ((x**self.a)-1)*x
-        return -1*numerator/denominator
+        numerator = (self.a - 1) * (x**self.a) + 1
+        denominator = ((x**self.a) - 1) * x
+        return -1 * numerator / denominator
 
 
 class LogOddsTransformation(ParameterTransformation):
@@ -67,11 +69,11 @@ class LogOddsTransformation(ParameterTransformation):
         """
         Calls transformation function
         """
-        return np.log(x/(1-x))
+        return np.log(x / (1 - x))
 
     def inverse(self, z: float_or_array):
         expz = np.exp(z)
-        return expz/(1+expz)
+        return expz / (1 + expz)
 
     def diff(self, x: float_or_array):
-        return 1/(x-x**2)
+        return 1 / (x - x**2)
