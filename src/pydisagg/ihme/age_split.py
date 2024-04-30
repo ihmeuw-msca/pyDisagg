@@ -20,7 +20,6 @@ import pandas as pd
 from .age_var import match_cols
 from ..disaggregate import split_datapoint
 from ..models import LogOdds_model, RateMultiplicativeModel
-from typing import Optional
 
 
 def split_row(
@@ -227,7 +226,7 @@ def split_df(
 
     try:
         result = pd.concat(
-            obs_to_split.apply(row_split_func, axis=1).tolist(),
+            [row_split_func(row) for _, row in obs_to_split.iterrows()],
             ignore_index=True,
         )
     except Exception as e:

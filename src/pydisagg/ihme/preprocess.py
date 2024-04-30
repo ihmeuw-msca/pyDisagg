@@ -6,7 +6,6 @@ from typing import Dict, List
 
 from .age_var import (
     age_id_map,
-    match_cols,
     match_pats,
     match_pops,
 )
@@ -213,7 +212,9 @@ def merge_pops(df_input, df_pop, df_nan=None):
     return df_merged, df_nan
 
 
-def merge_patterns(df_input, df_nan, patterns, drop_col):
+def merge_patterns(
+    df_input, df_nan, patterns, drop_col, match_pat_yr, match_pat_loc
+):
     """
     Merge the 'df_input' and 'patterns' dataframes based on 'sex_id', 'age_group_id', 'location_id' and 'year_id'.
     If 'location_id' is not available, try with 'location_id' set to 1.
@@ -225,6 +226,8 @@ def merge_patterns(df_input, df_nan, patterns, drop_col):
     - df_nan (pandas.DataFrame): Dataframe to store rows with missing values.
     - patterns (pandas.DataFrame): Dataframe containing patterns to be merged.
     - drop_col (bool): Flag indicating whether to drop the 'draw_' columns from 'patterns'.
+    - match_pat_yr (bool): Flag indicating whether to include 'year_id' in the merge operation.
+    - match_pat_loc (bool): Flag indicating whether to include 'location_id' in the merge operation.
 
     Returns:
     - df_input (pandas.DataFrame): Merged dataframe with NaN values dropped.
@@ -238,10 +241,14 @@ def merge_patterns(df_input, df_nan, patterns, drop_col):
     keep_cols = [
         "sex_id",
         "age_group_id",
-        "location_id",
-        "year_id",
         "mean_draw",
     ]
+
+    if match_pat_yr:
+        keep_cols.append("year_id")
+    if match_pat_loc:
+        keep_cols.append("location_id")
+
     # If drop_col is True, drop the other draw_ columns
     if drop_col:
         draw_cols = [col for col in patterns.columns if col.startswith("draw_")]
@@ -251,18 +258,19 @@ def merge_patterns(df_input, df_nan, patterns, drop_col):
 
     # Merge 'df_input' and 'patterns' dataframes on 'sex_id', 'age_group_id', 'location_id' and 'year_id'
     patterns_subset = patterns[keep_cols]
-    patterns_subset_temp = patterns_subset[
-        ["sex_id", "age_group_id", "location_id", "year_id", "mean_draw"]
-    ]
 
-    df_input = df_input.drop_duplicates(
-        subset=["sex_id", "age_group_id", "location_id", "year_id"]
-    )
+    # df_input = df_input.drop_duplicates(
+    #     subset=["sex_id", "age_group_id"]
+    #     + (["year_id"] if match_pat_yr else [])
+    #     + (["location_id"] if match_pat_loc else [])
+    # )
 
     df_merged = pd.merge(
         df_input,
         patterns_subset,
-        on=["sex_id", "age_group_id", "location_id", "year_id"],
+        on=["sex_id", "age_group_id"]
+        + (["year_id"] if match_pat_yr else [])
+        + (["location_id"] if match_pat_loc else []),
         how="inner",
     )
 
@@ -271,9 +279,11 @@ def merge_patterns(df_input, df_nan, patterns, drop_col):
         "sex_id",
         "population",
         "age_group_id",
-        "location_id",
-        "year_id",
     ]
+    if match_pat_yr:
+        columns_to_check.append("year_id")
+    if match_pat_loc:
+        columns_to_check.append("location_id")
 
     # Identify the rows with NaN values in the specified columns
     missing_rows = df_merged[
@@ -317,6 +327,8 @@ def process_data(
     pops: pd.DataFrame,
     patterns: pd.DataFrame,
     df_age_groups: pd.DataFrame = age_id_map,
+    match_pat_yr: bool = False,
+    match_pat_loc: bool = False,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Process the input data by expanding rows, merging populations, and merging patterns.
@@ -326,6 +338,8 @@ def process_data(
         df_age_groups (pd.DataFrame): The dataframe containing age groups.
         pops (pd.DataFrame): The dataframe containing population data.
         patterns (pd.DataFrame): The dataframe containing patterns data.
+        match_pat_yr (bool): Flag indicating whether to include 'year_id' in the merge operation.
+        match_pat_loc (bool): Flag indicating whether to include 'location_id' in the merge operation.
 
     Returns:
         pd.DataFrame: The expanded dataframe.
@@ -355,27 +369,30 @@ def process_data(
         raise KeyError(error_message)
 
     valid_df, df_nan = validate_data(df_input, pops, df_age_groups)
-    print(f"After validate_data:")
+    print("After validate_data:")
     print(f"Valid_df shape: {valid_df.shape}")
     print(f"df_nan shape: {df_nan.shape}")
 
     df_expanded = pd.concat(
         valid_df.apply(expand_row, df_age_groups=df_age_groups, axis=1).tolist()
     ).reset_index(drop=True)
-    print(f"After expand_row:")
+    print("After expand_row:")
     print(f"df_expanded shape: {df_expanded.shape}")
 
     df_expanded, df_nan = merge_pops(df_expanded, pops, df_nan)
-    print(f"After merge_pops:")
+    print("After merge_pops:")
     print(f"df_expanded_pop shape: {df_expanded.shape}")
 
     df_expanded, df_nan = merge_patterns(
-        df_input=df_expanded, patterns=patterns, df_nan=df_nan, drop_col=True
+        df_input=df_expanded,
+        patterns=patterns,
+        df_nan=df_nan,
+        drop_col=True,
+        match_pat_yr=match_pat_yr,
+        match_pat_loc=match_pat_loc,
     )
-    print(f"After merge_patterns:")
+    print("After merge_patterns:")
     print(f"df_expanded_pat shape: {df_expanded.shape}")
-
-    # Maybe include unique locations?
 
     # Print the number of rows dropped
     print(

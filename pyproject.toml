@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pydisagg"
-version = "0.3.4"
+version = "0.3.4.5"
 authors = [{ name = "IHME Math Sciences", email = "ihme.math.sciences@gmail.com" }]
 description = ""
 readme = "README.md"
@@ -27,8 +27,8 @@ requires-python = ">=3.6"
 [project.urls]
 homepage = "https://github.com/ihmeuw-msca/pydisagg"
 
-[tool.setuptools.packages]
-find = {} 
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "integration"]

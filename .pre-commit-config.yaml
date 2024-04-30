@@ -5,5 +5,5 @@ repos:
         name: ruff
         files: '(.*\.py$|.*\.pyi$)'
         language: python
-        entry: ruff
+        entry: ruff check .
         types: [python]
