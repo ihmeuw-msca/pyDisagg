@@ -430,15 +430,15 @@ def process_data(
     print(f"Number of 'row_id' dropped: {df_nan['row_id'].nunique()}")
 
     missing_value_counts = df_nan["error_reason"].value_counts()
-    unique_nid_per_missing_value = df_nan.groupby("error_reason")[
+    unique_rid_per_missing_value = df_nan.groupby("error_reason")[
         "row_id"
     ].nunique()
 
     for missing_value, count in missing_value_counts.items():
-        unique_nid = unique_nid_per_missing_value[missing_value]
+        unique_rid = unique_rid_per_missing_value[missing_value]
         # Print the number of rows dropped for each unique type of 'error_reason'
         print(
-            f"{count} rows dropped because of {missing_value}, corresponding to {unique_nid} row_id's"
+            f"{count} rows dropped because of {missing_value}, corresponding to {unique_rid} row_id's"
         )
 
     return df_expanded, df_nan
