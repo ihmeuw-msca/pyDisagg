@@ -1,34 +1,38 @@
 [build-system]
-requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+requires = [
+  "setuptools>=61",
+]
 
 [project]
 name = "pydisagg"
-version = "0.3.4.5"
-authors = [{ name = "IHME Math Sciences", email = "ihme.math.sciences@gmail.com" }]
+version = "0.3.4"
 description = ""
 readme = "README.md"
 license = { text = "BSD 2-Clause License" }
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: BSD License",
-    "Operating System :: OS Independent",
-]
-
-dependencies = [
-    "matplotlib",
-    "numpy",
-    "pandas",
-    "scipy",
-]
+authors = [{ name = "IHME Math Sciences", email = "ihme.math.sciences@gmail.com" }]
 requires-python = ">=3.6"
-
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: BSD License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.6",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+  "matplotlib",
+  "numpy",
+  "pandas",
+  "scipy",
+]
 [project.urls]
 homepage = "https://github.com/ihmeuw-msca/pydisagg"
-
-[tool.setuptools.packages.find]
-where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "integration"]

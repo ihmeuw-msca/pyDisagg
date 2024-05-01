@@ -1,14 +1,85 @@
-from typing import Tuple
-
 import numpy as np
 import pandas as pd
-from typing import Dict, List
 
 from .age_var import (
     age_id_map,
     match_pats,
     match_pops,
 )
+
+
+def validate_nonan(df):
+    """
+    Validates the input dataframe by checking for NaN values.
+
+    Args:
+        df (pandas.DataFrame): The input dataframe to be validated.
+
+    Returns:
+        nan_df (pandas.DataFrame): A dataframe containing the rows with NaN values and their corresponding error reasons.
+    """
+    nan_df = df[df.isna().any(axis=1)].copy()
+    nan_df["error_reason"] = (
+        "NaN values in the following columns: "
+        + ", ".join(nan_df.columns[nan_df.isna().any()].tolist())
+    )
+    return nan_df.dropna(how="all")
+
+
+def validate_sex_id(df):
+    """
+    Validates the input dataframe by checking for invalid sex_id.
+
+    Args:
+        df (pandas.DataFrame): The input dataframe to be validated.
+
+    Returns:
+        nan_df (pandas.DataFrame): A dataframe containing the rows with invalid sex_id and their corresponding error reasons.
+    """
+
+    with pd.option_context("future.no_silent_downcasting", True):
+        if df["sex_id"].dtype == "object":
+            df["sex_id"] = (
+                df["sex_id"]
+                .apply(lambda x: x.lower() if isinstance(x, str) else x)
+                .replace({"male": 1, "female": 2})
+                .astype(int)
+            )
+    nan_df = df[~df["sex_id"].isin([1, 2])].copy()
+    nan_df["error_reason"] = "sex_id is not M/F or 1/2"
+    return nan_df.dropna(how="all")
+
+
+def validate_location_id(df, pop_df):
+    """
+    Validates the input dataframe by checking for invalid location_ids.
+
+    Args:
+        df (pandas.DataFrame): The input dataframe to be validated.
+        pop_df (pandas.DataFrame): The population dataframe used for validation.
+
+    Returns:
+        nan_df (pandas.DataFrame): A dataframe containing the rows with invalid location_ids and their corresponding error reasons.
+    """
+    nan_df = df[~df["location_id"].isin(pop_df["location_id"])].copy()
+    nan_df["error_reason"] = "location_id is not in pop_df"
+    return nan_df.dropna(how="all")
+
+
+def validate_year_id(df, pop_df):
+    """
+    Validates the input dataframe by checking for invalid year_ids.
+
+    Args:
+        df (pandas.DataFrame): The input dataframe to be validated.
+        pop_df (pandas.DataFrame): The population dataframe used for validation.
+
+    Returns:
+        nan_df (pandas.DataFrame): A dataframe containing the rows with invalid year_ids and their corresponding error reasons.
+    """
+    nan_df = df[~df["year_id"].isin(pop_df["year_id"])].copy()
+    nan_df["error_reason"] = "year_id is not in pop_df"
+    return nan_df.dropna(how="all")
 
 
 def validate_data(df, pop_df, age_id_map=age_id_map):
@@ -29,50 +100,16 @@ def validate_data(df, pop_df, age_id_map=age_id_map):
 
     df["year_id"] = np.ceil((df["year_start"] + df["year_end"]) / 2).astype(int)
 
-    # Create a dataframe for NaN values
-    nan_df1 = df[df.isna().any(axis=1)].copy()
-    nan_df1["error_reason"] = (
-        "NaN values in the following columns: "
-        + ", ".join(nan_df1.columns[nan_df1.isna().any()].tolist())
-    )
-
-    # Check if 'sex_id' is a string, if so, convert to lowercase and replace 'male' with 1 and 'female' with 2
-    if df["sex_id"].dtype == "object":
-        df["sex_id"] = (
-            df["sex_id"]
-            .apply(lambda x: x.lower() if isinstance(x, str) else x)
-            .replace({"male": 1, "female": 2})
-            .infer_objects(copy=False)
-        )
-
-    nan_df2 = df[~df["sex_id"].isin([1, 2])].copy()
-    nan_df2["error_reason"] = "sex_id is not M/F or 1/2"
-
-    # Filter df for invalid location_ids and add error_reason
-    nan_df3 = df[~df["location_id"].isin(pop_df["location_id"])].copy()
-    nan_df3["error_reason"] = "location_id is not in pop_df"
-
-    # Filter df for invalid year_ids and add error_reason
-    nan_df4 = df[~df["year_id"].isin(pop_df["year_id"])].copy()
-    nan_df4["error_reason"] = "year_id is not in pop_df"
-
-    nan_df1 = nan_df1.dropna(how="all")
-    nan_df2 = nan_df2.dropna(how="all")
-    nan_df3 = nan_df3.dropna(how="all")
-    nan_df4 = nan_df4.dropna(how="all")
+    nan_df1 = validate_nonan(df)
+    nan_df2 = validate_sex_id(df)
+    nan_df3 = validate_location_id(df, pop_df)
+    nan_df4 = validate_year_id(df, pop_df)
 
     nan_df = pd.concat([nan_df1, nan_df2, nan_df3, nan_df4], ignore_index=True)
 
-    # Get the 'row_id' values in nan_df
     row_ids_to_drop = nan_df["row_id"]
-
-    # Find the indices of the rows in df that have the same 'row_id' as in nan_df
     indices_to_drop = df[df["row_id"].isin(row_ids_to_drop)].index
-
-    # Drop these indices from df to create valid_df
     valid_df = df.drop(indices_to_drop)
-
-    # valid_df['value'] = valid_df['value']+ 1e-10
 
     return valid_df, nan_df
 
@@ -94,14 +131,7 @@ def expand_row(row: pd.Series, df_age_groups: pd.DataFrame) -> pd.DataFrame:
         df_age_groups["age_group_years_start"]
         + df_age_groups["age_group_years_end"]
     ) / 2
-    """
-    # Filter df_age_groups
-    filtered_df = df_age_groups[
-        (df_age_groups["age_group_years_start"] < row["original_data_age_end"])
-        & (df_age_groups["age_group_years_end"] > row["original_data_age_start"])
-    ]
-     Also tried >= and <
-    """
+
     filtered_df = df_age_groups[
         (
             (
@@ -204,7 +234,10 @@ def merge_pops(df_input, df_pop, df_nan=None):
     unmatched_rows = unmatched_rows.dropna(how="all")
 
     # Then perform the concatenation
-    df_nan = pd.concat([df_nan, unmatched_rows], ignore_index=True)
+    df_nan = pd.concat(
+        [df_nan.dropna(how="all"), unmatched_rows.dropna(how="all")],
+        ignore_index=True,
+    )
 
     # Remove the unmatched rows from df_merged
     df_merged = df_merged.dropna(subset=["population"])
@@ -258,12 +291,6 @@ def merge_patterns(
 
     # Merge 'df_input' and 'patterns' dataframes on 'sex_id', 'age_group_id', 'location_id' and 'year_id'
     patterns_subset = patterns[keep_cols]
-
-    # df_input = df_input.drop_duplicates(
-    #     subset=["sex_id", "age_group_id"]
-    #     + (["year_id"] if match_pat_yr else [])
-    #     + (["location_id"] if match_pat_loc else [])
-    # )
 
     df_merged = pd.merge(
         df_input,
@@ -329,7 +356,7 @@ def process_data(
     df_age_groups: pd.DataFrame = age_id_map,
     match_pat_yr: bool = False,
     match_pat_loc: bool = False,
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Process the input data by expanding rows, merging populations, and merging patterns.
 
@@ -346,7 +373,7 @@ def process_data(
         pd.DataFrame: The dataframe containing dropped rows.
 
     """
-    missing_columns: Dict[str, List[str]] = {}
+    missing_columns: dict[str, list[str]] = {}
 
     for col in match_pops:
         if col not in pops.columns:

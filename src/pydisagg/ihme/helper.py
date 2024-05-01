@@ -1,4 +1,4 @@
-from .age_var import rename_dict_dis
+from pydisagg.ihme.age_var import rename_dict_dis
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -7,17 +7,21 @@ plt.style.use("ggplot")
 
 def rename_df(frozen_df, rename_dict=rename_dict_dis, drop=True):
     """
-    Renames columns of a DataFrame based on a given dictionary and optionally drops columns.
+    Parameters
+    ----------
+    frozen_df : DataFrame
+        The input DataFrame to be renamed.
+    rename_dict : dict
+        A dictionary mapping old column names to new column names.
+    drop : bool, optional
+        Whether to drop columns not present in the rename_dict. Defaults to True.
 
-    Parameters:
-        frozen_df (DataFrame): The input DataFrame to be renamed.
-        rename_dict (dict): A dictionary mapping old column names to new column names.
-        drop (bool, optional): Whether to drop columns not present in the rename_dict.
-                               Defaults to True.
-
-    Returns:
-        return_df: The renamed dataframe
-        frozen_df: The original dataframe with 'row_id' column added
+    Returns
+    -------
+    return_df : DataFrame
+        The renamed dataframe
+    frozen_df : DataFrame
+        The original dataframe with 'row_id' column added
     """
     # Create a copy of the input DataFrame to avoid changing it in place
     df = frozen_df.copy()
@@ -38,12 +42,17 @@ def glue_back(df, frozen_df):
     """
     Appends the columns of a frozen_df to a df based on the "row_id" column.
 
-    Parameters:
-        df (DataFrame): The main DataFrame to which columns will be appended.
-        frozen_df (DataFrame): The DataFrame whose columns will be appended to df.
+    Parameters
+    ----------
+    df : DataFrame
+        The main DataFrame to which columns will be appended.
+    frozen_df : DataFrame
+        The DataFrame whose columns will be appended to df.
 
-    Returns:
-        DataFrame: The merged dataframe
+    Returns
+    -------
+    DataFrame
+        The merged dataframe
     """
     merged_df = df.merge(
         frozen_df, on="row_id", how="left", suffixes=("", "_frozen")
@@ -57,7 +66,7 @@ def plot_results(
     result_df, pattern_df, row_id, title="Default Title", y_label="Some Measure"
 ):
     # Filter result_df for the given row_id
-    sub_df = result_df[result_df["row_id"] == row_id]
+    sub_df = result_df.query(f"row_id == {row_id}")
 
     # For each row in sub_df
     for _, row in sub_df.iterrows():
@@ -85,10 +94,11 @@ def plot_results(
         )
 
         # Look up the mean_draw value in patterns_df corresponding to the rows age_group_id and sex_id
-        mean_draw_df = pattern_df[
-            (pattern_df["age_group_id"] == row["age_group_id"])
-            & (pattern_df["sex_id"] == row["sex_id"])
-        ]
+        mean_draw_df = pattern_df.query(
+            " and ".join(
+                [f"{col} == {row[col]}" for col in ["age_group_id", "sex_id"]]
+            )
+        )
 
         if not mean_draw_df.empty:
             mean_draw = mean_draw_df["mean_draw"].values[0]
@@ -157,5 +167,6 @@ def plot_results(
     # Set title to "Prevalence by Age Group"
     plt.title(title)
 
-    # Show the plot
-    plt.show()
+    fig, ax = plt.subplots()
+
+    return fig
