@@ -37,14 +37,6 @@ def validate_sex_id(df):
         nan_df (pandas.DataFrame): A dataframe containing the rows with invalid sex_id and their corresponding error reasons.
     """
 
-    with pd.option_context("future.no_silent_downcasting", True):
-        if df["sex_id"].dtype == "object":
-            df["sex_id"] = (
-                df["sex_id"]
-                .apply(lambda x: x.lower() if isinstance(x, str) else x)
-                .replace({"male": 1, "female": 2})
-                .astype(int)
-            )
     nan_df = df[~df["sex_id"].isin([1, 2])].copy()
     nan_df["error_reason"] = "sex_id is not M/F or 1/2"
     return nan_df.dropna(how="all")

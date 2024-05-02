@@ -1,6 +1,7 @@
 from pydisagg.ihme.age_var import rename_dict_dis
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 plt.style.use("ggplot")
 
@@ -29,11 +30,20 @@ def rename_df(frozen_df, rename_dict=rename_dict_dis, drop=True):
 
     df.insert(0, "row_id", range(1, len(df) + 1))
     frozen_df_copy.insert(0, "row_id", range(1, len(frozen_df_copy) + 1))
-
     return_df = df.rename(columns=rename_dict)
+
     if drop:
         return_df = return_df[list(rename_dict.values())]
     return_df.insert(0, "row_id", range(1, len(return_df) + 1))
+
+    with pd.option_context("future.no_silent_downcasting", True):
+        if return_df["sex_id"].dtype == "object":
+            sex_id_mapping = {"male": 1, "female": 2, "both": 3}
+            return_df["sex_id"] = (
+                return_df["sex_id"]
+                .apply(lambda x: x.lower() if isinstance(x, str) else x)
+                .map(sex_id_mapping)
+            )
 
     return return_df, frozen_df_copy
 
