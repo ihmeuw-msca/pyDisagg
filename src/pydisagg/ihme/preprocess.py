@@ -157,15 +157,6 @@ def expand_row(row: pd.Series, df_age_groups: pd.DataFrame) -> pd.DataFrame:
         )
     ]
 
-    """
-    # If filtered_df is empty, return an empty DataFrame
-    if filtered_df.empty:
-        print(
-            f"Row with index {row.name} resulted in an empty DataFrame after filtering. Row details:\n{row}"
-        )
-        return pd.DataFrame()
-    """
-
     # Repeat the input row for the number of rows in filtered_df
     repeated_row = pd.DataFrame([row] * len(filtered_df)).reset_index(drop=True)
 
@@ -179,6 +170,9 @@ def expand_row(row: pd.Series, df_age_groups: pd.DataFrame) -> pd.DataFrame:
     repeated_row["age_group_years_end"] = filtered_df[
         "age_group_years_end"
     ].values
+
+    # Add 'split' column
+    repeated_row["split"] = 1 if len(filtered_df) > 1 else 0
 
     return repeated_row
 
