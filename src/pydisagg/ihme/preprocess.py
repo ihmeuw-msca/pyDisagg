@@ -237,9 +237,7 @@ def merge_pops(df_input, df_pop, df_nan=None):
     return df_merged, df_nan
 
 
-def merge_patterns(
-    df_input, df_nan, patterns, drop_col, match_pat_yr, match_pat_loc
-):
+def merge_patterns(df_input, df_nan, patterns, match_pat_yr, match_pat_loc):
     """
     Merge the 'df_input' and 'patterns' dataframes based on 'sex_id', 'age_group_id', 'location_id' and 'year_id'.
     If 'location_id' is not available, try with 'location_id' set to 1.
@@ -250,7 +248,6 @@ def merge_patterns(
     - df_input (pandas.DataFrame): Input dataframe to be merged.
     - df_nan (pandas.DataFrame): Dataframe to store rows with missing values.
     - patterns (pandas.DataFrame): Dataframe containing patterns to be merged.
-    - drop_col (bool): Flag indicating whether to drop the 'draw_' columns from 'patterns'.
     - match_pat_yr (bool): Flag indicating whether to include 'year_id' in the merge operation.
     - match_pat_loc (bool): Flag indicating whether to include 'location_id' in the merge operation.
 
@@ -259,9 +256,15 @@ def merge_patterns(
     - df_nan (pandas.DataFrame): Updated dataframe with rows containing missing values.
     """
 
-    # Create a new column 'mean_draw' in the 'patterns' dataframe
-    draw_cols = [col for col in patterns.columns if col.startswith("draw_")]
-    patterns["mean_draw"] = patterns[draw_cols].mean(axis=1)
+    # Check if 'mean' column exists, if yes, rename it to 'mean_draw'
+    if "mean" in patterns.columns:
+        patterns["mean_draw"] = patterns["mean"].copy()
+    else:
+        # Create a new column 'mean_draw' in the 'patterns' dataframe
+        draw_cols = [col for col in patterns.columns if col.startswith("draw_")]
+        patterns["mean_draw"] = patterns[draw_cols].mean(axis=1)
+        # Drop the other draw_ columns
+        patterns = patterns.drop(columns=draw_cols)
 
     keep_cols = [
         "sex_id",
@@ -274,40 +277,19 @@ def merge_patterns(
     if match_pat_loc:
         keep_cols.append("location_id")
 
-    # If drop_col is True, drop the other draw_ columns
-    if drop_col:
-        draw_cols = [col for col in patterns.columns if col.startswith("draw_")]
-        patterns = patterns.drop(columns=draw_cols)
-    else:
-        keep_cols += draw_cols
-
     # Merge 'df_input' and 'patterns' dataframes on 'sex_id', 'age_group_id', 'location_id' and 'year_id'
     patterns_subset = patterns[keep_cols]
+    keep_cols.remove("mean_draw")
 
     df_merged = pd.merge(
         df_input,
         patterns_subset,
-        on=["sex_id", "age_group_id"]
-        + (["year_id"] if match_pat_yr else [])
-        + (["location_id"] if match_pat_loc else []),
+        on=keep_cols,
         how="inner",
     )
 
-    # Specify the columns to check for NaN values
-    columns_to_check = [
-        "sex_id",
-        "population",
-        "age_group_id",
-    ]
-    if match_pat_yr:
-        columns_to_check.append("year_id")
-    if match_pat_loc:
-        columns_to_check.append("location_id")
-
     # Identify the rows with NaN values in the specified columns
-    missing_rows = df_merged[
-        df_merged[columns_to_check].isnull().any(axis=1)
-    ].copy()
+    missing_rows = df_merged[df_merged[keep_cols].isnull().any(axis=1)].copy()
 
     missing_rows["error_reason"] = missing_rows.apply(
         lambda row: (
@@ -322,7 +304,7 @@ def merge_patterns(
     df_nan = pd.concat([df_nan, missing_rows], ignore_index=True)
 
     # Drop rows with NaN values in the specified columns from df_merged
-    df_input = df_merged.dropna(subset=columns_to_check)
+    df_input = df_merged.dropna(subset=keep_cols)
 
     # Check if all age_group_ids in df_input are in patterns
     missing_age_group_ids = set(df_input["age_group_id"]) - set(
@@ -397,16 +379,17 @@ def process_data(
     ).reset_index(drop=True)
     print("After expand_row:")
     print(f"df_expanded shape: {df_expanded.shape}")
+    print(f"df_nan shape: {df_nan.shape}")
 
     df_expanded, df_nan = merge_pops(df_expanded, pops, df_nan)
     print("After merge_pops:")
     print(f"df_expanded_pop shape: {df_expanded.shape}")
+    print(f"df_nan shape: {df_nan.shape}")
 
     df_expanded, df_nan = merge_patterns(
         df_input=df_expanded,
         patterns=patterns,
         df_nan=df_nan,
-        drop_col=True,
         match_pat_yr=match_pat_yr,
         match_pat_loc=match_pat_loc,
     )

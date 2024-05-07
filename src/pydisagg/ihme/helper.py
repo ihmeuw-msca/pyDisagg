@@ -6,7 +6,7 @@ import pandas as pd
 plt.style.use("ggplot")
 
 
-def rename_df(frozen_df, rename_dict=rename_dict_dis, drop=True):
+def rename_df(frozen_df, rename_dict=rename_dict_dis):
     """
     Parameters
     ----------
@@ -14,8 +14,6 @@ def rename_df(frozen_df, rename_dict=rename_dict_dis, drop=True):
         The input DataFrame to be renamed.
     rename_dict : dict
         A dictionary mapping old column names to new column names.
-    drop : bool, optional
-        Whether to drop columns not present in the rename_dict. Defaults to True.
 
     Returns
     -------
@@ -24,7 +22,17 @@ def rename_df(frozen_df, rename_dict=rename_dict_dis, drop=True):
     frozen_df : DataFrame
         The original dataframe with 'row_id' column added
     """
-    # Create a copy of the input DataFrame to avoid changing it in place
+
+    # Check if all keys in rename_dict are present in the dataframe
+    missing_keys = [
+        key for key in rename_dict.keys() if key not in frozen_df.columns
+    ]
+    if missing_keys:
+        raise ValueError(
+            f"The following column names are missing in the dataframe: {missing_keys}"
+        )
+
+    # Create a copy of the input DataFrame to avoid changing it in place and have a copy with row_id to glue_back
     df = frozen_df.copy()
     frozen_df_copy = frozen_df.copy()
 
@@ -32,8 +40,8 @@ def rename_df(frozen_df, rename_dict=rename_dict_dis, drop=True):
     frozen_df_copy.insert(0, "row_id", range(1, len(frozen_df_copy) + 1))
     return_df = df.rename(columns=rename_dict)
 
-    if drop:
-        return_df = return_df[list(rename_dict.values())]
+    # Drop columns not present in rename_dict
+    return_df = return_df[list(rename_dict.values())]
     return_df.insert(0, "row_id", range(1, len(return_df) + 1))
 
     with pd.option_context("future.no_silent_downcasting", True):

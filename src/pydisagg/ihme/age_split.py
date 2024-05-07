@@ -148,12 +148,12 @@ def split_row(
         )
     ]
 
-    # Update post_split_prev and post_split_SE with checks for population sum
-    output_subset["post_split_prev"] = [
+    # Update post_split_value and post_split_SE with checks for population sum
+    output_subset["post_split_value"] = [
         (
             (x["split_result"] * x["pop"]).sum() / x["pop"].sum()
             if x["pop"].sum() > 0
-            else -1000
+            else np.nan
         )
         for x in split_results
     ]
@@ -163,7 +163,7 @@ def split_row(
         (
             (x["split_result_SE"] * x["pop"]).sum() / x["pop"].sum()
             if x["pop"].sum() > 0
-            else -1000
+            else np.nan
         )
         for x in split_results
     ]
