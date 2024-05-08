@@ -777,4 +777,4 @@ class DisaggModel:
         # denominator = self.T_diff(self.T_inverse(self.))
         # Check if this is accomplishing what i think it is - SA 4/19
         # previously not returning anything
-        return self.rate_jacobian(beta, rate_pattern, bucket_populations)
+        return self.rate_jacobian(beta, rate_pattern)

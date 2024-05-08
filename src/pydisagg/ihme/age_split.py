@@ -17,7 +17,7 @@ TODO:
 import numpy as np
 import pandas as pd
 
-from pydisagg.age_split.age_var import match_cols
+from pydisagg.ihme.age_var import match_cols
 from pydisagg.disaggregate import split_datapoint
 from pydisagg.models import LogOdds_model, RateMultiplicativeModel
 
@@ -148,12 +148,12 @@ def split_row(
         )
     ]
 
-    # Update post_split_prev and post_split_SE with checks for population sum
-    output_subset["post_split_prev"] = [
+    # Update post_split_value and post_split_SE with checks for population sum
+    output_subset["post_split_value"] = [
         (
             (x["split_result"] * x["pop"]).sum() / x["pop"].sum()
             if x["pop"].sum() > 0
-            else -1000
+            else np.nan
         )
         for x in split_results
     ]
@@ -163,7 +163,7 @@ def split_row(
         (
             (x["split_result_SE"] * x["pop"]).sum() / x["pop"].sum()
             if x["pop"].sum() > 0
-            else -1000
+            else np.nan
         )
         for x in split_results
     ]
@@ -226,7 +226,7 @@ def split_df(
 
     try:
         result = pd.concat(
-            obs_to_split.apply(row_split_func, axis=1).tolist(),
+            [row_split_func(row) for _, row in obs_to_split.iterrows()],
             ignore_index=True,
         )
     except Exception as e:
