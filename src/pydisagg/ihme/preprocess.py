@@ -172,7 +172,7 @@ def expand_row(row: pd.Series, df_age_groups: pd.DataFrame) -> pd.DataFrame:
     ].values
 
     # Add 'split' column
-    repeated_row["split"] = 1 if len(filtered_df) > 1 else 0
+    repeated_row["age_split"] = 1 if len(filtered_df) > 1 else 0
 
     return repeated_row
 
