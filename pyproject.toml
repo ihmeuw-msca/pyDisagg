@@ -30,6 +30,7 @@ dependencies = [
   "numpy",
   "pandas",
   "scipy",
+  "pydantic",
 ]
 [project.urls]
 homepage = "https://github.com/ihmeuw-msca/pydisagg"
