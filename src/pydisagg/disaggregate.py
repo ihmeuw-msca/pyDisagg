@@ -19,6 +19,7 @@ def split_datapoint(
     model: Optional[DisaggModel] = LogOdds_model(),
     output_type: Literal["total", "rate"] = "total",
     normalize_pop_for_average_type_obs: bool = False,
+    pattern_covariance: Optional[NDArray] = None,
 ) -> Union[tuple, NDArray]:
     """Disaggregate a datapoint using the model given as input.
     Defaults to assuming multiplicativity in the odds ratio
@@ -50,6 +51,8 @@ def split_datapoint(
         Whether or not to normalize populations to sum to 1, this is appropriate when the output_type is rate
         and when the aggregated observation is an average--whether an aggregated rate
         or a mean of a continuous measure over different groups
+    pattern_covariance: Optional[NDArray], optional
+        2d Numpy array with covariance matrix of pattern.
 
     Returns
     -------
@@ -70,6 +73,7 @@ def split_datapoint(
     """
     if output_type not in ["total", "rate"]:
         raise ValueError("output_type must be one of either 'total' or 'rate'")
+    
 
     if normalize_pop_for_average_type_obs is True:
         processed_bucket_populations = bucket_populations / np.sum(
@@ -82,7 +86,7 @@ def split_datapoint(
         point_estimates = model.split_to_counts(
             observed_total, rate_pattern, processed_bucket_populations
         )
-        if observed_total_se is not None:
+        if (observed_total_se is not None) and (pattern_covariance is None):
             fitted_beta = model.fit_beta(
                 observed_total, rate_pattern, processed_bucket_populations
             )
@@ -93,6 +97,19 @@ def split_datapoint(
                 observed_total_se,
             )
             return point_estimates, standard_errors
+
+        if (observed_total_se is not None) and (pattern_covariance is not None):
+            fitted_beta = model.fit_beta(
+                observed_total, rate_pattern, processed_bucket_populations
+            )
+
+            cov_mat = model.count_split_covariance_uncertainty(
+                fitted_beta, rate_pattern, processed_bucket_populations, observed_total_se, pattern_covariance
+            )
+            standard_errors = np.sqrt(np.diag(cov_mat))
+
+            return point_estimates, standard_errors
+
         return point_estimates
 
     if output_type == "rate":
@@ -102,7 +119,7 @@ def split_datapoint(
             processed_bucket_populations,
             reduce_output=True,
         )
-        if observed_total_se is not None:
+        if (observed_total_se is not None) and (pattern_covariance is None):
             fitted_beta = model.fit_beta(
                 observed_total, rate_pattern, processed_bucket_populations
             )
@@ -113,6 +130,19 @@ def split_datapoint(
                 observed_total_se,
             )
             return point_estimates, standard_errors
+
+        if (observed_total_se is not None) and (pattern_covariance is not None):
+            fitted_beta = model.fit_beta(
+                observed_total, rate_pattern, processed_bucket_populations
+            )
+
+            cov_mat = model.rate_split_covariance_uncertainty(
+                fitted_beta, rate_pattern, processed_bucket_populations, observed_total_se, pattern_covariance
+            )
+            standard_errors = np.sqrt(np.diag(cov_mat))
+
+            return point_estimates, standard_errors
+
         return point_estimates
 
 

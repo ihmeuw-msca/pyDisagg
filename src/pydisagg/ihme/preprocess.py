@@ -257,6 +257,7 @@ def merge_patterns(df_input, df_nan, patterns, match_pat_yr, match_pat_loc):
         # Create a new column 'mean_draw' in the 'patterns' dataframe
         draw_cols = [col for col in patterns.columns if col.startswith("draw_")]
         patterns["mean_draw"] = patterns[draw_cols].mean(axis=1)
+        patterns["var_draw"] = patterns[draw_cols].var(axis=1)
         # Drop the other draw_ columns
         patterns = patterns.drop(columns=draw_cols)
 
@@ -264,6 +265,7 @@ def merge_patterns(df_input, df_nan, patterns, match_pat_yr, match_pat_loc):
         "sex_id",
         "age_group_id",
         "mean_draw",
+        "var_draw",
     ]
 
     if match_pat_yr:
@@ -274,6 +276,7 @@ def merge_patterns(df_input, df_nan, patterns, match_pat_yr, match_pat_loc):
     # Merge 'df_input' and 'patterns' dataframes on 'sex_id', 'age_group_id', 'location_id' and 'year_id'
     patterns_subset = patterns[keep_cols]
     keep_cols.remove("mean_draw")
+    keep_cols.remove("var_draw")
 
     df_merged = pd.merge(
         df_input,
