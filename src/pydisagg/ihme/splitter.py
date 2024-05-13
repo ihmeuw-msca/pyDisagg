@@ -9,7 +9,7 @@ from pydisagg.ihme.validator import (
     validate_interval,
     validate_noindexdiff,
     validate_nonan,
-    validate_strictly_positive,
+    validate_positive,
 )
 
 
@@ -22,7 +22,7 @@ class DataConfig(BaseModel):
 
     @property
     def columns(self) -> list[str]:
-        return self.index + [self.age_lwr, self.age_upr, self.val]
+        return self.index + [self.age_lwr, self.age_upr, self.val, self.val_sd]
 
 
 class PatternConfig(BaseModel):
@@ -38,7 +38,10 @@ class PatternConfig(BaseModel):
 
     @property
     def columns(self) -> list[str]:
-        return self.index + [self.age_lwr, self.age_upr, self.val]
+        return self.index + [
+            self.age_lwr,
+            self.age_upr,
+        ]
 
 
 class PopulationConfig(BaseModel):
@@ -78,7 +81,7 @@ class AgeSplitter(BaseModel):
 
         validate_index(data, self.data.index, name)
         validate_nonan(data, name)
-        validate_strictly_positive(data, [self.data.val_sd], name)
+        validate_positive(data, [self.data.val_sd], name)
         validate_interval(
             data, self.data.age_lwr, self.data.age_upr, self.data.index, name
         )
@@ -86,9 +89,14 @@ class AgeSplitter(BaseModel):
 
     def parse_pattern(self, data: DataFrame, pattern: DataFrame) -> DataFrame:
         name = "pattern"
+        # Currently working around validate columns because mean_draw and mean_var are going to be created
         validate_columns(pattern, self.pattern.columns, name)
 
-        pattern = pattern[self.pattern.columns].copy()
+        columns_with_draws = list(self.pattern.columns) + list(
+            self.pattern.draws
+        )
+        pattern = pattern[columns_with_draws].copy()
+        # pattern = pattern[self.pattern.columns].copy()
 
         validate_index(pattern, self.pattern.index, name)
         validate_nonan(pattern, name)
@@ -99,6 +107,10 @@ class AgeSplitter(BaseModel):
             self.pattern.index,
             name,
         )
+
+        pattern["avg_draw"] = pattern[self.pattern.draws].mean(axis=1)
+        pattern["var_draw"] = pattern[self.pattern.draws].var(axis=1)
+        pattern = pattern.drop(columns=self.pattern.draws)
 
         data_with_pattern = self._merge_with_pattern(data, pattern)
 
@@ -113,21 +125,17 @@ class AgeSplitter(BaseModel):
     def _merge_with_pattern(
         self, data: DataFrame, pattern: DataFrame
     ) -> DataFrame:
-        data_with_pattern = (
-            data.merge(
-                pattern,
-                on=self.pattern.by,
-                how="left",
-                suffixes=("", "_pat"),
-            )
-            .query(
-                f"({self.pattern.age_lwr}_pat >= {self.data.age_lwr} and"
-                f" {self.pattern.age_lwr}_pat < {self.data.age_upr}) or"
-                f"({self.pattern.age_upr}_pat > {self.data.age_lwr} and"
-                f" {self.pattern.age_upr}_pat <= {self.data.age_upr})"
-            )
-            .dropna()
+        data_with_pattern = data.merge(
+            pattern, on=self.pattern.by, how="left", suffixes=("", "_pat")
         )
+
+        # Removed suffix from query because there was no name overlap, and also they are called from each infividual df not the combined so the rename wouldn't even apply yet I dont think
+        data_with_pattern = data_with_pattern.query(
+            f"({self.pattern.age_lwr} >= {self.data.age_lwr} and"
+            f" {self.pattern.age_lwr} < {self.data.age_upr}) or"
+            f"({self.pattern.age_upr} > {self.data.age_lwr} and"
+            f" {self.pattern.age_upr} <= {self.data.age_upr})"
+        ).dropna()
         return data_with_pattern
 
     def parse_population(

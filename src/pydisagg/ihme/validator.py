@@ -22,10 +22,11 @@ def validate_nonan(df: DataFrame, name: str) -> None:
         raise ValueError(f"{name} has NaN values in columns: {nan_columns}")
 
 
-def validate_strictly_positive(
-    df: DataFrame, columns: list[str], name: str
+def validate_positive(
+    df: DataFrame, columns: list[str], name: str, strict: bool = True
 ) -> None:
-    negative = [col for col in columns if df.eval(f"{col} <= 0").any()]
+    op = "<=" if strict else "<"
+    negative = [col for col in columns if df.eval(f"{col} {op} 0").any()]
     if negative:
         raise ValueError(f"{name} has negative values in: {negative}")
 
