@@ -1,9 +1,12 @@
 from typing import Any
 from warnings import warn
 
+import numpy as np
 from pandas import DataFrame
 from pydantic import BaseModel
 
+from pydisagg.DisaggModel import DisaggModel
+from pydisagg.disaggregate import split_datapoint
 from pydisagg.ihme.validator import (
     validate_columns,
     validate_index,
@@ -12,6 +15,7 @@ from pydisagg.ihme.validator import (
     validate_nonan,
     validate_positive,
 )
+from pydisagg.models import RateMultiplicativeModel
 
 
 class DataConfig(BaseModel):
@@ -180,10 +184,31 @@ class AgeSplitter(BaseModel):
         data: DataFrame,
         pattern: DataFrame,
         population: DataFrame,
+        model: DisaggModel = RateMultiplicativeModel(),
+        output_type: str = "rate",
     ) -> DataFrame:
         data = self.parse_data(data)
         data = self.parse_pattern(data, pattern)
         data = self.parse_population(data, population)
 
         data = self._align_pattern_and_population(data)
+
+        # where split happen
+        data["split_result"], data["split_result_se"] = np.nan, np.nan
+        data_group = data.groupby(self.data.index)
+        for key, data_sub in data_group:
+            split_result, SE = split_datapoint(
+                observed_total=data_sub[self.data.val].iloc[0],
+                bucket_populations=data_sub[self.population.val].to_numpy(),
+                rate_pattern=data_sub["avg_draw"].to_numpy(),
+                model=model,
+                output_type=output_type,
+                normalize_pop_for_average_type_obs=True,
+                observed_total_se=data_sub[self.data.val_sd].iloc[0],
+                pattern_covariance=np.diag(data_sub["var_draw"].to_numpy()),
+            )
+            index = data_group.groups[key]
+            data.loc[index, "split_result"] = split_result
+            data.loc[index, "split_result_se"] = SE
+
         return data
