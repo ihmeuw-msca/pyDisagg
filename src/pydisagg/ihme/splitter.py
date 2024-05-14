@@ -283,6 +283,29 @@ class AgeSplitter(BaseModel):
         model: DisaggModel = RateMultiplicativeModel(),
         output_type: str = "rate",
     ) -> DataFrame:
+        """
+        Splits the data based on the given pattern and population. The split results are added to the data as new columns.
+
+        Parameters
+        ----------
+        data : DataFrame
+            The data to be split.
+        pattern : DataFrame
+            The pattern to be used for splitting the data.
+        population : DataFrame
+            The population to be used for splitting the data.
+        model : DisaggModel, optional
+            The model to be used for splitting the data, by default RateMultiplicativeModel().
+        output_type : str, optional
+            The type of output to be returned, by default "rate".
+
+        Returns
+        -------
+        DataFrame
+            The two main output columns are: 'split_result' and 'split_result_se'.
+            There are additional intermediate columns for sanity checks and calculations (have a prefix of pat_ or pop_, and a suffix of _aligned).
+
+        """
         data = self.parse_data(data)
         data = self.parse_pattern(data, pattern)
         data = self.parse_population(data, population)
