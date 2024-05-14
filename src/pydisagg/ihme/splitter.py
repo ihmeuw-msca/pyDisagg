@@ -37,6 +37,10 @@ class PatternConfig(BaseModel):
     age_upr: str
     draws: list[str]
 
+    draw_mean: str = "avg_draw"
+    draw_var: str = "var_draw"
+    prefix: str = "pat_"
+
     @property
     def index(self) -> list[str]:
         return self.by + [self.age_key]
@@ -46,16 +50,51 @@ class PatternConfig(BaseModel):
         return self.index + [
             self.age_lwr,
             self.age_upr,
+            self.draw_mean,
+            self.draw_var,
         ]
+
+    @property
+    def val_fields(self) -> list[str]:
+        return [
+            "age_lwr",
+            "age_upr",
+            "draw_mean",
+            "draw_var",
+        ]
+
+    def apply_prefix(self) -> dict[str, str]:
+        rename_map = {}
+        for field in self.val_fields:
+            field_val = getattr(self, field)
+            new_field_val = self.prefix + field_val
+            setattr(self, field, new_field_val)
+            rename_map[field_val] = new_field_val
+        return rename_map
 
 
 class PopulationConfig(BaseModel):
     index: list[str]
     val: str
 
+    prefix: str = "pop_"
+
     @property
     def columns(self) -> list[str]:
         return self.index + [self.val]
+
+    @property
+    def val_fields(self) -> list[str]:
+        return ["val"]
+
+    def apply_prefix(self) -> dict[str, str]:
+        rename_map = {}
+        for field in self.val_fields:
+            field_val = getattr(self, field)
+            new_field_val = self.prefix + field_val
+            setattr(self, field, new_field_val)
+            rename_map[field_val] = new_field_val
+        return rename_map
 
 
 class AgeSplitter(BaseModel):
@@ -95,13 +134,17 @@ class AgeSplitter(BaseModel):
     def parse_pattern(self, data: DataFrame, pattern: DataFrame) -> DataFrame:
         name = "pattern"
         # Currently working around validate columns because mean_draw and mean_var are going to be created
-        validate_columns(pattern, self.pattern.columns, name)
-
-        columns_with_draws = list(self.pattern.columns) + list(
-            self.pattern.draws
+        validate_columns(pattern, self.pattern.draws, name)
+        pattern[self.pattern.draw_mean] = pattern[self.pattern.draws].mean(
+            axis=1
         )
-        pattern = pattern[columns_with_draws].copy()
-        # pattern = pattern[self.pattern.columns].copy()
+        pattern[self.pattern.draw_var] = pattern[self.pattern.draws].var(axis=1)
+
+        validate_columns(pattern, self.pattern.columns, name)
+        pattern = pattern[self.pattern.columns].copy()
+
+        rename_map = self.pattern.apply_prefix()
+        pattern.rename(columns=rename_map, inplace=True)
 
         validate_index(pattern, self.pattern.index, name)
         validate_nonan(pattern, name)
@@ -112,10 +155,6 @@ class AgeSplitter(BaseModel):
             self.pattern.index,
             name,
         )
-
-        pattern["avg_draw"] = pattern[self.pattern.draws].mean(axis=1)
-        pattern["var_draw"] = pattern[self.pattern.draws].var(axis=1)
-        pattern = pattern.drop(columns=self.pattern.draws)
 
         data_with_pattern = self._merge_with_pattern(data, pattern)
 
@@ -130,17 +169,16 @@ class AgeSplitter(BaseModel):
     def _merge_with_pattern(
         self, data: DataFrame, pattern: DataFrame
     ) -> DataFrame:
-        data_with_pattern = data.merge(
-            pattern, on=self.pattern.by, how="left", suffixes=("", "_pat")
+        data_with_pattern = (
+            data.merge(pattern, on=self.pattern.by, how="left")
+            .query(
+                f"({self.pattern.age_lwr} >= {self.data.age_lwr} and"
+                f" {self.pattern.age_lwr} < {self.data.age_upr}) or"
+                f"({self.pattern.age_upr} > {self.data.age_lwr} and"
+                f" {self.pattern.age_upr} <= {self.data.age_upr})"
+            )
+            .dropna()
         )
-
-        # Removed suffix from query because there was no name overlap, and also they are called from each infividual df not the combined so the rename wouldn't even apply yet I dont think
-        data_with_pattern = data_with_pattern.query(
-            f"({self.pattern.age_lwr}_pat >= {self.data.age_lwr} and"
-            f" {self.pattern.age_lwr}_pat < {self.data.age_upr}) or"
-            f"({self.pattern.age_upr}_pat > {self.data.age_lwr} and"
-            f" {self.pattern.age_upr}_pat <= {self.data.age_upr})"
-        ).dropna()
         return data_with_pattern
 
     def parse_population(
@@ -150,6 +188,8 @@ class AgeSplitter(BaseModel):
         validate_columns(population, self.population.columns, name)
 
         population = population[self.population.columns].copy()
+        rename_map = self.population.apply_prefix()
+        population.rename(columns=rename_map, inplace=True)
 
         validate_index(population, self.population.index, name)
         validate_nonan(population, name)
@@ -171,7 +211,6 @@ class AgeSplitter(BaseModel):
             population,
             on=self.population.index,
             how="left",
-            suffixes=("", "_pop"),
         ).dropna()
         return data_with_population
 
@@ -200,12 +239,14 @@ class AgeSplitter(BaseModel):
             split_result, SE = split_datapoint(
                 observed_total=data_sub[self.data.val].iloc[0],
                 bucket_populations=data_sub[self.population.val].to_numpy(),
-                rate_pattern=data_sub["avg_draw"].to_numpy(),
+                rate_pattern=data_sub[self.pattern.draw_mean].to_numpy(),
                 model=model,
                 output_type=output_type,
                 normalize_pop_for_average_type_obs=True,
                 observed_total_se=data_sub[self.data.val_sd].iloc[0],
-                pattern_covariance=np.diag(data_sub["var_draw"].to_numpy()),
+                pattern_covariance=np.diag(
+                    data_sub[self.pattern.draw_var].to_numpy()
+                ),
             )
             index = data_group.groups[key]
             data.loc[index, "split_result"] = split_result
