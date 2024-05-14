@@ -215,7 +215,64 @@ class AgeSplitter(BaseModel):
         return data_with_population
 
     def _align_pattern_and_population(self, data: DataFrame) -> DataFrame:
-        warn("Not implemented yet")
+        warn("This is only naive constant interpolation.")
+
+        data = data.sort_values(
+            self.data.index + [self.pattern.age_lwr, self.pattern.age_upr],
+            ignore_index=True,
+        )
+
+        data[self.pattern.draw_mean + "_aligned"] = data[self.pattern.draw_mean]
+        data[self.pattern.draw_var + "_aligned"] = data[self.pattern.draw_var]
+        data[self.population.val + "_aligned"] = data[self.population.val]
+
+        data_group = data.groupby(self.data.index, sort=False)
+        for key, data_sub in data_group:
+            # first element of the group
+            index_first, index_last = data_group.groups[key][[0, -1]]
+            data_first, data_last = data.loc[index_first], data.loc[index_last]
+
+            # align pattern
+            # TODO: currently we do constant interpolation for pattern
+            data.loc[index_first, self.pattern.draw_mean + "_aligned"] = (
+                data_first[self.pattern.draw_mean]
+            )
+            data.loc[index_first, self.pattern.draw_var + "_aligned"] = (
+                data_first[self.pattern.draw_var]
+            )
+            data.loc[index_last, self.pattern.draw_mean + "_aligned"] = (
+                data_last[self.pattern.draw_mean]
+            )
+            data.loc[index_last, self.pattern.draw_var + "_aligned"] = (
+                data_last[self.pattern.draw_var]
+            )
+
+            # align population
+            # TODO: this is naive implementation compute the proprotion of population
+            # within the given age interval
+            data.loc[index_first, self.population.val + "_aligned"] = (
+                data_first[self.population.val]
+                / (
+                    data_first[self.pattern.age_upr]
+                    - data_first[self.pattern.age_lwr]
+                )
+                * (
+                    data_first[self.pattern.age_upr]
+                    - data_first[self.data.age_lwr]
+                )
+            )
+            data.loc[index_last, self.population.val + "_aligned"] = (
+                data_last[self.population.val]
+                / (
+                    data_last[self.pattern.age_upr]
+                    - data_last[self.pattern.age_lwr]
+                )
+                * (
+                    data_last[self.data.age_upr]
+                    - data_last[self.pattern.age_lwr]
+                )
+            )
+
         return data
 
     def split(
@@ -238,14 +295,18 @@ class AgeSplitter(BaseModel):
         for key, data_sub in data_group:
             split_result, SE = split_datapoint(
                 observed_total=data_sub[self.data.val].iloc[0],
-                bucket_populations=data_sub[self.population.val].to_numpy(),
-                rate_pattern=data_sub[self.pattern.draw_mean].to_numpy(),
+                bucket_populations=data_sub[
+                    self.population.val + "_aligned"
+                ].to_numpy(),
+                rate_pattern=data_sub[
+                    self.pattern.draw_mean + "_aligned"
+                ].to_numpy(),
                 model=model,
                 output_type=output_type,
                 normalize_pop_for_average_type_obs=True,
                 observed_total_se=data_sub[self.data.val_sd].iloc[0],
                 pattern_covariance=np.diag(
-                    data_sub[self.pattern.draw_var].to_numpy()
+                    data_sub[self.pattern.draw_var + "_aligned"].to_numpy()
                 ),
             )
             index = data_group.groups[key]
