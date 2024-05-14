@@ -1,4 +1,5 @@
 from typing import Any
+from warnings import warn
 
 from pandas import DataFrame
 from pydantic import BaseModel
@@ -131,10 +132,10 @@ class AgeSplitter(BaseModel):
 
         # Removed suffix from query because there was no name overlap, and also they are called from each infividual df not the combined so the rename wouldn't even apply yet I dont think
         data_with_pattern = data_with_pattern.query(
-            f"({self.pattern.age_lwr} >= {self.data.age_lwr} and"
-            f" {self.pattern.age_lwr} < {self.data.age_upr}) or"
-            f"({self.pattern.age_upr} > {self.data.age_lwr} and"
-            f" {self.pattern.age_upr} <= {self.data.age_upr})"
+            f"({self.pattern.age_lwr}_pat >= {self.data.age_lwr} and"
+            f" {self.pattern.age_lwr}_pat < {self.data.age_upr}) or"
+            f"({self.pattern.age_upr}_pat > {self.data.age_lwr} and"
+            f" {self.pattern.age_upr}_pat <= {self.data.age_upr})"
         ).dropna()
         return data_with_pattern
 
@@ -170,6 +171,10 @@ class AgeSplitter(BaseModel):
         ).dropna()
         return data_with_population
 
+    def _align_pattern_and_population(self, data: DataFrame) -> DataFrame:
+        warn("Not implemented yet")
+        return data
+
     def split(
         self,
         data: DataFrame,
@@ -179,5 +184,6 @@ class AgeSplitter(BaseModel):
         data = self.parse_data(data)
         data = self.parse_pattern(data, pattern)
         data = self.parse_population(data, population)
-        ...
+
+        data = self._align_pattern_and_population(data)
         return data
