@@ -15,7 +15,7 @@ from pydisagg.ihme.validator import (
     validate_nonan,
     validate_positive,
 )
-from pydisagg.models import RateMultiplicativeModel
+from pydisagg.models import RateMultiplicativeModel, LogOdds_model
 
 
 class DataConfig(BaseModel):
@@ -280,7 +280,7 @@ class AgeSplitter(BaseModel):
         data: DataFrame,
         pattern: DataFrame,
         population: DataFrame,
-        model: DisaggModel = RateMultiplicativeModel(),
+        model: str = "rate",
         output_type: str = "rate",
     ) -> DataFrame:
         """
@@ -294,8 +294,8 @@ class AgeSplitter(BaseModel):
             The pattern to be used for splitting the data.
         population : DataFrame
             The population to be used for splitting the data.
-        model : DisaggModel, optional
-            The model to be used for splitting the data, by default RateMultiplicativeModel().
+        model : str, optional
+            The model to be used for splitting the data, by default "rate". Can be "rate" or "logodds".
         output_type : str, optional
             The type of output to be returned, by default "rate".
 
@@ -306,6 +306,18 @@ class AgeSplitter(BaseModel):
             There are additional intermediate columns for sanity checks and calculations (have a prefix of pat_ or pop_, and a suffix of _aligned).
 
         """
+        model_mapping = {
+            "rate": RateMultiplicativeModel(),
+            "logodds": LogOdds_model(),
+        }
+
+        if model not in model_mapping:
+            raise ValueError(
+                f"Invalid model: {model}. Expected one of: {list(model_mapping.keys())}"
+            )
+
+        model_instance = model_mapping[model]
+
         data = self.parse_data(data)
         data = self.parse_pattern(data, pattern)
         data = self.parse_population(data, population)
@@ -324,7 +336,7 @@ class AgeSplitter(BaseModel):
                 rate_pattern=data_sub[
                     self.pattern.draw_mean + "_aligned"
                 ].to_numpy(),
-                model=model,
+                model=model_instance,
                 output_type=output_type,
                 normalize_pop_for_average_type_obs=True,
                 observed_total_se=data_sub[self.data.val_sd].iloc[0],
