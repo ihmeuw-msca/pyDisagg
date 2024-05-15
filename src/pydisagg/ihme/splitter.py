@@ -5,7 +5,6 @@ import numpy as np
 from pandas import DataFrame
 from pydantic import BaseModel
 
-from pydisagg.DisaggModel import DisaggModel
 from pydisagg.disaggregate import split_datapoint
 from pydisagg.ihme.validator import (
     validate_columns,
