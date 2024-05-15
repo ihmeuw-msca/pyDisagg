@@ -28,7 +28,7 @@ def split_row(
     match_cols=match_cols,
     model="Rate",
     pattern_col="mean_draw",
-    pattern_var_col = None
+    pattern_var_col=None,
 ):
     """
     Splits a row of data based on age groups and performs interpolation.
@@ -71,7 +71,9 @@ def split_row(
     )
     if pattern_var_col is not None:
         pattern_var_interp = np.interp(
-            ages_included, output_subset["age_mid"], output_subset[pattern_var_col]
+            ages_included,
+            output_subset["age_mid"],
+            output_subset[pattern_var_col],
         )
     else:
         pattern_var_interp = 0 * patterns_interp
@@ -101,7 +103,7 @@ def split_row(
                     output_type="rate",
                     normalize_pop_for_average_type_obs=True,
                     observed_total_se=row["SE"],
-                    pattern_covariance = pattern_cov,
+                    pattern_covariance=pattern_cov,
                 )
             except Exception as e:
                 print(f"Error in split_datapoint with LogOdds model: {e}")
@@ -116,7 +118,7 @@ def split_row(
                     output_type="rate",
                     normalize_pop_for_average_type_obs=True,
                     observed_total_se=row["SE"],
-                    pattern_covariance = pattern_cov,
+                    pattern_covariance=pattern_cov,
                 )
             except Exception as e:
                 print(f"Error in split_datapoint with Rate model: {e}")
@@ -201,7 +203,10 @@ def split_row(
 
 
 def split_df(
-    df_expanded: pd.DataFrame, df_nan: pd.DataFrame = None, model: str = "rate",pattern_var_col = None
+    df_expanded: pd.DataFrame,
+    df_nan: pd.DataFrame = None,
+    model: str = "rate",
+    pattern_var_col=None,
 ):
     """
     Splits a DataFrame based on specified columns and returns the result.
@@ -231,12 +236,17 @@ def split_df(
 
     def row_split_func(x):
         return split_row(
-            x, df_expanded, match_cols=match_cols, model=model.lower(),pattern_var_col = pattern_var_col
+            x,
+            df_expanded,
+            match_cols=match_cols,
+            model=model.lower(),
+            pattern_var_col=pattern_var_col,
         )
+
     result = pd.concat(
-                [row_split_func(row) for _, row in obs_to_split.iterrows()],
-                ignore_index=True,
-            )
+        [row_split_func(row) for _, row in obs_to_split.iterrows()],
+        ignore_index=True,
+    )
 
     # try:
     #     result = pd.concat(

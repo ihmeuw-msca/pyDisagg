@@ -73,7 +73,6 @@ def split_datapoint(
     """
     if output_type not in ["total", "rate"]:
         raise ValueError("output_type must be one of either 'total' or 'rate'")
-    
 
     if normalize_pop_for_average_type_obs is True:
         processed_bucket_populations = bucket_populations / np.sum(
@@ -104,7 +103,11 @@ def split_datapoint(
             )
 
             cov_mat = model.count_split_covariance_uncertainty(
-                fitted_beta, rate_pattern, processed_bucket_populations, observed_total_se, pattern_covariance
+                fitted_beta,
+                rate_pattern,
+                processed_bucket_populations,
+                observed_total_se,
+                pattern_covariance,
             )
             standard_errors = np.sqrt(np.diag(cov_mat))
 
@@ -137,7 +140,11 @@ def split_datapoint(
             )
 
             cov_mat = model.rate_split_covariance_uncertainty(
-                fitted_beta, rate_pattern, processed_bucket_populations, observed_total_se, pattern_covariance
+                fitted_beta,
+                rate_pattern,
+                processed_bucket_populations,
+                observed_total_se,
+                pattern_covariance,
             )
             standard_errors = np.sqrt(np.diag(cov_mat))
 
