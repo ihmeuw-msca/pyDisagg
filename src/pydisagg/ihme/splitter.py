@@ -14,7 +14,7 @@ from pydisagg.ihme.validator import (
     validate_nonan,
     validate_positive,
 )
-from pydisagg.models import RateMultiplicativeModel, LogOdds_model
+from pydisagg.models import LogOdds_model, RateMultiplicativeModel
 
 
 class DataConfig(BaseModel):
@@ -34,10 +34,10 @@ class PatternConfig(BaseModel):
     age_key: str
     age_lwr: str
     age_upr: str
-    draws: list[str]
 
-    draw_mean: str = "avg_draw"
-    draw_var: str = "var_draw"
+    draws: list[str] = []
+    val: str = "val"
+    val_sd: str = "val_sd"
     prefix: str = "pat_"
 
     @property
@@ -49,8 +49,8 @@ class PatternConfig(BaseModel):
         return self.index + [
             self.age_lwr,
             self.age_upr,
-            self.draw_mean,
-            self.draw_var,
+            self.val,
+            self.val_sd,
         ]
 
     @property
@@ -58,18 +58,21 @@ class PatternConfig(BaseModel):
         return [
             "age_lwr",
             "age_upr",
-            "draw_mean",
-            "draw_var",
+            "val",
+            "val_sd",
         ]
 
     def apply_prefix(self) -> dict[str, str]:
         rename_map = {}
         for field in self.val_fields:
-            field_val = getattr(self, field)
-            new_field_val = self.prefix + field_val
-            setattr(self, field, new_field_val)
+            new_field_val = self.prefix + (field_val := getattr(self, field))
             rename_map[field_val] = new_field_val
+            setattr(self, field, new_field_val)
         return rename_map
+
+    def remove_prefix(self) -> None:
+        for field in self.val_fields:
+            setattr(self, field, getattr(self, field).removeprefix(self.prefix))
 
 
 class PopulationConfig(BaseModel):
@@ -89,11 +92,14 @@ class PopulationConfig(BaseModel):
     def apply_prefix(self) -> dict[str, str]:
         rename_map = {}
         for field in self.val_fields:
-            field_val = getattr(self, field)
-            new_field_val = self.prefix + field_val
-            setattr(self, field, new_field_val)
+            new_field_val = self.prefix + (field_val := getattr(self, field))
             rename_map[field_val] = new_field_val
+            setattr(self, field, new_field_val)
         return rename_map
+
+    def remove_prefix(self) -> None:
+        for field in self.val_fields:
+            setattr(self, field, getattr(self, field).removeprefix(self.prefix))
 
 
 class AgeSplitter(BaseModel):
@@ -132,21 +138,29 @@ class AgeSplitter(BaseModel):
 
     def parse_pattern(self, data: DataFrame, pattern: DataFrame) -> DataFrame:
         name = "pattern"
-        # Currently working around validate columns because mean_draw and mean_var are going to be created
-        validate_columns(pattern, self.pattern.draws, name)
-        pattern[self.pattern.draw_mean] = pattern[self.pattern.draws].mean(
-            axis=1
-        )
-        pattern[self.pattern.draw_var] = pattern[self.pattern.draws].var(axis=1)
+
+        if not all(
+            col in pattern.columns
+            for col in [self.pattern.val, self.pattern.val_sd]
+        ):
+            if not self.pattern.draws:
+                raise ValueError(
+                    "Must provide draws for pattern if pattern.val and "
+                    "pattern.val_sd are not available."
+                )
+
+            validate_columns(pattern, self.pattern.draws, name)
+            pattern[self.pattern.val] = pattern[self.pattern.draws].mean(axis=1)
+            pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(
+                axis=1
+            )
 
         validate_columns(pattern, self.pattern.columns, name)
         pattern = pattern[self.pattern.columns].copy()
 
-        rename_map = self.pattern.apply_prefix()
-        pattern.rename(columns=rename_map, inplace=True)
-
         validate_index(pattern, self.pattern.index, name)
         validate_nonan(pattern, name)
+        validate_positive(pattern, [self.pattern.val_sd], name)
         validate_interval(
             pattern,
             self.pattern.age_lwr,
@@ -154,6 +168,9 @@ class AgeSplitter(BaseModel):
             self.pattern.index,
             name,
         )
+
+        rename_map = self.pattern.apply_prefix()
+        pattern.rename(columns=rename_map, inplace=True)
 
         data_with_pattern = self._merge_with_pattern(data, pattern)
 
@@ -187,11 +204,12 @@ class AgeSplitter(BaseModel):
         validate_columns(population, self.population.columns, name)
 
         population = population[self.population.columns].copy()
-        rename_map = self.population.apply_prefix()
-        population.rename(columns=rename_map, inplace=True)
 
         validate_index(population, self.population.index, name)
         validate_nonan(population, name)
+
+        rename_map = self.population.apply_prefix()
+        population.rename(columns=rename_map, inplace=True)
 
         data_with_population = self._merge_with_population(data, population)
 
@@ -221,8 +239,8 @@ class AgeSplitter(BaseModel):
             ignore_index=True,
         )
 
-        data[self.pattern.draw_mean + "_aligned"] = data[self.pattern.draw_mean]
-        data[self.pattern.draw_var + "_aligned"] = data[self.pattern.draw_var]
+        data[self.pattern.val + "_aligned"] = data[self.pattern.val]
+        data[self.pattern.val_sd + "_aligned"] = data[self.pattern.val_sd]
         data[self.population.val + "_aligned"] = data[self.population.val]
 
         data_group = data.groupby(self.data.index, sort=False)
@@ -233,18 +251,18 @@ class AgeSplitter(BaseModel):
 
             # align pattern
             # TODO: currently we do constant interpolation for pattern
-            data.loc[index_first, self.pattern.draw_mean + "_aligned"] = (
-                data_first[self.pattern.draw_mean]
+            data.loc[index_first, self.pattern.val + "_aligned"] = data_first[
+                self.pattern.val
+            ]
+            data.loc[index_first, self.pattern.val_sd + "_aligned"] = (
+                data_first[self.pattern.val_sd]
             )
-            data.loc[index_first, self.pattern.draw_var + "_aligned"] = (
-                data_first[self.pattern.draw_var]
-            )
-            data.loc[index_last, self.pattern.draw_mean + "_aligned"] = (
-                data_last[self.pattern.draw_mean]
-            )
-            data.loc[index_last, self.pattern.draw_var + "_aligned"] = (
-                data_last[self.pattern.draw_var]
-            )
+            data.loc[index_last, self.pattern.val + "_aligned"] = data_last[
+                self.pattern.val
+            ]
+            data.loc[index_last, self.pattern.val_sd + "_aligned"] = data_last[
+                self.pattern.val_sd
+            ]
 
             # align population
             # TODO: this is naive implementation compute the proprotion of population
@@ -332,19 +350,20 @@ class AgeSplitter(BaseModel):
                 bucket_populations=data_sub[
                     self.population.val + "_aligned"
                 ].to_numpy(),
-                rate_pattern=data_sub[
-                    self.pattern.draw_mean + "_aligned"
-                ].to_numpy(),
+                rate_pattern=data_sub[self.pattern.val + "_aligned"].to_numpy(),
                 model=model_instance,
                 output_type=output_type,
                 normalize_pop_for_average_type_obs=True,
                 observed_total_se=data_sub[self.data.val_sd].iloc[0],
                 pattern_covariance=np.diag(
-                    data_sub[self.pattern.draw_var + "_aligned"].to_numpy()
+                    data_sub[self.pattern.val_sd + "_aligned"].to_numpy() ** 2
                 ),
             )
             index = data_group.groups[key]
             data.loc[index, "split_result"] = split_result
             data.loc[index, "split_result_se"] = SE
+
+        self.pattern.remove_prefix()
+        self.population.remove_prefix()
 
         return data
