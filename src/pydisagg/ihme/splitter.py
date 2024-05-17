@@ -65,11 +65,14 @@ class PatternConfig(BaseModel):
     def apply_prefix(self) -> dict[str, str]:
         rename_map = {}
         for field in self.val_fields:
-            field_val = getattr(self, field)
-            new_field_val = self.prefix + field_val
-            setattr(self, field, new_field_val)
+            new_field_val = self.prefix + (field_val := getattr(self, field))
             rename_map[field_val] = new_field_val
+            setattr(self, field, new_field_val)
         return rename_map
+
+    def remove_prefix(self) -> None:
+        for field in self.val_fields:
+            setattr(self, field, getattr(self, field).removeprefix(self.prefix))
 
 
 class PopulationConfig(BaseModel):
@@ -89,11 +92,14 @@ class PopulationConfig(BaseModel):
     def apply_prefix(self) -> dict[str, str]:
         rename_map = {}
         for field in self.val_fields:
-            field_val = getattr(self, field)
-            new_field_val = self.prefix + field_val
-            setattr(self, field, new_field_val)
+            new_field_val = self.prefix + (field_val := getattr(self, field))
             rename_map[field_val] = new_field_val
+            setattr(self, field, new_field_val)
         return rename_map
+
+    def remove_prefix(self) -> None:
+        for field in self.val_fields:
+            setattr(self, field, getattr(self, field).removeprefix(self.prefix))
 
 
 class AgeSplitter(BaseModel):
@@ -356,5 +362,8 @@ class AgeSplitter(BaseModel):
             index = data_group.groups[key]
             data.loc[index, "split_result"] = split_result
             data.loc[index, "split_result_se"] = SE
+
+        self.pattern.remove_prefix()
+        self.population.remove_prefix()
 
         return data
