@@ -30,7 +30,7 @@ def data():
 @pytest.fixture
 def pattern():
     np.random.seed(123)
-    return pd.DataFrame(
+    pattern_df1 = pd.DataFrame(
         dict(
             sex_id=[1] * 5 + [2] * 5,
             age_start=[0, 5, 10, 15, 20] * 2,
@@ -40,10 +40,12 @@ def pattern():
             draw_1=np.random.rand(10),
             draw_2=np.random.rand(10),
             year_id=[2010] * 10,
-            location_id=[1, 2] * 5,
+            location_id=[1]*10,
         )
     )
-
+    pattern_df2 = pattern_df1.copy()
+    pattern_df2['location_id']=2
+    return pd.concat([pattern_df1,pattern_df2]).reset_index(drop=True)
 
 @pytest.fixture
 def population():
