@@ -1,5 +1,4 @@
 from typing import Any
-from warnings import warn
 
 import numpy as np
 from pandas import DataFrame
@@ -232,8 +231,6 @@ class AgeSplitter(BaseModel):
         return data_with_population
 
     def _align_pattern_and_population(self, data: DataFrame) -> DataFrame:
-        warn("This is only naive constant interpolation.")
-
         data = data.sort_values(
             self.data.index + [self.pattern.age_lwr, self.pattern.age_upr],
             ignore_index=True,
@@ -245,11 +242,9 @@ class AgeSplitter(BaseModel):
 
         data_group = data.groupby(self.data.index, sort=False)
         for key, data_sub in data_group:
-            # first element of the group
             index_first, index_last = data_group.groups[key][[0, -1]]
             data_first, data_last = data.loc[index_first], data.loc[index_last]
 
-            # align pattern
             # TODO: currently we do constant interpolation for pattern
             data.loc[index_first, self.pattern.val + "_aligned"] = data_first[
                 self.pattern.val
@@ -341,7 +336,7 @@ class AgeSplitter(BaseModel):
 
         data = self._align_pattern_and_population(data)
 
-        # where split happen
+        # where split happens
         data["split_result"], data["split_result_se"] = np.nan, np.nan
         data_group = data.groupby(self.data.index)
         for key, data_sub in data_group:
