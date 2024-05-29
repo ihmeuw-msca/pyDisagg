@@ -347,7 +347,7 @@ class AgeSplitter(BaseModel):
                 ].to_numpy(),
                 rate_pattern=data_sub[self.pattern.val + "_aligned"].to_numpy(),
                 model=model_instance,
-                output_type=output_type,
+                output_type=output_type,  # type: ignore, this is handeled by model_mapping
                 normalize_pop_for_average_type_obs=True,
                 observed_total_se=data_sub[self.data.val_sd].iloc[0],
                 pattern_covariance=np.diag(
