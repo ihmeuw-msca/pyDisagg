@@ -2,8 +2,8 @@
 Installing pyDisagg
 ================
 
-Python version
---------------
+Python
+------
 
 The package :code:`pydisagg` is written in Python
 and requires Python 3.8 or later.
@@ -24,3 +24,22 @@ development mode.
     git clone https://github.com/ihmeuw-msca/pyDisagg.git
     cd pyDisagg
     pip install -e ".[test,docs]"
+
+
+R
+-
+Install reticulate if it isn't already
+
+.. code-block:: r
+
+   install.packages("reticulate")
+
+It is encouraged to create a virtual environment for pyDisagg to be install to (but this is not required)
+
+.. code-block:: r
+
+   library(reticulate)
+   use_condaenv("your_conda_env")
+   py_install("pydisagg")
+
+
