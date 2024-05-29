@@ -20,6 +20,39 @@ from pydisagg.models import LogOdds_model, RateMultiplicativeModel
 
 
 class AgeDataConfig(BaseModel):
+    """
+    A class used to represent the configuration of data to be split.
+
+    Attributes
+    ----------
+    index : list[str]
+        A list of columns that makes each row unique (e.g., seq) and contains columns like location_id, year_id, and sex_id for later merging.
+    age_lwr : str
+        The lower bound of age in study.
+    age_upr : str
+        The upper bound of age in study.
+    val : str
+        The value which you'd like to split.
+    val_sd : str
+        The standard deviation of the value.
+
+    Properties
+    ----------
+    columns : list[str]
+        A list of all the column names in the data configuration.
+
+    Methods
+    -------
+    columns(self) -> list[str]
+        Returns a list of all the column names in the data configuration.
+
+    Examples
+    --------
+    >>> config = DataConfig(index=['index1', 'index2'], age_lwr='20', age_upr='30', val='value', val_sd='sd')
+    >>> print(config.columns)
+    ['index1', 'index2', '20', '30', 'value', 'sd']
+    """
+
     index: list[str]
     age_lwr: str
     age_upr: str
@@ -48,26 +81,75 @@ class AgePopulationConfig(BaseModel):
 
     @property
     def columns(self) -> list[str]:
-        return self.index + [self.val]
+        """
+        Get a list of all the column names in the data configuration.
 
-    @property
-    def val_fields(self) -> list[str]:
-        return ["val"]
+        Returns
+        -------
+        list[str]
+            A list of all the column names in the data configuration.
 
-    def apply_prefix(self) -> dict[str, str]:
-        rename_map = {}
-        for field in self.val_fields:
-            new_field_val = self.prefix + (field_val := getattr(self, field))
-            rename_map[field_val] = new_field_val
-            setattr(self, field, new_field_val)
-        return rename_map
-
-    def remove_prefix(self) -> None:
-        for field in self.val_fields:
-            setattr(self, field, getattr(self, field).removeprefix(self.prefix))
+        Examples
+        --------
+        >>> config = DataConfig(index=['index1', 'index2'], age_lwr='20', age_upr='30', val='value', val_sd='sd')
+        >>> print(config.columns)
+        ['index1', 'index2', '20', '30', 'value', 'sd']
+        """
+        return self.index + [self.age_lwr, self.age_upr, self.val, self.val_sd]
 
 
 class AgePatternConfig(BaseModel):
+    """
+    A class used to represent the configuration of a pattern.
+
+    Attributes
+    ----------
+    by : list[str]
+        A list of by names.
+    age_key : str
+        The key for age.
+    age_lwr : str
+        The lower bound of age.
+    age_upr : str
+        The upper bound of age.
+    draws : list[str], optional
+        A list of draws, by default empty.
+    val : str, optional
+        The value, by default "val".
+    val_sd : str, optional
+        The standard deviation of the value, by default "val_sd".
+    prefix : str, optional
+        The prefix, by default "pat_".
+
+    Properties
+    ----------
+    index : list[str]
+        A list of all the index names in the pattern configuration.
+    columns : list[str]
+        A list of all the column names in the pattern configuration.
+    val_fields : list[str]
+        A list of all the value field names in the pattern configuration.
+
+    Methods
+    -------
+    index(self) -> list[str]
+        Returns a list of all the index names in the pattern configuration.
+    columns(self) -> list[str]
+        Returns a list of all the column names in the pattern configuration.
+    val_fields(self) -> list[str]
+        Returns a list of all the value field names in the pattern configuration.
+
+    Examples
+    --------
+    >>> config = PatternConfig(by=['by1', 'by2'], age_key='age', age_lwr='20', age_upr='30', draws=['draw1', 'draw2'])
+    >>> print(config.index)
+    ['by1', 'by2', 'age']
+    >>> print(config.columns)
+    ['by1', 'by2', 'age', '20', '30', 'val', 'val_sd']
+    >>> print(config.val_fields)
+    ['age_lwr', 'age_upr', 'val', 'val_sd']
+    """
+
     by: list[str]
     age_key: str
     age_lwr: str
@@ -80,10 +162,38 @@ class AgePatternConfig(BaseModel):
 
     @property
     def index(self) -> list[str]:
+        """
+        Get a list of all the index names in the pattern configuration.
+
+        Returns
+        -------
+        list[str]
+            A list of all the index names in the pattern configuration.
+
+        Examples
+        --------
+        >>> config = PatternConfig(by=['by1', 'by2'], age_key='age', age_lwr='20', age_upr='30', draws=['draw1', 'draw2'])
+        >>> print(config.index)
+        ['by1', 'by2', 'age']
+        """
         return self.by + [self.age_key]
 
     @property
     def columns(self) -> list[str]:
+        """
+        Get a list of all the column names in the pattern configuration.
+
+        Returns
+        -------
+        list[str]
+            A list of all the column names in the pattern configuration.
+
+        Examples
+        --------
+        >>> config = PatternConfig(by=['by1', 'by2'], age_key='age', age_lwr='20', age_upr='30', draws=['draw1', 'draw2'])
+        >>> print(config.columns)
+        ['by1', 'by2', 'age', '20', '30', 'val', 'val_sd']
+        """
         return self.index + [
             self.age_lwr,
             self.age_upr,
@@ -93,6 +203,20 @@ class AgePatternConfig(BaseModel):
 
     @property
     def val_fields(self) -> list[str]:
+        """
+        Get a list of all the value field names in the pattern configuration.
+
+        Returns
+        -------
+        list[str]
+            A list of all the value field names in the pattern configuration.
+
+        Examples
+        --------
+        >>> config = PatternConfig(by=['by1', 'by2'], age_key='age', age_lwr='20', age_upr='30', draws=['draw1', 'draw2'])
+        >>> print(config.val_fields)
+        ['age_lwr', 'age_upr', 'val', 'val_sd']
+        """
         return [
             "age_lwr",
             "age_upr",
