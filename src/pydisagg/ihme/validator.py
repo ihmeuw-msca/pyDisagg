@@ -28,7 +28,8 @@ def validate_positive(
     op = "<=" if strict else "<"
     negative = [col for col in columns if df.eval(f"{col} {op} 0").any()]
     if negative:
-        raise ValueError(f"{name} has negative values in: {negative}")
+        message = "0 or negative values in" if strict else "negative values in"
+        raise ValueError(f"{name} has {message}: {negative}")
 
 
 def validate_interval(
@@ -38,9 +39,7 @@ def validate_interval(
         df.query(f"{lwr} >= {upr}")[index]
     ).to_list()
     if invalid_index:
-        raise ValueError(
-            f"{name} has invalid interval with index: {invalid_index}"
-        )
+        raise ValueError(f"{name} has invalid interval with index: {invalid_index}")
 
 
 def validate_noindexdiff(
