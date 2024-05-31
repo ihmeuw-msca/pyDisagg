@@ -200,28 +200,41 @@ class SexSplitter(BaseModel):
         name = "population"
         validate_columns(population, self.population.columns + ["sex_id"], name)
 
-        # Filter for sex_id == 3
-        population = population[population["sex_id"] == 3][
-            self.population.columns
+        # Filter for each sex_id and select only the 'val' column, ignoring sex_id == 3
+        male_population = population[population["sex_id"] == 1][
+            ["location_id", "year_id", self.population.val]
+        ].copy()
+        female_population = population[population["sex_id"] == 2][
+            ["location_id", "year_id", self.population.val]
         ].copy()
 
-        validate_index(population, self.population.index, name)
-        validate_nonan(population, name)
+        # Rename the 'val' column for merging
+        male_population.rename(columns={self.population.val: "m_pop"}, inplace=True)
+        female_population.rename(columns={self.population.val: "f_pop"}, inplace=True)
 
-        # rename_map = self.population.apply_prefix()
-        # population.rename(columns=rename_map, inplace=True)
+        # Merge the male and female populations into the data DataFrame
+        data_with_population = self._merge_with_population(
+            data, male_population, "m_pop"
+        )
+        data_with_population = self._merge_with_population(
+            data_with_population, female_population, "f_pop"
+        )
 
-        data_with_population = self._merge_with_population(data, population)
+        # Fill NaN values with 0 or another appropriate value if needed
+        data_with_population["m_pop"] = data_with_population["m_pop"].fillna(0)
+        data_with_population["f_pop"] = data_with_population["f_pop"].fillna(0)
+
         return data_with_population
 
     def _merge_with_population(
-        self, data: DataFrame, population: DataFrame
+        self, data: DataFrame, population: DataFrame, pop_col: str
     ) -> DataFrame:
+        # Merging on location_id and year_id
         data_with_population = data.merge(
-            population,
-            on=self.population.index,
+            population[["location_id", "year_id", pop_col]],
+            on=["location_id", "year_id"],
             how="left",
-        ).dropna()
+        )
         return data_with_population
 
     def sex_split_df(
@@ -231,58 +244,56 @@ class SexSplitter(BaseModel):
         data = self.parse_pattern(data, pattern)
         data = self.parse_population(data, population)
 
-        return data
+        def sex_split_row(row):
+            split_result, SE = split_datapoint(
+                # This comes from the data
+                observed_total=row[self.data.val],
+                bucket_populations=np.array([row["m_pop"], row["f_pop"]]),
+                # This is from sex_pattern
+                rate_pattern=np.array([1.0, row[self.pattern.val]]),
+                model=RateMultiplicativeModel(),
+                output_type="rate",
+                normalize_pop_for_average_type_obs=True,
+                # This is from the data
+                observed_total_se=row[self.data.val_sd],
+                # This is from sex_pattern
+                pattern_covariance=np.diag(
+                    np.array([0, row[self.pattern.val_sd] ** 2])
+                ),
+            )
+            return pd.Series(
+                {
+                    "split_val_male": split_result[0],
+                    "split_val_female": split_result[1],
+                    "se_male": SE[0],
+                    "se_female": SE[1],
+                }
+            )
 
-    #     data["sex_split_result"], data["sex_split_result_se"] = np.nan, np.nan
-    #     def sex_split_row(row):
-    #         split_result, SE = split_datapoint(
-    #             #This comes from the data
-    #             observed_total=row[self.data.val],
-    #             #This comes from populations, based on how it matches to the data (is poulation: location, year specific?) then take those 2 values and choose male and female
-    #             bucket_populations=np.array([row["male_pop"], row["female_pop"]]),
-    #             #This is from sex_pattern
-    #             rate_pattern=np.array([1.0, row[self.pattern.val]]),
-    #             model=RateMultiplicativeModel(),
-    #             output_type="rate",
-    #             normalize_pop_for_average_type_obs=True,
-    #             #This is from the data
-    #             observed_total_se=row[self.data.val_sd],
-    #             #This is from sex_pattern
-    #             pattern_covariance=np.diag(np.array([0, row[self.pattern.val_sd] ** 2])),
-    #         )
-    #         return pd.Series(
-    #             {
-    #                 "split_val_male": split_result[0],
-    #                 "split_val_female": split_result[1],
-    #                 "se_male": SE[0],
-    #                 "se_female": SE[1],
-    #             }
-    #         )
+        # Apply the function across the DataFrame
+        split_results = data.apply(sex_split_row, axis=1)
 
-    #     # Apply the function across the DataFrame
-    #     split_results = data.apply(sex_split_row, axis=1)
+        # Create new DataFrames for male and female results
+        split_df_male = data.copy()
+        split_df_female = data.copy()
 
-    #     # Create new DataFrames for male and female results
-    #     split_df_male = data.copy()
-    #     split_df_female = data.copy()
+        # Add new columns for split results
+        split_df_male["sex_split_result"] = split_results["split_val_male"]
+        split_df_male["sex_split_result_se"] = split_results["se_male"]
+        split_df_female["sex_split_result"] = split_results["split_val_female"]
+        split_df_female["sex_split_result_se"] = split_results["se_female"]
 
-    #     split_df_male[[self.data.val, self.data.val_sd]] = split_results[
-    #         ["split_val_male", "se_male"]
-    #     ]
-    #     split_df_female[[self.data.val, self.data.val_sd]] = split_results[
-    #         ["split_val_female", "se_female"]
-    #     ]
+        split_df_male["sex_id"] = 1
+        split_df_female["sex_id"] = 2
 
-    #     split_df_male["sex_id"] = 1
-    #     split_df_female["sex_id"] = 2
+        # Combine the results back into one DataFrame
+        final_split_df = (
+            pd.concat([split_df_male, split_df_female], ignore_index=True)
+            .sort_values(["location_id", "year_id", "sex_id"])
+            .reset_index(drop=True)
+        )
 
-    #     # Combine the results back into one DataFrame
-    #     final_split_df = (
-    #         pd.concat([split_df_male, split_df_female], ignore_index=True)
-    #         .sort_values(["uid", "sex_id"])
-    #         .reset_index(drop=True)
-    #     )
-    #     return final_split_df
+        return final_split_df
 
 
 class AgeSplitter(BaseModel):
