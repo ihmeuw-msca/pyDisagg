@@ -1,20 +1,18 @@
 from typing import Any
-
 import pandas as pd
 import numpy as np
 from pandas import DataFrame
 from pydantic import BaseModel
-
 from pydisagg.disaggregate import split_datapoint
+from pydisagg.models import RateMultiplicativeModel, LogOdds_model
 from pydisagg.ihme.validator import (
     validate_columns,
     validate_index,
-    validate_interval,
-    validate_noindexdiff,
     validate_nonan,
     validate_positive,
+    validate_interval,
+    validate_noindexdiff,
 )
-from pydisagg.models import LogOdds_model, RateMultiplicativeModel
 
 
 class SexPatConfig(BaseModel):
@@ -67,52 +65,6 @@ class DataConfig(BaseModel):
         return self.index + [self.age_lwr, self.age_upr, self.val, self.val_sd]
 
 
-class PatternConfig(BaseModel):
-    by: list[str]
-    age_key: str
-    age_lwr: str
-    age_upr: str
-
-    draws: list[str] = []
-    val: str = "val"
-    val_sd: str = "val_sd"
-    prefix: str = "pat_"
-
-    @property
-    def index(self) -> list[str]:
-        return self.by + [self.age_key]
-
-    @property
-    def columns(self) -> list[str]:
-        return self.index + [
-            self.age_lwr,
-            self.age_upr,
-            self.val,
-            self.val_sd,
-        ]
-
-    @property
-    def val_fields(self) -> list[str]:
-        return [
-            "age_lwr",
-            "age_upr",
-            "val",
-            "val_sd",
-        ]
-
-    def apply_prefix(self) -> dict[str, str]:
-        rename_map = {}
-        for field in self.val_fields:
-            new_field_val = self.prefix + (field_val := getattr(self, field))
-            rename_map[field_val] = new_field_val
-            setattr(self, field, new_field_val)
-        return rename_map
-
-    def remove_prefix(self) -> None:
-        for field in self.val_fields:
-            setattr(self, field, getattr(self, field).removeprefix(self.prefix))
-
-
 class PopulationConfig(BaseModel):
     index: list[str]
     val: str
@@ -163,9 +115,7 @@ class SexSplitter(BaseModel):
     def parse_data(self, data: DataFrame) -> DataFrame:
         name = "data"
         validate_columns(data, self.data.columns, name)
-
         data = data[self.data.columns].copy()
-
         validate_index(data, self.data.index, name)
         validate_nonan(data, name)
         validate_positive(data, [self.data.val_sd], name)
@@ -293,7 +243,56 @@ class SexSplitter(BaseModel):
             .reset_index(drop=True)
         )
 
+        # Ensuring final_split_df has at most twice the length of original data
+        final_split_df = final_split_df[final_split_df["sex_id"].isin([1, 2])]
+
         return final_split_df
+
+
+class PatternConfig(BaseModel):
+    by: list[str]
+    age_key: str
+    age_lwr: str
+    age_upr: str
+
+    draws: list[str] = []
+    val: str = "val"
+    val_sd: str = "val_sd"
+    prefix: str = "pat_"
+
+    @property
+    def index(self) -> list[str]:
+        return self.by + [self.age_key]
+
+    @property
+    def columns(self) -> list[str]:
+        return self.index + [
+            self.age_lwr,
+            self.age_upr,
+            self.val,
+            self.val_sd,
+        ]
+
+    @property
+    def val_fields(self) -> list[str]:
+        return [
+            "age_lwr",
+            "age_upr",
+            "val",
+            "val_sd",
+        ]
+
+    def apply_prefix(self) -> dict[str, str]:
+        rename_map = {}
+        for field in self.val_fields:
+            new_field_val = self.prefix + (field_val := getattr(self, field))
+            rename_map[field_val] = new_field_val
+            setattr(self, field, new_field_val)
+        return rename_map
+
+    def remove_prefix(self) -> None:
+        for field in self.val_fields:
+            setattr(self, field, getattr(self, field).removeprefix(self.prefix))
 
 
 class AgeSplitter(BaseModel):
