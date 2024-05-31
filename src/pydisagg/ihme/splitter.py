@@ -108,8 +108,12 @@ class SexSplitter(BaseModel):
                 "population.index must be a subset of data.index + pattern.index"
             )
 
-    def _merge_with_pattern(self, data: DataFrame, pattern: DataFrame) -> DataFrame:
-        data_with_pattern = data.merge(pattern, on=self.pattern.by, how="left").dropna()
+    def _merge_with_pattern(
+        self, data: DataFrame, pattern: DataFrame
+    ) -> DataFrame:
+        data_with_pattern = data.merge(
+            pattern, on=self.pattern.by, how="left"
+        ).dropna()
         return data_with_pattern
 
     def parse_data(self, data: DataFrame) -> DataFrame:
@@ -125,7 +129,8 @@ class SexSplitter(BaseModel):
         name = "pattern"
 
         if not all(
-            col in pattern.columns for col in [self.pattern.val, self.pattern.val_sd]
+            col in pattern.columns
+            for col in [self.pattern.val, self.pattern.val_sd]
         ):
             if not self.pattern.draws:
                 raise ValueError(
@@ -134,7 +139,9 @@ class SexSplitter(BaseModel):
                 )
             validate_columns(pattern, self.pattern.draws, name)
             pattern[self.pattern.val] = pattern[self.pattern.draws].mean(axis=1)
-            pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(axis=1)
+            pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(
+                axis=1
+            )
 
         validate_columns(pattern, self.pattern.columns, name)
         pattern = pattern[self.pattern.columns].copy()
@@ -146,7 +153,9 @@ class SexSplitter(BaseModel):
         data_with_pattern = self._merge_with_pattern(data, pattern)
         return data_with_pattern
 
-    def parse_population(self, data: DataFrame, population: DataFrame) -> DataFrame:
+    def parse_population(
+        self, data: DataFrame, population: DataFrame
+    ) -> DataFrame:
         name = "population"
         validate_columns(population, self.population.columns + ["sex_id"], name)
 
@@ -159,8 +168,12 @@ class SexSplitter(BaseModel):
         ].copy()
 
         # Rename the 'val' column for merging
-        male_population.rename(columns={self.population.val: "m_pop"}, inplace=True)
-        female_population.rename(columns={self.population.val: "f_pop"}, inplace=True)
+        male_population.rename(
+            columns={self.population.val: "m_pop"}, inplace=True
+        )
+        female_population.rename(
+            columns={self.population.val: "f_pop"}, inplace=True
+        )
 
         # Merge the male and female populations into the data DataFrame
         data_with_population = self._merge_with_population(
@@ -333,7 +346,8 @@ class AgeSplitter(BaseModel):
         name = "pattern"
 
         if not all(
-            col in pattern.columns for col in [self.pattern.val, self.pattern.val_sd]
+            col in pattern.columns
+            for col in [self.pattern.val, self.pattern.val_sd]
         ):
             if not self.pattern.draws:
                 raise ValueError(
@@ -343,7 +357,9 @@ class AgeSplitter(BaseModel):
 
             validate_columns(pattern, self.pattern.draws, name)
             pattern[self.pattern.val] = pattern[self.pattern.draws].mean(axis=1)
-            pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(axis=1)
+            pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(
+                axis=1
+            )
 
         validate_columns(pattern, self.pattern.columns, name)
         pattern = pattern[self.pattern.columns].copy()
@@ -372,7 +388,9 @@ class AgeSplitter(BaseModel):
         # How to vectorize this action...
         return data_with_pattern
 
-    def _merge_with_pattern(self, data: DataFrame, pattern: DataFrame) -> DataFrame:
+    def _merge_with_pattern(
+        self, data: DataFrame, pattern: DataFrame
+    ) -> DataFrame:
         data_with_pattern = (
             data.merge(pattern, on=self.pattern.by, how="left")
             .query(
@@ -385,7 +403,9 @@ class AgeSplitter(BaseModel):
         )
         return data_with_pattern
 
-    def parse_population(self, data: DataFrame, population: DataFrame) -> DataFrame:
+    def parse_population(
+        self, data: DataFrame, population: DataFrame
+    ) -> DataFrame:
         name = "population"
         validate_columns(population, self.population.columns, name)
 
@@ -436,9 +456,9 @@ class AgeSplitter(BaseModel):
             data.loc[index_first, self.pattern.val + "_aligned"] = data_first[
                 self.pattern.val
             ]
-            data.loc[index_first, self.pattern.val_sd + "_aligned"] = data_first[
-                self.pattern.val_sd
-            ]
+            data.loc[index_first, self.pattern.val_sd + "_aligned"] = (
+                data_first[self.pattern.val_sd]
+            )
             data.loc[index_last, self.pattern.val + "_aligned"] = data_last[
                 self.pattern.val
             ]
@@ -451,13 +471,25 @@ class AgeSplitter(BaseModel):
             # within the given age interval
             data.loc[index_first, self.population.val + "_aligned"] = (
                 data_first[self.population.val]
-                / (data_first[self.pattern.age_upr] - data_first[self.pattern.age_lwr])
-                * (data_first[self.pattern.age_upr] - data_first[self.data.age_lwr])
+                / (
+                    data_first[self.pattern.age_upr]
+                    - data_first[self.pattern.age_lwr]
+                )
+                * (
+                    data_first[self.pattern.age_upr]
+                    - data_first[self.data.age_lwr]
+                )
             )
             data.loc[index_last, self.population.val + "_aligned"] = (
                 data_last[self.population.val]
-                / (data_last[self.pattern.age_upr] - data_last[self.pattern.age_lwr])
-                * (data_last[self.data.age_upr] - data_last[self.pattern.age_lwr])
+                / (
+                    data_last[self.pattern.age_upr]
+                    - data_last[self.pattern.age_lwr]
+                )
+                * (
+                    data_last[self.data.age_upr]
+                    - data_last[self.pattern.age_lwr]
+                )
             )
 
         return data

@@ -39,7 +39,9 @@ def validate_interval(
         df.query(f"{lwr} >= {upr}")[index]
     ).to_list()
     if invalid_index:
-        raise ValueError(f"{name} has invalid interval with index: {invalid_index}")
+        raise ValueError(
+            f"{name} has invalid interval with index: {invalid_index}"
+        )
 
 
 def validate_noindexdiff(

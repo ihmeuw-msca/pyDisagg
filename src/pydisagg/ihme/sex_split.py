@@ -95,7 +95,9 @@ def sex_split_df(df, ratio_2_over_1_col, ratio_se_col, val_col, val_se_col):
     split_df_male = df.copy()
     split_df_female = df.copy()
 
-    split_df_male[[val_col, val_se_col]] = split_results[["split_val_male", "se_male"]]
+    split_df_male[[val_col, val_se_col]] = split_results[
+        ["split_val_male", "se_male"]
+    ]
     split_df_female[[val_col, val_se_col]] = split_results[
         ["split_val_female", "se_female"]
     ]
