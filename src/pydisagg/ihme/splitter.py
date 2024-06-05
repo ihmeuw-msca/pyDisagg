@@ -62,7 +62,7 @@ class DataConfig(BaseModel):
 
     @property
     def columns(self) -> list[str]:
-        return self.index + [self.age_lwr, self.age_upr, self.val, self.val_sd]
+        return list(set(self.index + [self.age_lwr, self.age_upr, self.val, self.val_sd]))
 
 
 class PopulationConfig(BaseModel):
@@ -162,8 +162,8 @@ class SexSplitter(BaseModel):
         validate_index(pattern, self.pattern.index, name)
         validate_nonan(pattern, name)
         validate_positive(pattern, [self.pattern.val_sd], name)
-        rename_map = self.pattern.apply_prefix()
-        pattern.rename(columns=rename_map, inplace=True)
+        # rename_map = self.pattern.apply_prefix()
+        # pattern.rename(columns=rename_map, inplace=True)
         data_with_pattern = self._merge_with_pattern(data, pattern)
         return data_with_pattern
 
@@ -177,10 +177,10 @@ class SexSplitter(BaseModel):
 
         # Filter for each sex_id and select only the 'val' column, ignoring sex_id == 3
         male_population = population[population[self.population.sex] == 1][
-            ["location_id", "year_id", self.population.val]
+            self.population.index + [self.population.val]
         ].copy()
         female_population = population[population[self.population.sex] == 2][
-            ["location_id", "year_id", self.population.val]
+            self.population.index + [self.population.val]
         ].copy()
 
         # Rename the 'val' column for merging
@@ -264,12 +264,12 @@ class SexSplitter(BaseModel):
         # Combine the results back into one DataFrame
         final_split_df = (
             pd.concat([split_df_male, split_df_female], ignore_index=True)
-            .sort_values(["location_id", "year_id", "sex_id"])
+            .sort_values(self.data.index)
             .reset_index(drop=True)
         )
 
         # Ensuring final_split_df has at most twice the length of original data
-        final_split_df = final_split_df[final_split_df["sex_id"].isin([1, 2])]
+        #final_split_df = final_split_df[final_split_df["sex_id"].isin([1, 2])]
 
         return final_split_df
 
