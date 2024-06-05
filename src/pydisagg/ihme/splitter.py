@@ -92,10 +92,24 @@ class PopulationConfig(BaseModel):
             setattr(self, field, getattr(self, field).removeprefix(self.prefix))
 
 
+class SexPopulationConfig(BaseModel):
+    index: list[str]
+    sex: str
+    val: str
+
+    @property
+    def columns(self) -> list[str]:
+        return self.index + [self.sex] + [self.val]
+
+    @property
+    def val_fields(self) -> list[str]:
+        return ["val"]
+
+
 class SexSplitter(BaseModel):
     data: DataConfig
     pattern: SexPatConfig
-    population: PopulationConfig
+    population: SexPopulationConfig
 
     def model_post_init(self, __context: Any) -> None:
         """Extra validation of all the index."""
@@ -159,13 +173,13 @@ class SexSplitter(BaseModel):
         self, data: DataFrame, population: DataFrame
     ) -> DataFrame:
         name = "population"
-        validate_columns(population, self.population.columns + ["sex_id"], name)
+        validate_columns(population, self.population.columns, name)
 
         # Filter for each sex_id and select only the 'val' column, ignoring sex_id == 3
-        male_population = population[population["sex_id"] == 1][
+        male_population = population[population[self.population.sex] == 1][
             ["location_id", "year_id", self.population.val]
         ].copy()
-        female_population = population[population["sex_id"] == 2][
+        female_population = population[population[self.population.sex] == 2][
             ["location_id", "year_id", self.population.val]
         ].copy()
 
