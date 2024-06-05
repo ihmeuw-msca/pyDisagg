@@ -153,6 +153,8 @@ class SexSplitter(BaseModel):
         data_with_pattern = self._merge_with_pattern(data, pattern)
         return data_with_pattern
 
+    # This is currently hardcoded put we should somehow match index to index
+    # Perhaps additional params for the population config?
     def parse_population(
         self, data: DataFrame, population: DataFrame
     ) -> DataFrame:
@@ -183,19 +185,15 @@ class SexSplitter(BaseModel):
             data_with_population, female_population, "f_pop"
         )
 
-        # Fill NaN values with 0 or another appropriate value if needed
-        data_with_population["m_pop"] = data_with_population["m_pop"].fillna(0)
-        data_with_population["f_pop"] = data_with_population["f_pop"].fillna(0)
-
+        validate_nonan(data_with_population, name)
         return data_with_population
 
     def _merge_with_population(
         self, data: DataFrame, population: DataFrame, pop_col: str
     ) -> DataFrame:
-        # Merging on location_id and year_id
         data_with_population = data.merge(
-            population[["location_id", "year_id", pop_col]],
-            on=["location_id", "year_id"],
+            population,
+            on=self.population.index,
             how="left",
         )
         return data_with_population
