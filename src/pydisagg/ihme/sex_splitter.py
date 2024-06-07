@@ -10,7 +10,6 @@ from pydisagg.ihme.validator import (
     validate_index,
     validate_nonan,
     validate_positive,
-    # validate_noindexdiff,
 )
 
 
