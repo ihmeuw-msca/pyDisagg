@@ -40,7 +40,7 @@ def validate_interval(
     ).to_list()
     if invalid_index:
         raise ValueError(
-            f"{name} has invalid interval with index: {invalid_index}"
+            f"{name} has invalid interval with index: {invalid_index}. Lower age must be strictly less than upper age."
         )
 
 
