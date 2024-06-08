@@ -1,13 +1,15 @@
-import pytest
-import pandas as pd
 import numpy as np
+import pandas as pd
+import pytest
+
 from pydisagg.ihme.validator import (
     validate_columns,
     validate_index,
-    validate_nonan,
-    validate_positive,
     validate_interval,
     validate_noindexdiff,
+    validate_nonan,
+    validate_pat_coverage,
+    validate_positive,
 )
 
 
@@ -168,4 +170,54 @@ def test_validate_noindexdiff_merged_negative(data, pattern):
             data_with_pattern,
             data.columns.tolist(),
             "merged_data_pattern",
+        )
+
+
+@pytest.mark.parametrize(
+    "bad_data_with_pattern",
+    [
+        # gap in pattern
+        pd.DataFrame(
+            dict(
+                pat_lwr=[0, 1, 2, 2, 4, 5],
+                pat_upr=[1, 2, 5, 3, 5, 7],
+            )
+        ),
+        # overlap in pattern
+        pd.DataFrame(
+            dict(
+                pat_lwr=[0, 0, 2, 2, 3, 5],
+                pat_upr=[1, 2, 5, 3, 5, 7],
+            )
+        ),
+        # doesn't cover head
+        pd.DataFrame(
+            dict(
+                pat_lwr=[1, 2, 3, 2, 3, 5],
+                pat_upr=[2, 3, 5, 3, 5, 7],
+            )
+        ),
+        # doesn't cover tail
+        pd.DataFrame(
+            dict(
+                pat_lwr=[0, 1, 2, 2, 3, 5],
+                pat_upr=[1, 2, 4, 3, 5, 7],
+            )
+        ),
+    ],
+)
+def test_validate_pat_coverage_failure(bad_data_with_pattern):
+    bad_data_with_pattern["group_id"] = [1, 1, 1, 2, 2, 2]
+    bad_data_with_pattern["lwr"] = [0, 0, 0, 3, 3, 3]
+    bad_data_with_pattern["upr"] = [5, 5, 5, 7, 7, 7]
+
+    with pytest.raises(ValueError):
+        validate_pat_coverage(
+            bad_data_with_pattern,
+            "lwr",
+            "upr",
+            "pat_lwr",
+            "pat_upr",
+            ["group_id"],
+            "pattern",
         )

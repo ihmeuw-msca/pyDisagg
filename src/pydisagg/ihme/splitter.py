@@ -11,6 +11,7 @@ from pydisagg.ihme.validator import (
     validate_interval,
     validate_noindexdiff,
     validate_nonan,
+    validate_pat_coverage,
     validate_positive,
 )
 from pydisagg.models import LogOdds_model, RateMultiplicativeModel
@@ -174,11 +175,14 @@ class AgeSplitter(BaseModel):
         data_with_pattern = self._merge_with_pattern(data, pattern)
 
         validate_noindexdiff(data, data_with_pattern, self.data.index, name)
-        # TODO: add validation checks for incomplete age pattern
-        # * pattern age intervals do not overlap
-        # * smallest pattern interval doesn't cover the left end point of data
-        # * largest pattern interval doesn't cover the right end point of data
-        # How to vectorize this action...
+        validate_pat_coverage(
+            data_with_pattern,
+            self.data.age_lwr,
+            self.data.age_upr,
+            self.pattern.age_lwr,
+            self.pattern.age_upr,
+            self.data.index,
+        )
         return data_with_pattern
 
     def _merge_with_pattern(
@@ -296,7 +300,8 @@ class AgeSplitter(BaseModel):
         output_type: str = "rate",
     ) -> DataFrame:
         """
-        Splits the data based on the given pattern and population. The split results are added to the data as new columns.
+        Splits the data based on the given pattern and population. The split
+        results are added to the data as new columns.
 
         Parameters
         ----------
@@ -307,7 +312,8 @@ class AgeSplitter(BaseModel):
         population : DataFrame
             The population to be used for splitting the data.
         model : str, optional
-            The model to be used for splitting the data, by default "rate". Can be "rate" or "logodds".
+            The model to be used for splitting the data, by default "rate".
+            Can be "rate" or "logodds".
         output_type : str, optional
             The type of output to be returned, by default "rate".
 
@@ -315,7 +321,8 @@ class AgeSplitter(BaseModel):
         -------
         DataFrame
             The two main output columns are: 'split_result' and 'split_result_se'.
-            There are additional intermediate columns for sanity checks and calculations (have a prefix of pat_ or pop_, and a suffix of _aligned).
+            There are additional intermediate columns for sanity checks and
+            calculations (have a prefix of pat_ or pop_, and a suffix of _aligned).
 
         """
         model_mapping = {
