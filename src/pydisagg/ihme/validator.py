@@ -23,8 +23,10 @@ def validate_nonan(df: DataFrame, name: str) -> None:
 
 
 def validate_positive(
-    df: DataFrame, columns: list[str], name: str, strict: bool = True
+    df: DataFrame, columns: list[str], name: str, strict: bool = False
 ) -> None:
+    """Validates that observation values in cols are non-negative or strictly positive
+    """
     op = "<=" if strict else "<"
     negative = [col for col in columns if df.eval(f"{col} {op} 0").any()]
     if negative:

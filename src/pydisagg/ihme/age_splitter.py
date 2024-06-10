@@ -1,5 +1,4 @@
 from typing import Any
-import pandas as pd
 import numpy as np
 from pandas import DataFrame
 from pydantic import BaseModel
@@ -13,44 +12,7 @@ from pydisagg.ihme.validator import (
     validate_interval,
     validate_noindexdiff,
 )
-
-
-class SexPatConfig(BaseModel):
-    by: list[str]
-    draws: list[str] = []
-    val: str = "ratio_f_to_m"
-    val_sd: str = "ratio_f_to_m_se"
-    prefix: str = "sex_pat_"
-
-    @property
-    def index(self) -> list[str]:
-        return self.by
-
-    @property
-    def columns(self) -> list[str]:
-        return self.index + [
-            self.val,
-            self.val_sd,
-        ]
-
-    @property
-    def val_fields(self) -> list[str]:
-        return [
-            "val",
-            "val_sd",
-        ]
-
-    def apply_prefix(self) -> dict[str, str]:
-        rename_map = {}
-        for field in self.val_fields:
-            new_field_val = self.prefix + (field_val := getattr(self, field))
-            rename_map[field_val] = new_field_val
-            setattr(self, field, new_field_val)
-        return rename_map
-
-    def remove_prefix(self) -> None:
-        for field in self.val_fields:
-            setattr(self, field, getattr(self, field).removeprefix(self.prefix))
+import warnings
 
 
 class DataConfig(BaseModel):
@@ -62,7 +24,11 @@ class DataConfig(BaseModel):
 
     @property
     def columns(self) -> list[str]:
-        return list(set(self.index + [self.age_lwr, self.age_upr, self.val, self.val_sd]))
+        return list(
+            set(
+                self.index + [self.age_lwr, self.age_upr, self.val, self.val_sd]
+            )
+        )
 
 
 class PopulationConfig(BaseModel):
@@ -90,188 +56,6 @@ class PopulationConfig(BaseModel):
     def remove_prefix(self) -> None:
         for field in self.val_fields:
             setattr(self, field, getattr(self, field).removeprefix(self.prefix))
-
-
-class SexPopulationConfig(BaseModel):
-    index: list[str]
-    sex: str
-    val: str
-
-    @property
-    def columns(self) -> list[str]:
-        return self.index + [self.sex] + [self.val]
-
-    @property
-    def val_fields(self) -> list[str]:
-        return ["val"]
-
-
-class SexSplitter(BaseModel):
-    data: DataConfig
-    pattern: SexPatConfig
-    population: SexPopulationConfig
-
-    def model_post_init(self, __context: Any) -> None:
-        """Extra validation of all the index."""
-        if not set(self.pattern.by).issubset(self.data.index):
-            raise ValueError("pattern.by must be a subset of data.index")
-        if not set(self.population.index).issubset(
-            self.data.index + self.pattern.index
-        ):
-            raise ValueError(
-                "population.index must be a subset of data.index + pattern.index"
-            )
-
-    def _merge_with_pattern(
-        self, data: DataFrame, pattern: DataFrame
-    ) -> DataFrame:
-        data_with_pattern = data.merge(
-            pattern, on=self.pattern.by, how="left"
-        ).dropna()
-        return data_with_pattern
-
-    def parse_data(self, data: DataFrame) -> DataFrame:
-        name = "data"
-        validate_columns(data, self.data.columns, name)
-        data = data[self.data.columns].copy()
-        validate_index(data, self.data.index, name)
-        validate_nonan(data, name)
-        validate_positive(data, [self.data.val_sd], name)
-        return data
-
-    def parse_pattern(self, data: DataFrame, pattern: DataFrame) -> DataFrame:
-        name = "pattern"
-
-        if not all(
-            col in pattern.columns
-            for col in [self.pattern.val, self.pattern.val_sd]
-        ):
-            if not self.pattern.draws:
-                raise ValueError(
-                    "Must provide draws for pattern if pattern.val and "
-                    "pattern.val_sd are not available."
-                )
-            validate_columns(pattern, self.pattern.draws, name)
-            pattern[self.pattern.val] = pattern[self.pattern.draws].mean(axis=1)
-            pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(
-                axis=1
-            )
-
-        validate_columns(pattern, self.pattern.columns, name)
-        pattern = pattern[self.pattern.columns].copy()
-        validate_index(pattern, self.pattern.index, name)
-        validate_nonan(pattern, name)
-        validate_positive(pattern, [self.pattern.val_sd], name)
-        # rename_map = self.pattern.apply_prefix()
-        # pattern.rename(columns=rename_map, inplace=True)
-        data_with_pattern = self._merge_with_pattern(data, pattern)
-        return data_with_pattern
-
-    # This is currently hardcoded put we should somehow match index to index
-    # Perhaps additional params for the population config?
-    def parse_population(
-        self, data: DataFrame, population: DataFrame
-    ) -> DataFrame:
-        name = "population"
-        validate_columns(population, self.population.columns, name)
-
-        # Filter for each sex_id and select only the 'val' column, ignoring sex_id == 3
-        male_population = population[population[self.population.sex] == 1][
-            self.population.index + [self.population.val]
-        ].copy()
-        female_population = population[population[self.population.sex] == 2][
-            self.population.index + [self.population.val]
-        ].copy()
-
-        # Rename the 'val' column for merging
-        male_population.rename(
-            columns={self.population.val: "m_pop"}, inplace=True
-        )
-        female_population.rename(
-            columns={self.population.val: "f_pop"}, inplace=True
-        )
-
-        # Merge the male and female populations into the data DataFrame
-        data_with_population = self._merge_with_population(
-            data, male_population, "m_pop"
-        )
-        data_with_population = self._merge_with_population(
-            data_with_population, female_population, "f_pop"
-        )
-
-        validate_nonan(data_with_population, name)
-        return data_with_population
-
-    def _merge_with_population(
-        self, data: DataFrame, population: DataFrame, pop_col: str
-    ) -> DataFrame:
-        data_with_population = data.merge(
-            population,
-            on=self.population.index,
-            how="left",
-        )
-        return data_with_population
-
-    def sex_split_df(
-        self, data: DataFrame, pattern: DataFrame, population: DataFrame
-    ) -> DataFrame:
-        data = self.parse_data(data)
-        data = self.parse_pattern(data, pattern)
-        data = self.parse_population(data, population)
-
-        def sex_split_row(row):
-            split_result, SE = split_datapoint(
-                # This comes from the data
-                observed_total=row[self.data.val],
-                bucket_populations=np.array([row["m_pop"], row["f_pop"]]),
-                # This is from sex_pattern
-                rate_pattern=np.array([1.0, row[self.pattern.val]]),
-                model=RateMultiplicativeModel(),
-                output_type="rate",
-                normalize_pop_for_average_type_obs=True,
-                # This is from the data
-                observed_total_se=row[self.data.val_sd],
-                # This is from sex_pattern
-                pattern_covariance=np.diag(
-                    np.array([0, row[self.pattern.val_sd] ** 2])
-                ),
-            )
-            return pd.Series(
-                {
-                    "split_val_male": split_result[0],
-                    "split_val_female": split_result[1],
-                    "se_male": SE[0],
-                    "se_female": SE[1],
-                }
-            )
-
-        # Apply the function across the DataFrame
-        split_results = data.apply(sex_split_row, axis=1)
-
-        # Create new DataFrames for male and female results
-        split_df_male = data.copy()
-        split_df_female = data.copy()
-
-        # Add new columns for split results
-        split_df_male["sex_split_result"] = split_results["split_val_male"]
-        split_df_male["sex_split_result_se"] = split_results["se_male"]
-        split_df_female["sex_split_result"] = split_results["split_val_female"]
-        split_df_female["sex_split_result_se"] = split_results["se_female"]
-
-        split_df_male["sex_id"] = 1
-        split_df_female["sex_id"] = 2
-
-        # Combine the results back into one DataFrame
-        final_split_df = (
-            pd.concat([split_df_male, split_df_female], ignore_index=True)
-            .sort_values(self.data.index)
-            .reset_index(drop=True)
-        )
-
-        # Ensuring final_split_df has at most twice the length of original data
-        #final_split_df = final_split_df[final_split_df["sex_id"].isin([1, 2])]
-
-        return final_split_df
 
 
 class PatternConfig(BaseModel):
@@ -340,7 +124,7 @@ class AgeSplitter(BaseModel):
                 "population.index must be a subset of data.index + pattern.index"
             )
 
-    def parse_data(self, data: DataFrame) -> DataFrame:
+    def parse_data(self, data: DataFrame,positive_strict: bool) -> DataFrame:
         name = "data"
         validate_columns(data, self.data.columns, name)
 
@@ -348,13 +132,13 @@ class AgeSplitter(BaseModel):
 
         validate_index(data, self.data.index, name)
         validate_nonan(data, name)
-        validate_positive(data, [self.data.val_sd], name)
+        validate_positive(data, [self.data.val_sd], name,strict = positive_strict)
         validate_interval(
             data, self.data.age_lwr, self.data.age_upr, self.data.index, name
         )
         return data
 
-    def parse_pattern(self, data: DataFrame, pattern: DataFrame) -> DataFrame:
+    def parse_pattern(self, data: DataFrame, pattern: DataFrame,positive_strict: bool) -> DataFrame:
         name = "pattern"
 
         if not all(
@@ -378,7 +162,7 @@ class AgeSplitter(BaseModel):
 
         validate_index(pattern, self.pattern.index, name)
         validate_nonan(pattern, name)
-        validate_positive(pattern, [self.pattern.val_sd], name)
+        validate_positive(pattern, [self.pattern.val_sd], name,strict=positive_strict)
         validate_interval(
             pattern,
             self.pattern.age_lwr,
@@ -479,7 +263,7 @@ class AgeSplitter(BaseModel):
             ]
 
             # align population
-            # TODO: this is naive implementation compute the proprotion of population
+            # TODO: this is naive implementation compute the proportion of population
             # within the given age interval
             data.loc[index_first, self.population.val + "_aligned"] = (
                 data_first[self.population.val]
@@ -513,6 +297,7 @@ class AgeSplitter(BaseModel):
         population: DataFrame,
         model: str = "rate",
         output_type: str = "rate",
+        propagate_zeros = True,
     ) -> DataFrame:
         """
         Splits the data based on the given pattern and population. The split results are added to the data as new columns.
@@ -529,6 +314,8 @@ class AgeSplitter(BaseModel):
             The model to be used for splitting the data, by default "rate". Can be "rate" or "logodds".
         output_type : str, optional
             The type of output to be returned, by default "rate".
+        propagate_zeros : Bool, optional
+            Whether to propagate pre-split zeros as post split zeros. Default true
 
         Returns
         -------
@@ -549,14 +336,33 @@ class AgeSplitter(BaseModel):
 
         model_instance = model_mapping[model]
 
-        data = self.parse_data(data)
-        data = self.parse_pattern(data, pattern)
+        #If not propagating zeros,then positivity has to be strict
+        data = self.parse_data(data,positive_strict= not propagate_zeros)
+        data = self.parse_pattern(data, pattern,positive_strict= not propagate_zeros)
         data = self.parse_population(data, population)
 
         data = self._align_pattern_and_population(data)
 
         # where split happens
         data["split_result"], data["split_result_se"] = np.nan, np.nan
+        if propagate_zeros is True:
+            data_zero = data[(data[self.data.val]==0) or (data[self.pattern.val + "_aligned"]==0)]
+            data = data[data[self.data.val]>0]
+            #Manually split zero values
+            data_zero['split_result']=0.
+            data_zero['split_result_se']=0.
+
+            #Warn for all zero propagation
+            num_zval = (data[self.data.val]==0).sum()
+            num_zpat = (data[self.pattern.val + "_aligned"]==0).sum()
+            num_overlap = ((data[self.data.val]==0)*(data[self.pattern.val + "_aligned"]==0)).sum()
+            if num_zval>0:
+                warnings.warn(f"{num_zval} zeros produced from propagating pre-split zero values")
+            if num_zpat>0:
+                warnings.warn(f"{num_zpat} zeros produced from propagating pattern zero values")
+            if num_overlap>0:
+                warnings.warn(f"{num_overlap} zeros produced from this were overlappingf")
+        
         data_group = data.groupby(self.data.index)
         for key, data_sub in data_group:
             split_result, SE = split_datapoint(
