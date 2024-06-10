@@ -124,7 +124,7 @@ class AgeSplitter(BaseModel):
                 "population.index must be a subset of data.index + pattern.index"
             )
 
-    def parse_data(self, data: DataFrame,positive_strict) -> DataFrame:
+    def parse_data(self, data: DataFrame,positive_strict: bool) -> DataFrame:
         name = "data"
         validate_columns(data, self.data.columns, name)
 
@@ -138,7 +138,7 @@ class AgeSplitter(BaseModel):
         )
         return data
 
-    def parse_pattern(self, data: DataFrame, pattern: DataFrame,positive_strict) -> DataFrame:
+    def parse_pattern(self, data: DataFrame, pattern: DataFrame,positive_strict: bool) -> DataFrame:
         name = "pattern"
 
         if not all(
@@ -297,7 +297,7 @@ class AgeSplitter(BaseModel):
         population: DataFrame,
         model: str = "rate",
         output_type: str = "rate",
-        propagate_zeros = True
+        propagate_zeros = True,
     ) -> DataFrame:
         """
         Splits the data based on the given pattern and population. The split results are added to the data as new columns.
@@ -349,8 +349,10 @@ class AgeSplitter(BaseModel):
             data_zero = data[(data[self.data.val]==0) or (data[self.pattern.val + "_aligned"]==0)]
             data = data[data[self.data.val]>0]
             #Manually split zero values
-            data_zero['split_result']=0
-            data_zero['split_result_se']=0
+            data_zero['split_result']=0.
+            data_zero['split_result_se']=0.
+
+            #Warn for all zero propagation
             num_zval = (data[self.data.val]==0).sum()
             num_zpat = (data[self.pattern.val + "_aligned"]==0).sum()
             num_overlap = ((data[self.data.val]==0)*(data[self.pattern.val + "_aligned"]==0)).sum()
