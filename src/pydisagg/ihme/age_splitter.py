@@ -346,7 +346,7 @@ class AgeSplitter(BaseModel):
         # where split happens
         data["split_result"], data["split_result_se"] = np.nan, np.nan
         if propagate_zeros is True:
-            data_zero = data[(data[self.data.val]==0) or (data[self.pattern.val + "_aligned"]==0)]
+            data_zero = data[(data[self.data.val]==0)|(data[self.pattern.val + "_aligned"]==0)]
             data = data[data[self.data.val]>0]
             #Manually split zero values
             data_zero['split_result']=0.
