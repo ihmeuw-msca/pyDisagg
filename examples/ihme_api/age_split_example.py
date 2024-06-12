@@ -70,7 +70,6 @@ last_row = df_data.iloc[-1].copy()
 last_row["uid"] = 10
 last_row["val"] = 0
 df_data_zero = df_data._append(last_row, ignore_index=True)
-print(df_data_zero)
 
 data_config = DataConfig(
     index=["uid", "sex_id", "location_id", "year_id"],
@@ -93,11 +92,9 @@ pop_config = PopulationConfig(
     val="population",
 )
 
-age_splitter = AgeSplitter(
-    data=data_config, pattern=pat_config, population=pop_config
-)
+age_splitter = AgeSplitter(data=data_config, pattern=pat_config, population=pop_config)
 result_df = age_splitter.split(
-    data=df_data, pattern=df_pattern, population=df_pop, propagate_zeros=False
+    data=df_data, pattern=df_pattern, population=df_pop, propagate_zeros=True
 )
 print("Split Data:")
 print(result_df)
