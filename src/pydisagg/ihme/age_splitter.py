@@ -125,7 +125,7 @@ class AgeSplitter(BaseModel):
                 "population.index must be a subset of data.index + pattern.index"
             )
 
-    def parse_data(self, data: DataFrame,positive_strict: bool) -> DataFrame:
+    def parse_data(self, data: DataFrame, positive_strict: bool) -> DataFrame:
         name = "data"
         validate_columns(data, self.data.columns, name)
 
@@ -133,13 +133,17 @@ class AgeSplitter(BaseModel):
 
         validate_index(data, self.data.index, name)
         validate_nonan(data, name)
-        validate_positive(data, [self.data.val_sd], name,strict = positive_strict)
+        validate_positive(
+            data, [self.data.val_sd], name, strict=positive_strict
+        )
         validate_interval(
             data, self.data.age_lwr, self.data.age_upr, self.data.index, name
         )
         return data
 
-    def parse_pattern(self, data: DataFrame, pattern: DataFrame,positive_strict: bool) -> DataFrame:
+    def parse_pattern(
+        self, data: DataFrame, pattern: DataFrame, positive_strict: bool
+    ) -> DataFrame:
         name = "pattern"
 
         if not all(
@@ -163,7 +167,9 @@ class AgeSplitter(BaseModel):
 
         validate_index(pattern, self.pattern.index, name)
         validate_nonan(pattern, name)
-        validate_positive(pattern, [self.pattern.val_sd], name,strict=positive_strict)
+        validate_positive(
+            pattern, [self.pattern.val_sd], name, strict=positive_strict
+        )
         validate_interval(
             pattern,
             self.pattern.age_lwr,
@@ -298,7 +304,7 @@ class AgeSplitter(BaseModel):
         population: DataFrame,
         model: str = "rate",
         output_type: str = "rate",
-        propagate_zeros = True,
+        propagate_zeros=True,
     ) -> DataFrame:
         """
         Splits the data based on the given pattern and population. The split results are added to the data as new columns.
@@ -337,9 +343,11 @@ class AgeSplitter(BaseModel):
 
         model_instance = model_mapping[model]
 
-        #If not propagating zeros,then positivity has to be strict
-        data = self.parse_data(data,positive_strict= not propagate_zeros)
-        data = self.parse_pattern(data, pattern,positive_strict= not propagate_zeros)
+        # If not propagating zeros,then positivity has to be strict
+        data = self.parse_data(data, positive_strict=not propagate_zeros)
+        data = self.parse_pattern(
+            data, pattern, positive_strict=not propagate_zeros
+        )
         data = self.parse_population(data, population)
 
         data = self._align_pattern_and_population(data)
@@ -347,23 +355,35 @@ class AgeSplitter(BaseModel):
         # where split happens
         data["split_result"], data["split_result_se"] = np.nan, np.nan
         if propagate_zeros is True:
-            data_zero = data[(data[self.data.val]==0)|(data[self.pattern.val + "_aligned"]==0)]
-            data = data[data[self.data.val]>0]
-            #Manually split zero values
-            data_zero['split_result']=0.
-            data_zero['split_result_se']=0.
+            data_zero = data[
+                (data[self.data.val] == 0)
+                | (data[self.pattern.val + "_aligned"] == 0)
+            ]
+            data = data[data[self.data.val] > 0]
+            # Manually split zero values
+            data_zero["split_result"] = 0.0
+            data_zero["split_result_se"] = 0.0
 
-            #Warn for all zero propagation
-            num_zval = (data[self.data.val]==0).sum()
-            num_zpat = (data[self.pattern.val + "_aligned"]==0).sum()
-            num_overlap = ((data[self.data.val]==0)*(data[self.pattern.val + "_aligned"]==0)).sum()
-            if num_zval>0:
-                warnings.warn(f"{num_zval} zeros produced from propagating pre-split zero values")
-            if num_zpat>0:
-                warnings.warn(f"{num_zpat} zeros produced from propagating pattern zero values")
-            if num_overlap>0:
-                warnings.warn(f"{num_overlap} zeros produced from this were overlappingf")
-        
+            # Warn for all zero propagation
+            num_zval = (data[self.data.val] == 0).sum()
+            num_zpat = (data[self.pattern.val + "_aligned"] == 0).sum()
+            num_overlap = (
+                (data[self.data.val] == 0)
+                * (data[self.pattern.val + "_aligned"] == 0)
+            ).sum()
+            if num_zval > 0:
+                warnings.warn(
+                    f"{num_zval} zeros produced from propagating pre-split zero values"
+                )
+            if num_zpat > 0:
+                warnings.warn(
+                    f"{num_zpat} zeros produced from propagating pattern zero values"
+                )
+            if num_overlap > 0:
+                warnings.warn(
+                    f"{num_overlap} zeros produced from this were overlappingf"
+                )
+
         data_group = data.groupby(self.data.index)
         for key, data_sub in data_group:
             split_result, SE = split_datapoint(
@@ -384,7 +404,7 @@ class AgeSplitter(BaseModel):
             data.loc[index, "split_result"] = split_result
             data.loc[index, "split_result_se"] = SE
         if propagate_zeros is True:
-            data = pd.concat([data,data_zero])
+            data = pd.concat([data, data_zero])
 
         self.pattern.remove_prefix()
         self.population.remove_prefix()
