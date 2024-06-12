@@ -1,5 +1,6 @@
 from typing import Any
 import numpy as np
+import pandas as pd
 from pandas import DataFrame
 from pydantic import BaseModel
 from pydisagg.disaggregate import split_datapoint
@@ -382,6 +383,8 @@ class AgeSplitter(BaseModel):
             index = data_group.groups[key]
             data.loc[index, "split_result"] = split_result
             data.loc[index, "split_result_se"] = SE
+        if propagate_zeros is True:
+            data = pd.concat([data,data_zero])
 
         self.pattern.remove_prefix()
         self.population.remove_prefix()
