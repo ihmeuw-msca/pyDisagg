@@ -13,7 +13,7 @@ from pydisagg.ihme.validator import (
 )
 
 
-class SexPatConfig(BaseModel):
+class SexPatternConfig(BaseModel):
     by: list[str]
     draws: list[str] = []
     val: str = "ratio_f_to_m"
@@ -67,7 +67,7 @@ class SexDataConfig(BaseModel):
 
 class SexSplitter(BaseModel):
     data: SexDataConfig
-    pattern: SexPatConfig
+    pattern: SexPatternConfig
     population: SexPopulationConfig
 
     def model_post_init(self, __context: Any) -> None:
@@ -162,8 +162,10 @@ class SexSplitter(BaseModel):
     def _merge_with_population(
         self, data: DataFrame, population: DataFrame, pop_col: str
     ) -> DataFrame:
+        keep_cols = self.population.index + [pop_col]
+        population_temp = population[keep_cols]
         data_with_population = data.merge(
-            population,
+            population_temp,
             on=self.population.index,
             how="left",
         )

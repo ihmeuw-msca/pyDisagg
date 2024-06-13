@@ -16,7 +16,7 @@ from pydisagg.ihme.validator import (
 import warnings
 
 
-class DataConfig(BaseModel):
+class AgeDataConfig(BaseModel):
     index: list[str]
     age_lwr: str
     age_upr: str
@@ -32,7 +32,7 @@ class DataConfig(BaseModel):
         )
 
 
-class PopulationConfig(BaseModel):
+class AgePopulationConfig(BaseModel):
     index: list[str]
     val: str
 
@@ -59,7 +59,7 @@ class PopulationConfig(BaseModel):
             setattr(self, field, getattr(self, field).removeprefix(self.prefix))
 
 
-class PatternConfig(BaseModel):
+class AgePatternConfig(BaseModel):
     by: list[str]
     age_key: str
     age_lwr: str
@@ -106,9 +106,9 @@ class PatternConfig(BaseModel):
 
 
 class AgeSplitter(BaseModel):
-    data: DataConfig
-    pattern: PatternConfig
-    population: PopulationConfig
+    data: AgeDataConfig
+    pattern: AgePatternConfig
+    population: AgePopulationConfig
 
     def model_post_init(self, __context: Any) -> None:
         """Extra validation of all the index."""
@@ -304,7 +304,7 @@ class AgeSplitter(BaseModel):
         population: DataFrame,
         model: str = "rate",
         output_type: str = "rate",
-        propagate_zeros=True,
+        propagate_zeros=False,
     ) -> DataFrame:
         """
         Splits the data based on the given pattern and population. The split results are added to the data as new columns.
