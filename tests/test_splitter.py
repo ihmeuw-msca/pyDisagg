@@ -4,9 +4,9 @@ import numpy as np
 from pydantic import ValidationError
 from pydisagg.ihme.age_splitter import (
     AgeSplitter,
-    DataConfig,
-    PatternConfig,
-    PopulationConfig,
+    AgeDataConfig,
+    AgePatternConfig,
+    AgePopulationConfig,
 )
 
 
@@ -66,14 +66,14 @@ def population():
 
 
 def test_model_post_init():
-    data_config = DataConfig(
+    data_config = AgeDataConfig(
         index=["index1"],
         age_lwr="age_lwr1",
         age_upr="age_upr1",
         val="val1",
         val_sd="val_sd1",
     )
-    pattern_config = PatternConfig(
+    pattern_config = AgePatternConfig(
         by=["by1"],
         age_key="age_key1",
         age_lwr="age_lwr2",
@@ -83,7 +83,7 @@ def test_model_post_init():
         draw_var="draw_var1",
         prefix="prefix1",
     )
-    population_config = PopulationConfig(
+    population_config = AgePopulationConfig(
         index=["index2"], val="val2", prefix="prefix2"
     )
 
@@ -127,7 +127,7 @@ def test_model_post_init():
 
 @pytest.mark.skip(reason="not implemented yet")
 def test_parse_data(data):
-    data_config = DataConfig(
+    data_config = AgeDataConfig(
         index=["unique_id", "location_id", "year_id", "sex_id"],
         age_lwr="age_start",
         age_upr="age_end",
