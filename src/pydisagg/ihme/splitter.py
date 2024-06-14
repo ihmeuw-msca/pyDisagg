@@ -194,7 +194,9 @@ class AgeSplitter(BaseModel):
                 "(@self.pattern.age_lwr >= @self.data.age_lwr and"
                 " @self.pattern.age_lwr < @self.data.age_upr) or"
                 "(@self.pattern.age_upr > @self.data.age_lwr and"
-                " @self.pattern.age_upr <= @self.data.age_upr)"
+                " @self.pattern.age_upr <= @self.data.age_upr) or"
+                "(@self.pattern.age_lwr <= @self.data.age_lwr and"
+                " @self.pattern.age_upr >= @self.data.age_upr)"
             )
             .dropna()
         )
