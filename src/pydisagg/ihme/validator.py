@@ -13,7 +13,13 @@ def validate_index(df: DataFrame, index: list[str], name: str) -> None:
         df[df[index].duplicated()][index]
     ).to_list()
     if duplicated_index:
-        raise ValueError(f"{name} has duplicated index: {duplicated_index}")
+        error_message = f"{name} has duplicated index with {len(duplicated_index)} indices \n"
+        error_message += f"Index columns: ({', '.join(index)})\n"
+        if len(duplicated_index) > 5:
+            error_message += "First 5: \n"
+        error_message += ", \n".join(str(idx) for idx in duplicated_index[:5])
+        error_message += "\n"
+        raise ValueError(error_message)
 
 
 def validate_nonan(df: DataFrame, name: str) -> None:
