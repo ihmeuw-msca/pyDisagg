@@ -171,7 +171,7 @@ class SexSplitter(BaseModel):
         )
         return data_with_population
 
-    def sex_split_df(
+    def split(
         self, data: DataFrame, pattern: DataFrame, population: DataFrame
     ) -> DataFrame:
         data = self.parse_data(data)
@@ -205,12 +205,9 @@ class SexSplitter(BaseModel):
             )
 
         split_results = data.apply(sex_split_row, axis=1)
-
-        # Create new DataFrames for male and female results
         split_df_male = data.copy()
         split_df_female = data.copy()
 
-        # Add new columns for split results
         split_df_male["sex_split_result"] = split_results["split_val_male"]
         split_df_male["sex_split_result_se"] = split_results["se_male"]
         split_df_female["sex_split_result"] = split_results["split_val_female"]
@@ -219,7 +216,6 @@ class SexSplitter(BaseModel):
         split_df_male["sex_id"] = self.population.sex_m
         split_df_female["sex_id"] = self.population.sex_f
 
-        # Combine the results back into one DataFrame
         final_split_df = (
             pd.concat([split_df_male, split_df_female], ignore_index=True)
             .sort_values(self.data.index)

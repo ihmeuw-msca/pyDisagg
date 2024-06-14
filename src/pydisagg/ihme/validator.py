@@ -40,9 +40,15 @@ def validate_interval(
         df.query(f"{lwr} >= {upr}")[index]
     ).to_list()
     if invalid_index:
-        raise ValueError(
-            f"{name} has invalid interval with index: {invalid_index}"
-        )
+        error_message = f"Index columns: ({', '.join(index)})\n"
+        if len(invalid_index) == 1:
+            error_message += f"{name} has invalid interval with 1 index: "
+        else:
+            error_message += f"{name} has invalid interval with {len(invalid_index)} indices: "
+        error_message += ", ".join(str(idx) for idx in invalid_index[:5])
+        if len(invalid_index) > 5:
+            error_message += " (showing first 5)"
+        raise ValueError(error_message)
 
 
 def validate_noindexdiff(
@@ -53,4 +59,14 @@ def validate_noindexdiff(
     missing_index = index_ref.difference(index).to_list()
 
     if missing_index:
-        raise ValueError(f"Missing {name} info for index: {missing_index}")
+        error_message = f"Index columns: ({', '.join(index.names)})\n"
+        if len(missing_index) == 1:
+            error_message += f"Missing {name} info for 1 index\n"
+        else:
+            error_message += (
+                f"Missing {name} info for {len(missing_index)} indices\n"
+            )
+        if len(missing_index) > 5:
+            error_message += "First 5: "
+        error_message += ", ".join(str(idx) for idx in missing_index[:5])
+        raise ValueError(error_message)

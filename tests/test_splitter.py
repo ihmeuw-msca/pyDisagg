@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import numpy as np
 from pydantic import ValidationError
-from pydisagg.ihme.age_splitter import (
+from pydisagg.ihme.splitter import (
     AgeSplitter,
     AgeDataConfig,
     AgePatternConfig,
@@ -125,24 +125,24 @@ def test_model_post_init():
         )
 
 
-@pytest.mark.skip(reason="not implemented yet")
-def test_parse_data(data):
-    data_config = AgeDataConfig(
-        index=["unique_id", "location_id", "year_id", "sex_id"],
-        age_lwr="age_start",
-        age_upr="age_end",
-        val="mean",
-        val_sd="SE",
-    )
-    splitter = AgeSplitter(data=data_config, pattern=None, population=None)
-    parsed_data = splitter.parse_data(data)
-    assert isinstance(parsed_data, pd.DataFrame)
-    assert not parsed_data.empty
-    assert set(data_config.index).issubset(parsed_data.columns)
-    assert data_config.age_lwr in parsed_data.columns
-    assert data_config.age_upr in parsed_data.columns
-    assert data_config.val in parsed_data.columns
-    assert data_config.val_sd in parsed_data.columns
+# @pytest.mark.skip(reason="not implemented yet")
+# def test_parse_data(data):
+#     data_config = AgeDataConfig(
+#         index=["unique_id", "location_id", "year_id", "sex_id"],
+#         age_lwr="age_start",
+#         age_upr="age_end",
+#         val="mean",
+#         val_sd="SE",
+#     )
+#     splitter = AgeSplitter(data=data_config, pattern=None, population=None)
+#     parsed_data = splitter.parse_data(data)
+#     assert isinstance(parsed_data, pd.DataFrame)
+#     assert not parsed_data.empty
+#     assert set(data_config.index).issubset(parsed_data.columns)
+#     assert data_config.age_lwr in parsed_data.columns
+#     assert data_config.age_upr in parsed_data.columns
+#     assert data_config.val in parsed_data.columns
+#     assert data_config.val_sd in parsed_data.columns
 
 
 # @pytest.mark.skip(reason="not implemented yet")

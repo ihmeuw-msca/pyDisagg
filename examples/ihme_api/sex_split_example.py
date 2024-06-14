@@ -1,10 +1,10 @@
 import pandas as pd
 
-from pydisagg.ihme.sex_splitter import (
-    SexDataConfig,
-    SexPatConfig,
-    SexPopulationConfig,
+from pydisagg.ihme.splitter import (
     SexSplitter,
+    SexDataConfig,
+    SexPatternConfig,
+    SexPopulationConfig,
 )
 
 pattern_df = pd.DataFrame(
@@ -60,9 +60,7 @@ data_config = SexDataConfig(
     val_sd="standard_error",
 )
 
-pattern_config = SexPatConfig(
-    by=["year_id"], val="pat_val", val_sd="pat_val_sd"
-)
+pattern_config = SexPatternConfig(by=["year_id"], val="pat_val", val_sd="pat_val_sd")
 
 population_config = SexPopulationConfig(
     index=["year_id"], sex="sex_id", sex_m=1, sex_f=2, val="population"
@@ -72,7 +70,7 @@ sex_splitter = SexSplitter(
 )
 
 
-result_df = sex_splitter.sex_split_df(
+result_df = sex_splitter.split(
     data=data_df, pattern=pattern_df, population=population_df
 )
 print("Split Data:")

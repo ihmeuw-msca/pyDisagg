@@ -1,11 +1,11 @@
 import numpy as np
 import pandas as pd
 
-from pydisagg.ihme.age_splitter import (
-    DataConfig,
-    PatternConfig,
-    PopulationConfig,
+from pydisagg.ihme.splitter import (
     AgeSplitter,
+    AgeDataConfig,
+    AgePatternConfig,
+    AgePopulationConfig,
 )
 
 
@@ -71,7 +71,7 @@ last_row["uid"] = 10
 last_row["val"] = 0
 df_data_zero = df_data._append(last_row, ignore_index=True)
 
-data_config = DataConfig(
+data_config = AgeDataConfig(
     index=["uid", "sex_id", "location_id", "year_id"],
     age_lwr="age_start",
     age_upr="age_end",
@@ -79,7 +79,7 @@ data_config = DataConfig(
     val_sd="val_sd",
 )
 
-pat_config = PatternConfig(
+pat_config = AgePatternConfig(
     by=["sex_id", "year_id", "location_id"],
     age_key="age_group_id",
     age_lwr="age_start",
@@ -87,7 +87,7 @@ pat_config = PatternConfig(
     draws=["draw_0", "draw_1", "draw_2"],
 )
 
-pop_config = PopulationConfig(
+pop_config = AgePopulationConfig(
     index=["sex_id", "year_id", "location_id", "age_group_id"],
     val="population",
 )
