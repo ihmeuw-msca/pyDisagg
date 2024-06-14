@@ -46,12 +46,10 @@ def validate_interval(
         df.query(f"{lwr} >= {upr}")[index]
     ).to_list()
     if invalid_index:
-        error_message = (
-            f"{name} has invalid interval with {len(invalid_index)} indices \n"
-        )
+        error_message = f"{name} has invalid interval with {len(invalid_index)} indices. \nLower age must be strictly less than upper age.\n"
         error_message += f"Index columns: ({', '.join(index)})\n"
         if len(invalid_index) > 5:
-            error_message += "First 5: \n"
+            error_message += "First 5 indices with invalid interval: \n"
         error_message += ", \n".join(str(idx) for idx in invalid_index[:5])
         error_message += "\n"
         raise ValueError(error_message)
