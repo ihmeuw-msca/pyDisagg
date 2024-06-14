@@ -60,7 +60,9 @@ data_config = SexDataConfig(
     val_sd="standard_error",
 )
 
-pattern_config = SexPatternConfig(by=["year_id"], val="pat_val", val_sd="pat_val_sd")
+pattern_config = SexPatternConfig(
+    by=["year_id"], val="pat_val", val_sd="pat_val_sd"
+)
 
 population_config = SexPopulationConfig(
     index=["year_id"], sex="sex_id", sex_m=1, sex_f=2, val="population"
