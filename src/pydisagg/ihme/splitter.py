@@ -191,10 +191,10 @@ class AgeSplitter(BaseModel):
         data_with_pattern = (
             data.merge(pattern, on=self.pattern.by, how="left")
             .query(
-                f"({self.pattern.age_lwr} >= {self.data.age_lwr} and"
-                f" {self.pattern.age_lwr} < {self.data.age_upr}) or"
-                f"({self.pattern.age_upr} > {self.data.age_lwr} and"
-                f" {self.pattern.age_upr} <= {self.data.age_upr})"
+                "(@self.pattern.age_lwr >= @self.data.age_lwr and"
+                " @self.pattern.age_lwr < @self.data.age_upr) or"
+                "(@self.pattern.age_upr > @self.data.age_lwr and"
+                " @self.pattern.age_upr <= @self.data.age_upr)"
             )
             .dropna()
         )
@@ -244,50 +244,25 @@ class AgeSplitter(BaseModel):
         data[self.pattern.val_sd + "_aligned"] = data[self.pattern.val_sd]
         data[self.population.val + "_aligned"] = data[self.population.val]
 
-        data_group = data.groupby(self.data.index, sort=False)
-        for key, data_sub in data_group:
-            index_first, index_last = data_group.groups[key][[0, -1]]
-            data_first, data_last = data.loc[index_first], data.loc[index_last]
+        index_group = data.reset_index().groupby(self.data.index)["index"]
+        index_first = index_group.first().to_list()
+        index_last = index_group.last().to_list()
 
-            # TODO: currently we do constant interpolation for pattern
-            data.loc[index_first, self.pattern.val + "_aligned"] = data_first[
-                self.pattern.val
-            ]
-            data.loc[index_first, self.pattern.val_sd + "_aligned"] = (
-                data_first[self.pattern.val_sd]
-            )
-            data.loc[index_last, self.pattern.val + "_aligned"] = data_last[
-                self.pattern.val
-            ]
-            data.loc[index_last, self.pattern.val_sd + "_aligned"] = data_last[
-                self.pattern.val_sd
-            ]
+        data.loc[index_first, self.population.val + "_aligned"] = data[
+            index_first
+        ].eval(
+            "@self.population.val "
+            "/ (@self.pattern.age_upr - @self.pattern.age_lwr) "
+            "* (@self.pattern.age_upr - @self.data.age_lwr)"
+        )
 
-            # align population
-            # TODO: this is naive implementation compute the proprotion of population
-            # within the given age interval
-            data.loc[index_first, self.population.val + "_aligned"] = (
-                data_first[self.population.val]
-                / (
-                    data_first[self.pattern.age_upr]
-                    - data_first[self.pattern.age_lwr]
-                )
-                * (
-                    data_first[self.pattern.age_upr]
-                    - data_first[self.data.age_lwr]
-                )
-            )
-            data.loc[index_last, self.population.val + "_aligned"] = (
-                data_last[self.population.val]
-                / (
-                    data_last[self.pattern.age_upr]
-                    - data_last[self.pattern.age_lwr]
-                )
-                * (
-                    data_last[self.data.age_upr]
-                    - data_last[self.pattern.age_lwr]
-                )
-            )
+        data.loc[index_last, self.population.val + "_aligned"] = data[
+            index_last
+        ].eval(
+            "@self.population.val "
+            "/ (@self.pattern.age_upr - @self.pattern.age_lwr) "
+            "* (@self.data.age_upr - @self.pattern.age_lwr)"
+        )
 
         return data
 
