@@ -172,11 +172,20 @@ class SexSplitter(BaseModel):
         return data_with_population
 
     def split(
-        self, data: DataFrame, pattern: DataFrame, population: DataFrame
+        self,
+        data: DataFrame,
+        pattern: DataFrame,
+        population: DataFrame,
+        model: str = "rate",
     ) -> DataFrame:
         data = self.parse_data(data)
         data = self.parse_pattern(data, pattern)
         data = self.parse_population(data, population)
+
+        if model != "rate":
+            raise ValueError(
+                "Only 'rate' model is currently supported for SexSplitter"
+            )
 
         def sex_split_row(row):
             split_result, SE = split_datapoint(
