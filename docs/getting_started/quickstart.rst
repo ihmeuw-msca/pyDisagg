@@ -84,19 +84,3 @@ Age Splitting
     # R code goes here
 
 
-IHME
-====
-
-Import
-~~~~~~
-.. code-block:: r
-
-    #If you're using the SciComp beta image with R 4.4.0 then load the reticulate library like this:
-    #library(reticulate)
- 
-    #If you are using the default image (R 4.2.2) then you need to load the reticulate library like this:
-    library(reticulate, lib.loc = "/ihme/code/msca/miniconda3/envs/pyDisagg/lib/R/library/")
-    reticulate::use_python("/ihme/code/msca/miniconda3/envs/pyDisagg/bin/python")
-    splitter <- import("pydisagg.ihme.splitter")
-
-
