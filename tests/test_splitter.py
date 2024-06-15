@@ -4,9 +4,9 @@ import numpy as np
 from pydantic import ValidationError
 from pydisagg.ihme.splitter import (
     AgeSplitter,
-    DataConfig,
-    PatternConfig,
-    PopulationConfig,
+    AgeDataConfig,
+    AgePatternConfig,
+    AgePopulationConfig,
 )
 
 
@@ -40,12 +40,13 @@ def pattern():
             draw_1=np.random.rand(10),
             draw_2=np.random.rand(10),
             year_id=[2010] * 10,
-            location_id=[1]*10,
+            location_id=[1] * 10,
         )
     )
     pattern_df2 = pattern_df1.copy()
-    pattern_df2['location_id']=2
-    return pd.concat([pattern_df1,pattern_df2]).reset_index(drop=True)
+    pattern_df2["location_id"] = 2
+    return pd.concat([pattern_df1, pattern_df2]).reset_index(drop=True)
+
 
 @pytest.fixture
 def population():
@@ -65,14 +66,14 @@ def population():
 
 
 def test_model_post_init():
-    data_config = DataConfig(
+    data_config = AgeDataConfig(
         index=["index1"],
         age_lwr="age_lwr1",
         age_upr="age_upr1",
         val="val1",
         val_sd="val_sd1",
     )
-    pattern_config = PatternConfig(
+    pattern_config = AgePatternConfig(
         by=["by1"],
         age_key="age_key1",
         age_lwr="age_lwr2",
@@ -82,7 +83,7 @@ def test_model_post_init():
         draw_var="draw_var1",
         prefix="prefix1",
     )
-    population_config = PopulationConfig(
+    population_config = AgePopulationConfig(
         index=["index2"], val="val2", prefix="prefix2"
     )
 
@@ -124,57 +125,57 @@ def test_model_post_init():
         )
 
 
-@pytest.mark.skip(reason="not implemented yet")
-def test_parse_data(data):
-    data_config = DataConfig(
-        index=["unique_id", "location_id", "year_id", "sex_id"],
-        age_lwr="age_start",
-        age_upr="age_end",
-        val="mean",
-        val_sd="SE",
-    )
-    splitter = AgeSplitter(data=data_config, pattern=None, population=None)
-    parsed_data = splitter.parse_data(data)
-    assert isinstance(parsed_data, pd.DataFrame)
-    assert not parsed_data.empty
-    assert set(data_config.index).issubset(parsed_data.columns)
-    assert data_config.age_lwr in parsed_data.columns
-    assert data_config.age_upr in parsed_data.columns
-    assert data_config.val in parsed_data.columns
-    assert data_config.val_sd in parsed_data.columns
+# @pytest.mark.skip(reason="not implemented yet")
+# def test_parse_data(data):
+#     data_config = AgeDataConfig(
+#         index=["unique_id", "location_id", "year_id", "sex_id"],
+#         age_lwr="age_start",
+#         age_upr="age_end",
+#         val="mean",
+#         val_sd="SE",
+#     )
+#     splitter = AgeSplitter(data=data_config, pattern=None, population=None)
+#     parsed_data = splitter.parse_data(data)
+#     assert isinstance(parsed_data, pd.DataFrame)
+#     assert not parsed_data.empty
+#     assert set(data_config.index).issubset(parsed_data.columns)
+#     assert data_config.age_lwr in parsed_data.columns
+#     assert data_config.age_upr in parsed_data.columns
+#     assert data_config.val in parsed_data.columns
+#     assert data_config.val_sd in parsed_data.columns
 
 
-@pytest.mark.skip(reason="not implemented yet")
-def test_parse_pattern(pattern):
-    splitter = AgeSplitter()
-    # Add assertions for each test case
+# @pytest.mark.skip(reason="not implemented yet")
+# def test_parse_pattern(pattern):
+#     splitter = AgeSplitter()
+#     # Add assertions for each test case
 
 
-@pytest.mark.skip(reason="not implemented yet")
-def test_merge_with_pattern(data, pattern):
-    splitter = AgeSplitter()
-    # Add assertions for each test case
+# @pytest.mark.skip(reason="not implemented yet")
+# def test_merge_with_pattern(data, pattern):
+#     splitter = AgeSplitter()
+#     # Add assertions for each test case
 
 
-@pytest.mark.skip(reason="not implemented yet")
-def test_parse_population(population):
-    splitter = AgeSplitter()
-    # Add assertions for each test case
+# @pytest.mark.skip(reason="not implemented yet")
+# def test_parse_population(population):
+#     splitter = AgeSplitter()
+#     # Add assertions for each test case
 
 
-@pytest.mark.skip(reason="not implemented yet")
-def test_merge_with_population(data, population):
-    splitter = AgeSplitter()
-    # Add assertions for each test case
+# @pytest.mark.skip(reason="not implemented yet")
+# def test_merge_with_population(data, population):
+#     splitter = AgeSplitter()
+#     # Add assertions for each test case
 
 
-@pytest.mark.skip(reason="not implemented yet")
-def test_align_pattern_and_population(data):
-    splitter = AgeSplitter()
-    # Add assertions for each test case
+# @pytest.mark.skip(reason="not implemented yet")
+# def test_align_pattern_and_population(data):
+#     splitter = AgeSplitter()
+#     # Add assertions for each test case
 
 
-@pytest.mark.skip(reason="not implemented yet")
-def test_split(data, pattern, population):
-    splitter = AgeSplitter()
-    # Add assertions for each test case
+# @pytest.mark.skip(reason="not implemented yet")
+# def test_split(data, pattern, population):
+#     splitter = AgeSplitter()
+#     # Add assertions for each test case

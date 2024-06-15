@@ -1,6 +1,8 @@
+import warnings
 from typing import Any
 
 import numpy as np
+import pandas as pd
 from pandas import DataFrame
 from pydantic import BaseModel
 
@@ -17,7 +19,7 @@ from pydisagg.ihme.validator import (
 from pydisagg.models import LogOdds_model, RateMultiplicativeModel
 
 
-class DataConfig(BaseModel):
+class AgeDataConfig(BaseModel):
     index: list[str]
     age_lwr: str
     age_upr: str
@@ -26,10 +28,41 @@ class DataConfig(BaseModel):
 
     @property
     def columns(self) -> list[str]:
-        return self.index + [self.age_lwr, self.age_upr, self.val, self.val_sd]
+        return list(
+            set(
+                self.index + [self.age_lwr, self.age_upr, self.val, self.val_sd]
+            )
+        )
 
 
-class PatternConfig(BaseModel):
+class AgePopulationConfig(BaseModel):
+    index: list[str]
+    val: str
+
+    prefix: str = "pop_"
+
+    @property
+    def columns(self) -> list[str]:
+        return self.index + [self.val]
+
+    @property
+    def val_fields(self) -> list[str]:
+        return ["val"]
+
+    def apply_prefix(self) -> dict[str, str]:
+        rename_map = {}
+        for field in self.val_fields:
+            new_field_val = self.prefix + (field_val := getattr(self, field))
+            rename_map[field_val] = new_field_val
+            setattr(self, field, new_field_val)
+        return rename_map
+
+    def remove_prefix(self) -> None:
+        for field in self.val_fields:
+            setattr(self, field, getattr(self, field).removeprefix(self.prefix))
+
+
+class AgePatternConfig(BaseModel):
     by: list[str]
     age_key: str
     age_lwr: str
@@ -75,37 +108,10 @@ class PatternConfig(BaseModel):
             setattr(self, field, getattr(self, field).removeprefix(self.prefix))
 
 
-class PopulationConfig(BaseModel):
-    index: list[str]
-    val: str
-
-    prefix: str = "pop_"
-
-    @property
-    def columns(self) -> list[str]:
-        return self.index + [self.val]
-
-    @property
-    def val_fields(self) -> list[str]:
-        return ["val"]
-
-    def apply_prefix(self) -> dict[str, str]:
-        rename_map = {}
-        for field in self.val_fields:
-            new_field_val = self.prefix + (field_val := getattr(self, field))
-            rename_map[field_val] = new_field_val
-            setattr(self, field, new_field_val)
-        return rename_map
-
-    def remove_prefix(self) -> None:
-        for field in self.val_fields:
-            setattr(self, field, getattr(self, field).removeprefix(self.prefix))
-
-
 class AgeSplitter(BaseModel):
-    data: DataConfig
-    pattern: PatternConfig
-    population: PopulationConfig
+    data: AgeDataConfig
+    pattern: AgePatternConfig
+    population: AgePopulationConfig
 
     def model_post_init(self, __context: Any) -> None:
         """Extra validation of all the index."""
@@ -122,7 +128,7 @@ class AgeSplitter(BaseModel):
                 "population.index must be a subset of data.index + pattern.index"
             )
 
-    def parse_data(self, data: DataFrame) -> DataFrame:
+    def parse_data(self, data: DataFrame, positive_strict: bool) -> DataFrame:
         name = "data"
         validate_columns(data, self.data.columns, name)
 
@@ -130,17 +136,22 @@ class AgeSplitter(BaseModel):
 
         validate_index(data, self.data.index, name)
         validate_nonan(data, name)
-        validate_positive(data, [self.data.val_sd], name)
+        validate_positive(
+            data, [self.data.val_sd], name, strict=positive_strict
+        )
         validate_interval(
             data, self.data.age_lwr, self.data.age_upr, self.data.index, name
         )
         return data
 
-    def parse_pattern(self, data: DataFrame, pattern: DataFrame) -> DataFrame:
+    def parse_pattern(
+        self, data: DataFrame, pattern: DataFrame, positive_strict: bool
+    ) -> DataFrame:
         name = "pattern"
 
         if not all(
-            col in pattern.columns for col in [self.pattern.val, self.pattern.val_sd]
+            col in pattern.columns
+            for col in [self.pattern.val, self.pattern.val_sd]
         ):
             if not self.pattern.draws:
                 raise ValueError(
@@ -150,14 +161,18 @@ class AgeSplitter(BaseModel):
 
             validate_columns(pattern, self.pattern.draws, name)
             pattern[self.pattern.val] = pattern[self.pattern.draws].mean(axis=1)
-            pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(axis=1)
+            pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(
+                axis=1
+            )
 
         validate_columns(pattern, self.pattern.columns, name)
         pattern = pattern[self.pattern.columns].copy()
 
         validate_index(pattern, self.pattern.index, name)
         validate_nonan(pattern, name)
-        validate_positive(pattern, [self.pattern.val_sd], name)
+        validate_positive(
+            pattern, [self.pattern.val_sd], name, strict=positive_strict
+        )
         validate_interval(
             pattern,
             self.pattern.age_lwr,
@@ -183,7 +198,9 @@ class AgeSplitter(BaseModel):
         )
         return data_with_pattern
 
-    def _merge_with_pattern(self, data: DataFrame, pattern: DataFrame) -> DataFrame:
+    def _merge_with_pattern(
+        self, data: DataFrame, pattern: DataFrame
+    ) -> DataFrame:
         data_with_pattern = (
             data.merge(pattern, on=self.pattern.by, how="left")
             .query(
@@ -198,7 +215,9 @@ class AgeSplitter(BaseModel):
         )
         return data_with_pattern
 
-    def parse_population(self, data: DataFrame, population: DataFrame) -> DataFrame:
+    def parse_population(
+        self, data: DataFrame, population: DataFrame
+    ) -> DataFrame:
         name = "population"
         validate_columns(population, self.population.columns, name)
 
@@ -269,6 +288,7 @@ class AgeSplitter(BaseModel):
         population: DataFrame,
         model: str = "rate",
         output_type: str = "rate",
+        propagate_zeros=False,
     ) -> DataFrame:
         """
         Splits the data based on the given pattern and population. The split
@@ -287,6 +307,8 @@ class AgeSplitter(BaseModel):
             Can be "rate" or "logodds".
         output_type : str, optional
             The type of output to be returned, by default "rate".
+        propagate_zeros : Bool, optional
+            Whether to propagate pre-split zeros as post split zeros. Default true
 
         Returns
         -------
@@ -308,14 +330,47 @@ class AgeSplitter(BaseModel):
 
         model_instance = model_mapping[model]
 
-        data = self.parse_data(data)
-        data = self.parse_pattern(data, pattern)
+        # If not propagating zeros,then positivity has to be strict
+        data = self.parse_data(data, positive_strict=not propagate_zeros)
+        data = self.parse_pattern(
+            data, pattern, positive_strict=not propagate_zeros
+        )
         data = self.parse_population(data, population)
 
         data = self._align_pattern_and_population(data)
 
         # where split happens
         data["split_result"], data["split_result_se"] = np.nan, np.nan
+        if propagate_zeros is True:
+            data_zero = data[
+                (data[self.data.val] == 0)
+                | (data[self.pattern.val + "_aligned"] == 0)
+            ]
+            data = data[data[self.data.val] > 0]
+            # Manually split zero values
+            data_zero["split_result"] = 0.0
+            data_zero["split_result_se"] = 0.0
+
+            # Warn for all zero propagation
+            num_zval = (data[self.data.val] == 0).sum()
+            num_zpat = (data[self.pattern.val + "_aligned"] == 0).sum()
+            num_overlap = (
+                (data[self.data.val] == 0)
+                * (data[self.pattern.val + "_aligned"] == 0)
+            ).sum()
+            if num_zval > 0:
+                warnings.warn(
+                    f"{num_zval} zeros produced from propagating pre-split zero values"
+                )
+            if num_zpat > 0:
+                warnings.warn(
+                    f"{num_zpat} zeros produced from propagating pattern zero values"
+                )
+            if num_overlap > 0:
+                warnings.warn(
+                    f"{num_overlap} zeros produced from this were overlappingf"
+                )
+
         data_group = data.groupby(self.data.index)
         for key, data_sub in data_group:
             split_result, SE = split_datapoint(
@@ -325,7 +380,7 @@ class AgeSplitter(BaseModel):
                 ].to_numpy(),
                 rate_pattern=data_sub[self.pattern.val + "_aligned"].to_numpy(),
                 model=model_instance,
-                output_type=output_type,
+                output_type=output_type,  # type: ignore, this is handeled by model_mapping
                 normalize_pop_for_average_type_obs=True,
                 observed_total_se=data_sub[self.data.val_sd].iloc[0],
                 pattern_covariance=np.diag(
@@ -335,6 +390,8 @@ class AgeSplitter(BaseModel):
             index = data_group.groups[key]
             data.loc[index, "split_result"] = split_result
             data.loc[index, "split_result_se"] = SE
+        if propagate_zeros is True:
+            data = pd.concat([data, data_zero])
 
         self.pattern.remove_prefix()
         self.population.remove_prefix()
