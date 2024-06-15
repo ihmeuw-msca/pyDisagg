@@ -1,19 +1,22 @@
+import warnings
 from typing import Any
+
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from pydantic import BaseModel
+
 from pydisagg.disaggregate import split_datapoint
-from pydisagg.models import RateMultiplicativeModel, LogOdds_model
 from pydisagg.ihme.validator import (
     validate_columns,
     validate_index,
-    validate_nonan,
-    validate_positive,
     validate_interval,
     validate_noindexdiff,
+    validate_nonan,
+    validate_pat_coverage,
+    validate_positive,
 )
-import warnings
+from pydisagg.models import LogOdds_model, RateMultiplicativeModel
 
 
 class AgeDataConfig(BaseModel):
@@ -184,11 +187,15 @@ class AgeSplitter(BaseModel):
         data_with_pattern = self._merge_with_pattern(data, pattern)
 
         validate_noindexdiff(data, data_with_pattern, self.data.index, name)
-        # TODO: add validation checks for incomplete age pattern
-        # * pattern age intervals do not overlap
-        # * smallest pattern interval doesn't cover the left end point of data
-        # * largest pattern interval doesn't cover the right end point of data
-        # How to vectorize this action...
+        validate_pat_coverage(
+            data_with_pattern,
+            self.data.age_lwr,
+            self.data.age_upr,
+            self.pattern.age_lwr,
+            self.pattern.age_upr,
+            self.data.index,
+            name,
+        )
         return data_with_pattern
 
     def _merge_with_pattern(
@@ -200,7 +207,9 @@ class AgeSplitter(BaseModel):
                 f"({self.pattern.age_lwr} >= {self.data.age_lwr} and"
                 f" {self.pattern.age_lwr} < {self.data.age_upr}) or"
                 f"({self.pattern.age_upr} > {self.data.age_lwr} and"
-                f" {self.pattern.age_upr} <= {self.data.age_upr})"
+                f" {self.pattern.age_upr} <= {self.data.age_upr}) or"
+                f"({self.pattern.age_lwr} <= {self.data.age_lwr} and"
+                f" {self.pattern.age_upr} >= {self.data.age_upr})"
             )
             .dropna()
         )
@@ -250,50 +259,25 @@ class AgeSplitter(BaseModel):
         data[self.pattern.val_sd + "_aligned"] = data[self.pattern.val_sd]
         data[self.population.val + "_aligned"] = data[self.population.val]
 
-        data_group = data.groupby(self.data.index, sort=False)
-        for key, data_sub in data_group:
-            index_first, index_last = data_group.groups[key][[0, -1]]
-            data_first, data_last = data.loc[index_first], data.loc[index_last]
+        index_group = data.reset_index().groupby(self.data.index)["index"]
+        index_first = index_group.first().to_list()
+        index_last = index_group.last().to_list()
 
-            # TODO: currently we do constant interpolation for pattern
-            data.loc[index_first, self.pattern.val + "_aligned"] = data_first[
-                self.pattern.val
-            ]
-            data.loc[index_first, self.pattern.val_sd + "_aligned"] = (
-                data_first[self.pattern.val_sd]
-            )
-            data.loc[index_last, self.pattern.val + "_aligned"] = data_last[
-                self.pattern.val
-            ]
-            data.loc[index_last, self.pattern.val_sd + "_aligned"] = data_last[
-                self.pattern.val_sd
-            ]
+        data.loc[index_first, self.population.val + "_aligned"] = data.loc[
+            index_first
+        ].eval(
+            f"{self.population.val} "
+            f"/ ({self.pattern.age_upr} - {self.pattern.age_lwr}) "
+            f"* ({self.pattern.age_upr} - {self.data.age_lwr})"
+        )
 
-            # align population
-            # TODO: this is naive implementation compute the proportion of population
-            # within the given age interval
-            data.loc[index_first, self.population.val + "_aligned"] = (
-                data_first[self.population.val]
-                / (
-                    data_first[self.pattern.age_upr]
-                    - data_first[self.pattern.age_lwr]
-                )
-                * (
-                    data_first[self.pattern.age_upr]
-                    - data_first[self.data.age_lwr]
-                )
-            )
-            data.loc[index_last, self.population.val + "_aligned"] = (
-                data_last[self.population.val]
-                / (
-                    data_last[self.pattern.age_upr]
-                    - data_last[self.pattern.age_lwr]
-                )
-                * (
-                    data_last[self.data.age_upr]
-                    - data_last[self.pattern.age_lwr]
-                )
-            )
+        data.loc[index_last, self.population.val + "_aligned"] = data.loc[
+            index_last
+        ].eval(
+            f"{self.population.val} "
+            f"/ ({self.pattern.age_upr} - {self.pattern.age_lwr}) "
+            f"* ({self.data.age_upr} - {self.pattern.age_lwr})"
+        )
 
         return data
 
@@ -307,7 +291,8 @@ class AgeSplitter(BaseModel):
         propagate_zeros=False,
     ) -> DataFrame:
         """
-        Splits the data based on the given pattern and population. The split results are added to the data as new columns.
+        Splits the data based on the given pattern and population. The split
+        results are added to the data as new columns.
 
         Parameters
         ----------
@@ -318,7 +303,8 @@ class AgeSplitter(BaseModel):
         population : DataFrame
             The population to be used for splitting the data.
         model : str, optional
-            The model to be used for splitting the data, by default "rate". Can be "rate" or "logodds".
+            The model to be used for splitting the data, by default "rate".
+            Can be "rate" or "logodds".
         output_type : str, optional
             The type of output to be returned, by default "rate".
         propagate_zeros : Bool, optional
@@ -328,7 +314,8 @@ class AgeSplitter(BaseModel):
         -------
         DataFrame
             The two main output columns are: 'split_result' and 'split_result_se'.
-            There are additional intermediate columns for sanity checks and calculations (have a prefix of pat_ or pop_, and a suffix of _aligned).
+            There are additional intermediate columns for sanity checks and
+            calculations (have a prefix of pat_ or pop_, and a suffix of _aligned).
 
         """
         model_mapping = {
