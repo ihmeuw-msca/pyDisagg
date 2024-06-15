@@ -140,8 +140,7 @@ class AgeSplitter(BaseModel):
         name = "pattern"
 
         if not all(
-            col in pattern.columns
-            for col in [self.pattern.val, self.pattern.val_sd]
+            col in pattern.columns for col in [self.pattern.val, self.pattern.val_sd]
         ):
             if not self.pattern.draws:
                 raise ValueError(
@@ -151,9 +150,7 @@ class AgeSplitter(BaseModel):
 
             validate_columns(pattern, self.pattern.draws, name)
             pattern[self.pattern.val] = pattern[self.pattern.draws].mean(axis=1)
-            pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(
-                axis=1
-            )
+            pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(axis=1)
 
         validate_columns(pattern, self.pattern.columns, name)
         pattern = pattern[self.pattern.columns].copy()
@@ -182,12 +179,11 @@ class AgeSplitter(BaseModel):
             self.pattern.age_lwr,
             self.pattern.age_upr,
             self.data.index,
+            name,
         )
         return data_with_pattern
 
-    def _merge_with_pattern(
-        self, data: DataFrame, pattern: DataFrame
-    ) -> DataFrame:
+    def _merge_with_pattern(self, data: DataFrame, pattern: DataFrame) -> DataFrame:
         data_with_pattern = (
             data.merge(pattern, on=self.pattern.by, how="left")
             .query(
@@ -202,9 +198,7 @@ class AgeSplitter(BaseModel):
         )
         return data_with_pattern
 
-    def parse_population(
-        self, data: DataFrame, population: DataFrame
-    ) -> DataFrame:
+    def parse_population(self, data: DataFrame, population: DataFrame) -> DataFrame:
         name = "population"
         validate_columns(population, self.population.columns, name)
 
@@ -250,7 +244,7 @@ class AgeSplitter(BaseModel):
         index_first = index_group.first().to_list()
         index_last = index_group.last().to_list()
 
-        data.loc[index_first, self.population.val + "_aligned"] = data[
+        data.loc[index_first, self.population.val + "_aligned"] = data.loc[
             index_first
         ].eval(
             f"{self.population.val} "
@@ -258,7 +252,7 @@ class AgeSplitter(BaseModel):
             f"* ({self.pattern.age_upr} - {self.data.age_lwr})"
         )
 
-        data.loc[index_last, self.population.val + "_aligned"] = data[
+        data.loc[index_last, self.population.val + "_aligned"] = data.loc[
             index_last
         ].eval(
             f"{self.population.val} "
