@@ -191,12 +191,12 @@ class AgeSplitter(BaseModel):
         data_with_pattern = (
             data.merge(pattern, on=self.pattern.by, how="left")
             .query(
-                "(@self.pattern.age_lwr >= @self.data.age_lwr and"
-                " @self.pattern.age_lwr < @self.data.age_upr) or"
-                "(@self.pattern.age_upr > @self.data.age_lwr and"
-                " @self.pattern.age_upr <= @self.data.age_upr) or"
-                "(@self.pattern.age_lwr <= @self.data.age_lwr and"
-                " @self.pattern.age_upr >= @self.data.age_upr)"
+                f"({self.pattern.age_lwr} >= {self.data.age_lwr} and"
+                f" {self.pattern.age_lwr} < {self.data.age_upr}) or"
+                f"({self.pattern.age_upr} > {self.data.age_lwr} and"
+                f" {self.pattern.age_upr} <= {self.data.age_upr}) or"
+                f"({self.pattern.age_lwr} <= {self.data.age_lwr} and"
+                f" {self.pattern.age_upr} >= {self.data.age_upr})"
             )
             .dropna()
         )
@@ -253,17 +253,17 @@ class AgeSplitter(BaseModel):
         data.loc[index_first, self.population.val + "_aligned"] = data[
             index_first
         ].eval(
-            "@self.population.val "
-            "/ (@self.pattern.age_upr - @self.pattern.age_lwr) "
-            "* (@self.pattern.age_upr - @self.data.age_lwr)"
+            f"{self.population.val} "
+            f"/ ({self.pattern.age_upr} - {self.pattern.age_lwr}) "
+            f"* ({self.pattern.age_upr} - {self.data.age_lwr})"
         )
 
         data.loc[index_last, self.population.val + "_aligned"] = data[
             index_last
         ].eval(
-            "@self.population.val "
-            "/ (@self.pattern.age_upr - @self.pattern.age_lwr) "
-            "* (@self.data.age_upr - @self.pattern.age_lwr)"
+            f"{self.population.val} "
+            f"/ ({self.pattern.age_upr} - {self.pattern.age_lwr}) "
+            f"* ({self.data.age_upr} - {self.pattern.age_lwr})"
         )
 
         return data
