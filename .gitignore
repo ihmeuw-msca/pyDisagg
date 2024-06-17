@@ -131,3 +131,6 @@ dmypy.json
 # personal notes
 dev_notes.md
 .vscode
+
+# OS generated file
+.DS_Store
