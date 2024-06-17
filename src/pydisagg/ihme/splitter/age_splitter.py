@@ -313,7 +313,7 @@ class AgeSplitter(BaseModel):
         Returns
         -------
         DataFrame
-            The two main output columns are: 'split_result' and 'split_result_se'.
+            The two main output columns are: 'age_split_result' and 'age_split_result_se'.
             There are additional intermediate columns for sanity checks and
             calculations (have a prefix of pat_ or pop_, and a suffix of _aligned).
 
@@ -340,7 +340,7 @@ class AgeSplitter(BaseModel):
         data = self._align_pattern_and_population(data)
 
         # where split happens
-        data["split_result"], data["split_result_se"] = np.nan, np.nan
+        data["age_split_result"], data["age_split_result_se"] = np.nan, np.nan
         if propagate_zeros is True:
             data_zero = data[
                 (data[self.data.val] == 0)
@@ -348,8 +348,8 @@ class AgeSplitter(BaseModel):
             ]
             data = data[data[self.data.val] > 0]
             # Manually split zero values
-            data_zero["split_result"] = 0.0
-            data_zero["split_result_se"] = 0.0
+            data_zero["age_split_result"] = 0.0
+            data_zero["age_split_result_se"] = 0.0
 
             # Warn for all zero propagation
             num_zval = (data[self.data.val] == 0).sum()
@@ -388,8 +388,8 @@ class AgeSplitter(BaseModel):
                 ),
             )
             index = data_group.groups[key]
-            data.loc[index, "split_result"] = split_result
-            data.loc[index, "split_result_se"] = SE
+            data.loc[index, "age_split_result"] = split_result
+            data.loc[index, "age_split_result_se"] = SE
         if propagate_zeros is True:
             data = pd.concat([data, data_zero])
 
