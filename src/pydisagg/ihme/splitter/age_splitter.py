@@ -313,7 +313,7 @@ class AgeSplitter(BaseModel):
         output_type : str, optional
             The type of output to be returned, by default "rate".
         propagate_zeros : Bool, optional
-            Whether to propagate pre-split zeros as post split zeros. Default true
+            Whether to propagate pre-split zeros as post split zeros. Default false
 
         Returns
         -------
