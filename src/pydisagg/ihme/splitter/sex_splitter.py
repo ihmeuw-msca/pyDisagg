@@ -177,15 +177,16 @@ class SexSplitter(BaseModel):
         pattern: DataFrame,
         population: DataFrame,
         model: str = "rate",
+        output_type: str = "rate",
     ) -> DataFrame:
         data = self.parse_data(data)
         data = self.parse_pattern(data, pattern)
         data = self.parse_population(data, population)
 
-        if model != "rate":
-            raise ValueError(
-                "Only 'rate' model is currently supported for SexSplitter"
-            )
+        if output_type == "total":
+            pop_normalize = False
+        elif output_type == "rate":
+            pop_normalize = True
 
         def sex_split_row(row):
             split_result, SE = split_datapoint(
@@ -195,8 +196,8 @@ class SexSplitter(BaseModel):
                 # This is from sex_pattern
                 rate_pattern=np.array([1.0, row[self.pattern.val]]),
                 model=RateMultiplicativeModel(),
-                output_type="rate",
-                normalize_pop_for_average_type_obs=True,
+                output_type=output_type,
+                normalize_pop_for_average_type_obs=pop_normalize,
                 # This is from the data
                 observed_total_se=row[self.data.val_sd],
                 # This is from sex_pattern
