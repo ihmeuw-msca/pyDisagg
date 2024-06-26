@@ -25,14 +25,19 @@ class AgeDataConfig(BaseModel):
     age_upr: str
     val: str
     val_sd: str
+    # sample_size: str | None
 
     @property
     def columns(self) -> list[str]:
-        return list(
-            set(
-                self.index + [self.age_lwr, self.age_upr, self.val, self.val_sd]
-            )
-        )
+        base_columns = self.index + [
+            self.age_lwr,
+            self.age_upr,
+            self.val,
+            self.val_sd,
+        ]
+        # if self.sample_size is not None:
+        #     base_columns.append(self.sample_size)
+        return list(set(base_columns))
 
 
 class AgePopulationConfig(BaseModel):
@@ -279,6 +284,16 @@ class AgeSplitter(BaseModel):
             f"* ({self.data.age_upr} - {self.pattern.age_lwr})"
         )
 
+        # Not used right now, but useful in checking how we handle population partitioning
+        # Can be used to split sample sizes using the pseudo-proportion
+        data[self.population.val + "_total"] = data.groupby(self.data.index)[
+            self.population.val + "_aligned"
+        ].transform(lambda x: x.sum())
+        data[self.population.val + "_proportion"] = (
+            data[self.population.val + "_aligned"]
+            / data[self.population.val + "_total"]
+        )
+
         return data
 
     def split(
@@ -308,7 +323,7 @@ class AgeSplitter(BaseModel):
         output_type : str, optional
             The type of output to be returned, by default "rate".
         propagate_zeros : Bool, optional
-            Whether to propagate pre-split zeros as post split zeros. Default true
+            Whether to propagate pre-split zeros as post split zeros. Default false
 
         Returns
         -------
@@ -372,6 +387,11 @@ class AgeSplitter(BaseModel):
                 )
 
         data_group = data.groupby(self.data.index)
+        if output_type == "total":
+            pop_normalize = False
+        elif output_type == "rate":
+            pop_normalize = True
+
         for key, data_sub in data_group:
             split_result, SE = split_datapoint(
                 observed_total=data_sub[self.data.val].iloc[0],
@@ -381,7 +401,7 @@ class AgeSplitter(BaseModel):
                 rate_pattern=data_sub[self.pattern.val + "_aligned"].to_numpy(),
                 model=model_instance,
                 output_type=output_type,  # type: ignore, this is handeled by model_mapping
-                normalize_pop_for_average_type_obs=True,
+                normalize_pop_for_average_type_obs=pop_normalize,
                 observed_total_se=data_sub[self.data.val_sd].iloc[0],
                 pattern_covariance=np.diag(
                     data_sub[self.pattern.val_sd + "_aligned"].to_numpy() ** 2
@@ -395,5 +415,8 @@ class AgeSplitter(BaseModel):
 
         self.pattern.remove_prefix()
         self.population.remove_prefix()
+
+        # Something llike this can be implemented for sample size split
+        # data["split_"+ self.data.sample_size] = data[self.data.sample_size] * data[self.population.val + "_proportion"]
 
         return data
