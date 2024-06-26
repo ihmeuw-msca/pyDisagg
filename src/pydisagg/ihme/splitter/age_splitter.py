@@ -25,14 +25,19 @@ class AgeDataConfig(BaseModel):
     age_upr: str
     val: str
     val_sd: str
+    # sample_size: str | None
 
     @property
     def columns(self) -> list[str]:
-        return list(
-            set(
-                self.index + [self.age_lwr, self.age_upr, self.val, self.val_sd]
-            )
-        )
+        base_columns = self.index + [
+            self.age_lwr,
+            self.age_upr,
+            self.val,
+            self.val_sd,
+        ]
+        # if self.sample_size is not None:
+        #     base_columns.append(self.sample_size)
+        return list(set(base_columns))
 
 
 class AgePopulationConfig(BaseModel):
@@ -410,5 +415,8 @@ class AgeSplitter(BaseModel):
 
         self.pattern.remove_prefix()
         self.population.remove_prefix()
+
+        # Something llike this can be implemented for sample size split
+        # data["split_"+ self.data.sample_size] = data[self.data.sample_size] * data[self.population.val + "_proportion"]
 
         return data
