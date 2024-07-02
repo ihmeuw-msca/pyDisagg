@@ -27,7 +27,7 @@ classifiers = [
 ]
 dependencies = [
   "matplotlib",
-  "numpy",
+  "numpy<2.0.0",
   "pandas",
   "scipy",
   "pydantic",
