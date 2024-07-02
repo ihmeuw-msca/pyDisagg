@@ -10,6 +10,7 @@ from pydisagg.ihme.validator import (
     validate_index,
     validate_nonan,
     validate_positive,
+    validate_population_data,
 )
 
 
@@ -100,7 +101,6 @@ class SexSplitter(BaseModel):
 
     def parse_pattern(self, data: DataFrame, pattern: DataFrame) -> DataFrame:
         name = "pattern"
-
         if not all(
             col in pattern.columns
             for col in [self.pattern.val, self.pattern.val_sd]
@@ -138,6 +138,7 @@ class SexSplitter(BaseModel):
         male_population = self.get_population_by_sex(
             population, self.population.sex_m
         )
+
         female_population = self.get_population_by_sex(
             population, self.population.sex_f
         )
@@ -152,10 +153,14 @@ class SexSplitter(BaseModel):
         data_with_population = self._merge_with_population(
             data, male_population, "m_pop"
         )
+
         data_with_population = self._merge_with_population(
             data_with_population, female_population, "f_pop"
         )
 
+        validate_population_data(
+            data_with_population, ["m_pop", "f_pop"], self.data.index, name
+        )
         validate_nonan(data_with_population, name)
         return data_with_population
 

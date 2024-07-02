@@ -114,3 +114,20 @@ def validate_pat_coverage(
         raise ValueError(
             f"{name} pattern does not cover the data lower and/or upper bound"
         )
+
+
+def validate_population_data(
+    df: DataFrame, columns: list[str], index: list[str], name: str
+) -> None:
+    missing_data = df[df[columns].isna().any(axis=1)]
+    if not missing_data.empty:
+        error_message = (
+            f"Missing {name} data for {missing_data.shape[0]} rows.\n"
+        )
+        error_message += f"Index columns: ({', '.join(index)})\n"
+        formatted_rows = ",\n".join(
+            str(tuple(missing_data.loc[idx, index]))
+            for idx in missing_data.head().index
+        )
+        error_message += formatted_rows
+        raise ValueError(error_message)
