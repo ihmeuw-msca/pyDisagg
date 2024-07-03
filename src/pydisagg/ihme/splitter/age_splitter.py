@@ -99,6 +99,18 @@ class AgePopulationConfig(Schema):
         """
         return self.index + [self.age_lwr, self.age_upr, self.val, self.val_sd]
 
+    def apply_prefix(self) -> dict[str, str]:
+        rename_map = {}
+        for field in self.val_fields:
+            new_field_val = self.prefix + (field_val := getattr(self, field))
+            rename_map[field_val] = new_field_val
+            setattr(self, field, new_field_val)
+        return rename_map
+
+    def remove_prefix(self) -> None:
+        for field in self.val_fields:
+            setattr(self, field, getattr(self, field).removeprefix(self.prefix))
+
 
 class AgePatternConfig(BaseModel):
     """
