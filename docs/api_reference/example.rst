@@ -1,5 +1,5 @@
-pypkg.example
-=============
+PyDisagg Example
+================
 
-.. automodule:: pypkg.example
+.. automodule:: pydisagg.example
    :members:

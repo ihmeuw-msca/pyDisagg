@@ -2,6 +2,8 @@
 Quickstart
 ==========
 
+Below are examples of how to load the package in Python and R. The Python example shows age-splitting, and the R example is for sex-splitting. However, both age and sex splitting are available in either Python or R.
+
 Python
 ======
 
@@ -10,9 +12,9 @@ Import
 .. code-block:: python
 
     from pydisagg.ihme.splitter import (
-        DataConfig,
-        PatternConfig,
-        PopulationConfig,
+        AgeDataConfig,
+        AgePatternConfig,
+        AgePopulationConfig,
         AgeSplitter,
     )
 
@@ -20,7 +22,7 @@ Configuration
 ~~~~~~~~~~~~~
 .. code-block:: python
 
-    fpg_data_con = DataConfig(
+    fpg_data_con = AgeDataConfig(
         index=["unique_id", "location_id", "year_id", "sex_id"],
         age_lwr="age_start",
         age_upr="age_end",
@@ -30,7 +32,7 @@ Configuration
 
     draw_cols = patterns_fpg.filter(regex="^draw_").columns.tolist()
 
-    fpg_pattern_con = PatternConfig(
+    fpg_pattern_con = AgePatternConfig(
         by=["location_id", "year_id", "sex_id"],
         age_key="age_group_id",
         age_lwr="age_group_years_start",
@@ -40,7 +42,7 @@ Configuration
         val_sd="var_draw",
     )
 
-    fpg_pop_con = PopulationConfig(
+    fpg_pop_con = AgePopulationConfig(
         index=["age_group_id", "location_id", "year_id", "sex_id"],
         val="population",
     )
@@ -57,7 +59,7 @@ Age Splitting
         data=fpg_df,
         pattern=patterns_fpg,
         population=pops_df,
-        model="rate",
+        model="logodds",
         output_type="rate",
     )
 
@@ -69,18 +71,41 @@ Import
 ~~~~~~
 .. code-block:: r
 
-    # R code goes here
+    library(reticulate)
+    reticulate::use_python("/some/path/to/miniconda3/envs/your-conda-env/bin/python")
+    splitter <- import("pydisagg.ihme.splitter")
 
 Configuration
 ~~~~~~~~~~~~~
 .. code-block:: r
 
-    # R code goes here
+    sex_splitter = splitter$SexSplitter(
+    data=splitter$SexDataConfig(
+        index=c("nid","seq", "location_id", "year_id", "sex_id","age_lwr","age_upr"),
+        val="val",
+        val_sd="val_sd"
+    ),
+    pattern=splitter$SexPatternConfig(
+        by=list('year_id'),
+        val='draw_mean',
+        val_sd='draw_sd'
+    ),
+    population=splitter$SexPopulationConfig(
+        index=c('location_id', 'year_id'),
+        sex="sex_id",
+        sex_m=1,
+        sex_f=2,
+        val='population'
+    )
+)
 
-Age Splitting
+Sex Splitting
 ~~~~~~~~~~~~~
 .. code-block:: r
 
-    # R code goes here
+    result_sex_df = sex_splitter$split(data=pre_split,
+                                   pattern= sex_pattern,population= sex_pop,
+                                   model="rate"
+                                   output_type = "total")
 
 

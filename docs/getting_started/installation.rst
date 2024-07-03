@@ -34,7 +34,7 @@ Install reticulate if it isn't already
 
    install.packages("reticulate")
 
-It is encouraged to create a virtual environment for pyDisagg to be install to (but this is not required)
+It is encouraged to create a virtual environment for pyDisagg
 
 .. code-block:: r
 
