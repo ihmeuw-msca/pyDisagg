@@ -122,9 +122,7 @@ class AgeSplitter(BaseModel):
         data = data[self.data.columns].copy()
         validate_index(data, self.data.index, name)
         validate_nonan(data, name)
-        validate_positive(
-            data, [self.data.val_sd], name, strict=positive_strict
-        )
+        validate_positive(data, [self.data.val_sd], name, strict=positive_strict)
         validate_interval(
             data, self.data.age_lwr, self.data.age_upr, self.data.index, name
         )
@@ -137,8 +135,7 @@ class AgeSplitter(BaseModel):
 
         # Check if val and val_sd are missing, and generate them if necessary
         if not all(
-            col in pattern.columns
-            for col in [self.pattern.val, self.pattern.val_sd]
+            col in pattern.columns for col in [self.pattern.val, self.pattern.val_sd]
         ):
             if not self.pattern.draws:
                 raise ValueError(
@@ -150,20 +147,14 @@ class AgeSplitter(BaseModel):
             validate_columns(pattern, self.pattern.draws, name)
             validate_realnumber(pattern, self.pattern.draws, name)
             pattern[self.pattern.val] = pattern[self.pattern.draws].mean(axis=1)
-            pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(
-                axis=1
-            )
+            pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(axis=1)
 
         # Validate columns after potential generation
         validate_columns(pattern, self.pattern.columns, name)
 
         # Validate for NaN values
         validate_nonan(pattern, name)
-
-        # Validate for negative values in val_sd
-        validate_positive(pattern, [self.pattern.val_sd], name, strict=False)
-
-        # Validate interval correctness
+        validate_positive(pattern, [self.pattern.val_sd], name, strict=positive_strict)
         validate_interval(
             pattern,
             self.pattern.age_lwr,
@@ -195,9 +186,7 @@ class AgeSplitter(BaseModel):
 
         return data_with_pattern
 
-    def _merge_with_pattern(
-        self, data: DataFrame, pattern: DataFrame
-    ) -> DataFrame:
+    def _merge_with_pattern(self, data: DataFrame, pattern: DataFrame) -> DataFrame:
         # TODO change these asserts to validate_columns
         assert (
             self.data.age_lwr in data.columns
@@ -226,9 +215,7 @@ class AgeSplitter(BaseModel):
         )
         return data_with_pattern
 
-    def parse_population(
-        self, data: DataFrame, population: DataFrame
-    ) -> DataFrame:
+    def parse_population(self, data: DataFrame, population: DataFrame) -> DataFrame:
         name = "Parsing Population"
         validate_columns(population, self.population.columns, name)
 
@@ -357,23 +344,18 @@ class AgeSplitter(BaseModel):
         if self.pattern.prefix_status == "prefixed":
             self.pattern.remove_prefix()
         data = self.parse_data(data, positive_strict=not propagate_zeros)
-        data = self.parse_pattern(
-            data, pattern, positive_strict=not propagate_zeros
-        )
+        data = self.parse_pattern(data, pattern, positive_strict=not propagate_zeros)
         data = self.parse_population(data, population)
 
         data = self._align_pattern_and_population(data)
 
         # where split happens
         data["age_split_result"], data["age_split_result_se"] = np.nan, np.nan
-        data["age_split"] = (
-            0  # Indicate that the row was not split by age initially
-        )
+        data["age_split"] = 0  # Indicate that the row was not split by age initially
 
         if propagate_zeros is True:
             data_zero = data[
-                (data[self.data.val] == 0)
-                | (data[self.pattern.val + "_aligned"] == 0)
+                (data[self.data.val] == 0) | (data[self.pattern.val + "_aligned"] == 0)
             ]
             data = data[data[self.data.val] > 0]
             # Manually split zero values
@@ -385,8 +367,7 @@ class AgeSplitter(BaseModel):
             num_zval = (data[self.data.val] == 0).sum()
             num_zpat = (data[self.pattern.val + "_aligned"] == 0).sum()
             num_overlap = (
-                (data[self.data.val] == 0)
-                * (data[self.pattern.val + "_aligned"] == 0)
+                (data[self.data.val] == 0) * (data[self.pattern.val + "_aligned"] == 0)
             ).sum()
             if num_zval > 0:
                 warnings.warn(
