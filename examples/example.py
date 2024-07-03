@@ -68,6 +68,7 @@ pop = pop.drop(columns=["population_y"]).rename(columns={"population_x": "popula
 # Sex splitting (example configuration, adjust as needed)
 sex_splitter = SexSplitter(
     data=SexDataConfig(
+<<<<<<< HEAD
         index=[
             "nid",
             "seq",
@@ -77,6 +78,9 @@ sex_splitter = SexSplitter(
             "age_lwr",
             "age_upr",
         ],
+=======
+        index=["nid", "seq", "location_id", "year_id", "sex_id", "age_lwr", "age_upr"],
+>>>>>>> 886e366 (Updated documentation)
         val="val",
         val_sd="val_sd",
     ),
@@ -112,8 +116,12 @@ age_splitter = AgeSplitter(
         draws=[f"draw_{i}" for i in range(3)],  # Adjust based on actual draw columns
     ),
     population=AgePopulationConfig(
+<<<<<<< HEAD
         index=["age_group_id", "location_id", "year_id", "sex_id"],
         val="population",
+=======
+        index=["age_group_id", "location_id", "year_id", "sex_id"], val="population"
+>>>>>>> 886e366 (Updated documentation)
     ),
 )
 
