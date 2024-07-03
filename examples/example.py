@@ -59,16 +59,28 @@ age_pop = pd.DataFrame(
     list(itertools.product([34, 6], [2020, 2021], [1, 2], range(21))),
     columns=["location_id", "year_id", "sex_id", "age_group_id"],
 )
-age_pop["population"] = np.tile([1000, 1050, 1100, 1150, 1200], int(len(age_pop) / 5))
+age_pop["population"] = np.tile(
+    [1000, 1050, 1100, 1150, 1200], int(len(age_pop) / 5)
+)
 
 # Merging and cleaning up population data
 pop = pd.merge(sex_pop, age_pop, on=["location_id", "year_id", "sex_id"])
-pop = pop.drop(columns=["population_y"]).rename(columns={"population_x": "population"})
+pop = pop.drop(columns=["population_y"]).rename(
+    columns={"population_x": "population"}
+)
 
 # Sex splitting (example configuration, adjust as needed)
 sex_splitter = SexSplitter(
     data=SexDataConfig(
-        index=["nid", "seq", "location_id", "year_id", "sex_id", "age_lwr", "age_upr"],
+        index=[
+            "nid",
+            "seq",
+            "location_id",
+            "year_id",
+            "sex_id",
+            "age_lwr",
+            "age_upr",
+        ],
         val="val",
         val_sd="val_sd",
     ),
@@ -101,10 +113,13 @@ age_splitter = AgeSplitter(
         age_key="age_group_id",
         age_lwr="age_group_years_start",
         age_upr="age_group_years_end",
-        draws=[f"draw_{i}" for i in range(3)],  # Adjust based on actual draw columns
+        draws=[
+            f"draw_{i}" for i in range(3)
+        ],  # Adjust based on actual draw columns
     ),
     population=AgePopulationConfig(
-        index=["age_group_id", "location_id", "year_id", "sex_id"], val="population"
+        index=["age_group_id", "location_id", "year_id", "sex_id"],
+        val="population",
     ),
 )
 

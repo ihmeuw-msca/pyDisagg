@@ -141,9 +141,7 @@ class AgeSplitter(BaseModel):
 
         validate_index(data, self.data.index, name)
         validate_nonan(data, name)
-        validate_positive(
-            data, [self.data.val_sd], name, strict=positive_strict
-        )
+        validate_positive(data, [self.data.val_sd], name, strict=positive_strict)
         validate_interval(
             data, self.data.age_lwr, self.data.age_upr, self.data.index, name
         )
@@ -155,8 +153,7 @@ class AgeSplitter(BaseModel):
         name = "pattern"
 
         if not all(
-            col in pattern.columns
-            for col in [self.pattern.val, self.pattern.val_sd]
+            col in pattern.columns for col in [self.pattern.val, self.pattern.val_sd]
         ):
             if not self.pattern.draws:
                 raise ValueError(
@@ -166,18 +163,14 @@ class AgeSplitter(BaseModel):
 
             validate_columns(pattern, self.pattern.draws, name)
             pattern[self.pattern.val] = pattern[self.pattern.draws].mean(axis=1)
-            pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(
-                axis=1
-            )
+            pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(axis=1)
 
         validate_columns(pattern, self.pattern.columns, name)
         pattern = pattern[self.pattern.columns].copy()
 
         validate_index(pattern, self.pattern.index, name)
         validate_nonan(pattern, name)
-        validate_positive(
-            pattern, [self.pattern.val_sd], name, strict=positive_strict
-        )
+        validate_positive(pattern, [self.pattern.val_sd], name, strict=positive_strict)
         validate_interval(
             pattern,
             self.pattern.age_lwr,
@@ -203,9 +196,7 @@ class AgeSplitter(BaseModel):
         )
         return data_with_pattern
 
-    def _merge_with_pattern(
-        self, data: DataFrame, pattern: DataFrame
-    ) -> DataFrame:
+    def _merge_with_pattern(self, data: DataFrame, pattern: DataFrame) -> DataFrame:
         data_with_pattern = (
             data.merge(pattern, on=self.pattern.by, how="left")
             .query(
@@ -220,9 +211,7 @@ class AgeSplitter(BaseModel):
         )
         return data_with_pattern
 
-    def parse_population(
-        self, data: DataFrame, population: DataFrame
-    ) -> DataFrame:
+    def parse_population(self, data: DataFrame, population: DataFrame) -> DataFrame:
         name = "population"
         validate_columns(population, self.population.columns, name)
 
@@ -347,9 +336,7 @@ class AgeSplitter(BaseModel):
 
         # If not propagating zeros,then positivity has to be strict
         data = self.parse_data(data, positive_strict=not propagate_zeros)
-        data = self.parse_pattern(
-            data, pattern, positive_strict=not propagate_zeros
-        )
+        data = self.parse_pattern(data, pattern, positive_strict=not propagate_zeros)
         data = self.parse_population(data, population)
 
         data = self._align_pattern_and_population(data)
@@ -358,8 +345,7 @@ class AgeSplitter(BaseModel):
         data["age_split_result"], data["age_split_result_se"] = np.nan, np.nan
         if propagate_zeros is True:
             data_zero = data[
-                (data[self.data.val] == 0)
-                | (data[self.pattern.val + "_aligned"] == 0)
+                (data[self.data.val] == 0) | (data[self.pattern.val + "_aligned"] == 0)
             ]
             data = data[data[self.data.val] > 0]
             # Manually split zero values
@@ -370,8 +356,7 @@ class AgeSplitter(BaseModel):
             num_zval = (data[self.data.val] == 0).sum()
             num_zpat = (data[self.pattern.val + "_aligned"] == 0).sum()
             num_overlap = (
-                (data[self.data.val] == 0)
-                * (data[self.pattern.val + "_aligned"] == 0)
+                (data[self.data.val] == 0) * (data[self.pattern.val + "_aligned"] == 0)
             ).sum()
             if num_zval > 0:
                 warnings.warn(
