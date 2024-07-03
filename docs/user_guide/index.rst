@@ -6,7 +6,7 @@ User guide
    :numbered:
 
    project_organization
-   style_guide
+   config_guide
    testing
    documentation
    cicd
