@@ -19,7 +19,7 @@ from pydisagg.ihme.validator import (
 class SexPatternConfig(BaseModel):
     by: list[str]
     draws: list[str] = []
-    model_type: Literal["rate", "logodds"] = "rate"
+    model: Literal["rate", "logodds"] = "rate"
     val: str = "ratio_f_to_m"
     val_sd: str = "ratio_f_to_m_se"
     prefix: str = "sex_pat_"
@@ -185,9 +185,7 @@ class SexSplitter(BaseModel):
         population: DataFrame,
         output_type: str = "rate",
     ) -> DataFrame:
-        model = (
-            self.pattern.model_type
-        )  # FIX THIS, just so we don't have angry squiggles
+        model = self.pattern.model
         data = self.parse_data(data)
         data = self.parse_pattern(data, pattern)
         data = self.parse_population(data, population)
@@ -201,7 +199,7 @@ class SexSplitter(BaseModel):
             if model == "rate":
                 input_pattern = np.array([1.0, row[self.pattern.val]])
                 splitting_model = RateMultiplicativeModel()
-            elif model == "log_odds":
+            elif model == "logodds":
                 # Expit of 0 is 0.5
                 input_pattern = np.array([0.5, expit(row[self.pattern.val])])
                 splitting_model = LogOdds_model()
