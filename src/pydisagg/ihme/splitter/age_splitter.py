@@ -1,5 +1,5 @@
 import warnings
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
@@ -301,8 +301,8 @@ class AgeSplitter(BaseModel):
         data: DataFrame,
         pattern: DataFrame,
         population: DataFrame,
-        model: str = "rate",
-        output_type: str = "rate",
+        model: Literal["rate", "logodds"] = "rate",
+        output_type: Literal["rate", "count"] = "rate",
         propagate_zeros=False,
     ) -> DataFrame:
         """
@@ -387,7 +387,7 @@ class AgeSplitter(BaseModel):
                 )
 
         data_group = data.groupby(self.data.index)
-        if output_type == "total":
+        if output_type == "count":
             pop_normalize = False
         elif output_type == "rate":
             pop_normalize = True

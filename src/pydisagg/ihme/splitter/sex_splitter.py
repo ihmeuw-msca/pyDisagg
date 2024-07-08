@@ -188,7 +188,7 @@ class SexSplitter(BaseModel):
         data = self.parse_pattern(data, pattern)
         data = self.parse_population(data, population)
 
-        if output_type == "total":
+        if output_type == "count":
             pop_normalize = False
         elif output_type == "rate":
             pop_normalize = True

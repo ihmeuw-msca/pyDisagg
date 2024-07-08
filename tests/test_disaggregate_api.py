@@ -27,7 +27,7 @@ def test_count_model_consistency(model):
         rate_pattern,
         measurement_SE,
         model,
-        output_type="total",
+        output_type="count",
     )
     assert_approx_equal(measured_total, np.sum(result))
     assert_approx_equal(measurement_SE, np.sum(SE))
