@@ -1,5 +1,5 @@
 Configuration guide
-===========
+===================
 
 Sex and Age Configuration
 -------------------------
