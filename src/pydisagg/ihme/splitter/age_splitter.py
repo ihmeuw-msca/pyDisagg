@@ -186,10 +186,11 @@ class AgeSplitter(BaseModel):
             name,
         )
 
+        pattern_copy = pattern.copy()
         rename_map = self.pattern.apply_prefix()
-        pattern.rename(columns=rename_map, inplace=True)
+        pattern_copy.rename(columns=rename_map, inplace=True)
 
-        data_with_pattern = self._merge_with_pattern(data, pattern)
+        data_with_pattern = self._merge_with_pattern(data, pattern_copy)
 
         validate_noindexdiff(data, data_with_pattern, self.data.index, name)
         validate_pat_coverage(
@@ -231,10 +232,11 @@ class AgeSplitter(BaseModel):
         validate_index(population, self.population.index, name)
         validate_nonan(population, name)
 
+        pop_copy = population.copy()
         rename_map = self.population.apply_prefix()
-        population.rename(columns=rename_map, inplace=True)
+        pop_copy.rename(columns=rename_map, inplace=True)
 
-        data_with_population = self._merge_with_population(data, population)
+        data_with_population = self._merge_with_population(data, pop_copy)
 
         validate_noindexdiff(
             data,
@@ -416,7 +418,7 @@ class AgeSplitter(BaseModel):
         self.pattern.remove_prefix()
         self.population.remove_prefix()
 
-        # Something llike this can be implemented for sample size split
+        # Something like this can be implemented for sample size split
         # data["split_"+ self.data.sample_size] = data[self.data.sample_size] * data[self.population.val + "_proportion"]
 
         return data
