@@ -3,8 +3,10 @@ import pandas as pd
 import numpy as np
 from pandas import DataFrame
 from pydantic import BaseModel
+from scipy.special import expit
+from typing import Literal
 from pydisagg.disaggregate import split_datapoint
-from pydisagg.models import RateMultiplicativeModel
+from pydisagg.models import RateMultiplicativeModel, LogOdds_model
 from pydisagg.ihme.validator import (
     validate_columns,
     validate_index,
@@ -17,6 +19,7 @@ from pydisagg.ihme.validator import (
 class SexPatternConfig(BaseModel):
     by: list[str]
     draws: list[str] = []
+    model_type: Literal["rate", "logodds"] = "rate"
     val: str = "ratio_f_to_m"
     val_sd: str = "ratio_f_to_m_se"
     prefix: str = "sex_pat_"
@@ -181,9 +184,11 @@ class SexSplitter(BaseModel):
         data: DataFrame,
         pattern: DataFrame,
         population: DataFrame,
-        model: str = "rate",
         output_type: str = "rate",
     ) -> DataFrame:
+        model = (
+            self.pattern.model_type
+        )  # FIX THIS, just so we don't have angry squiggles
         data = self.parse_data(data)
         data = self.parse_pattern(data, pattern)
         data = self.parse_population(data, population)
@@ -194,13 +199,20 @@ class SexSplitter(BaseModel):
             pop_normalize = True
 
         def sex_split_row(row):
+            if model == "rate":
+                input_pattern = np.array([1.0, row[self.pattern.val]])
+                splitting_model = RateMultiplicativeModel()
+            elif model == "log_odds":
+                # Expit of 0 is 0.5
+                input_pattern = np.array([0.5, expit(row[self.pattern.val])])
+                splitting_model = LogOdds_model()
             split_result, SE = split_datapoint(
                 # This comes from the data
                 observed_total=row[self.data.val],
                 bucket_populations=np.array([row["m_pop"], row["f_pop"]]),
                 # This is from sex_pattern
-                rate_pattern=np.array([1.0, row[self.pattern.val]]),
-                model=RateMultiplicativeModel(),
+                rate_pattern=input_pattern,
+                model=splitting_model,
                 output_type=output_type,
                 normalize_pop_for_average_type_obs=pop_normalize,
                 # This is from the data
