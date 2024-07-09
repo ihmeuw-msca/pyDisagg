@@ -10,6 +10,7 @@ from pydisagg.ihme.validator import (
     validate_index,
     validate_nonan,
     validate_positive,
+    validate_noindexdiff,
 )
 
 
@@ -90,7 +91,7 @@ class SexSplitter(BaseModel):
         return data_with_pattern
 
     def parse_data(self, data: DataFrame) -> DataFrame:
-        name = "data"
+        name = "When parsing, data"
         validate_columns(data, self.data.columns, name)
         data = data[self.data.columns].copy()
         validate_index(data, self.data.index, name)
@@ -99,8 +100,7 @@ class SexSplitter(BaseModel):
         return data
 
     def parse_pattern(self, data: DataFrame, pattern: DataFrame) -> DataFrame:
-        name = "pattern"
-
+        name = "When parsing, pattern"
         if not all(
             col in pattern.columns
             for col in [self.pattern.val, self.pattern.val_sd]
@@ -132,12 +132,13 @@ class SexSplitter(BaseModel):
     def parse_population(
         self, data: DataFrame, population: DataFrame
     ) -> DataFrame:
-        name = "population"
+        name = "When parsing, population"
         validate_columns(population, self.population.columns, name)
 
         male_population = self.get_population_by_sex(
             population, self.population.sex_m
         )
+
         female_population = self.get_population_by_sex(
             population, self.population.sex_f
         )
@@ -152,11 +153,14 @@ class SexSplitter(BaseModel):
         data_with_population = self._merge_with_population(
             data, male_population, "m_pop"
         )
+
         data_with_population = self._merge_with_population(
             data_with_population, female_population, "f_pop"
         )
 
+        validate_columns(data_with_population, ["m_pop", "f_pop"], name)
         validate_nonan(data_with_population, name)
+        validate_noindexdiff(data, data_with_population, self.data.index, name)
         return data_with_population
 
     def _merge_with_population(
@@ -177,15 +181,16 @@ class SexSplitter(BaseModel):
         pattern: DataFrame,
         population: DataFrame,
         model: str = "rate",
+        output_type: str = "rate",
     ) -> DataFrame:
         data = self.parse_data(data)
         data = self.parse_pattern(data, pattern)
         data = self.parse_population(data, population)
 
-        if model != "rate":
-            raise ValueError(
-                "Only 'rate' model is currently supported for SexSplitter"
-            )
+        if output_type == "count":
+            pop_normalize = False
+        elif output_type == "rate":
+            pop_normalize = True
 
         def sex_split_row(row):
             split_result, SE = split_datapoint(
@@ -195,8 +200,8 @@ class SexSplitter(BaseModel):
                 # This is from sex_pattern
                 rate_pattern=np.array([1.0, row[self.pattern.val]]),
                 model=RateMultiplicativeModel(),
-                output_type="rate",
-                normalize_pop_for_average_type_obs=True,
+                output_type=output_type,
+                normalize_pop_for_average_type_obs=pop_normalize,
                 # This is from the data
                 observed_total_se=row[self.data.val_sd],
                 # This is from sex_pattern
