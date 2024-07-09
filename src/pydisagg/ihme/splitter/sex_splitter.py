@@ -10,7 +10,7 @@ from pydisagg.ihme.validator import (
     validate_index,
     validate_nonan,
     validate_positive,
-    validate_population_data,
+    validate_noindexdiff,
 )
 
 
@@ -91,7 +91,7 @@ class SexSplitter(BaseModel):
         return data_with_pattern
 
     def parse_data(self, data: DataFrame) -> DataFrame:
-        name = "data"
+        name = "When parsing, data"
         validate_columns(data, self.data.columns, name)
         data = data[self.data.columns].copy()
         validate_index(data, self.data.index, name)
@@ -100,7 +100,7 @@ class SexSplitter(BaseModel):
         return data
 
     def parse_pattern(self, data: DataFrame, pattern: DataFrame) -> DataFrame:
-        name = "pattern"
+        name = "When parsing, pattern"
         if not all(
             col in pattern.columns
             for col in [self.pattern.val, self.pattern.val_sd]
@@ -132,7 +132,7 @@ class SexSplitter(BaseModel):
     def parse_population(
         self, data: DataFrame, population: DataFrame
     ) -> DataFrame:
-        name = "population"
+        name = "When parsing, population"
         validate_columns(population, self.population.columns, name)
 
         male_population = self.get_population_by_sex(
@@ -158,10 +158,9 @@ class SexSplitter(BaseModel):
             data_with_population, female_population, "f_pop"
         )
 
-        validate_population_data(
-            data_with_population, ["m_pop", "f_pop"], self.data.index, name
-        )
+        validate_columns(data_with_population, ["m_pop", "f_pop"], name)
         validate_nonan(data_with_population, name)
+        validate_noindexdiff(data, data_with_population, self.data.index, name)
         return data_with_population
 
     def _merge_with_population(

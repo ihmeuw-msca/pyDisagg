@@ -134,7 +134,7 @@ class AgeSplitter(BaseModel):
             )
 
     def parse_data(self, data: DataFrame, positive_strict: bool) -> DataFrame:
-        name = "data"
+        name = "Parsing Data"
         validate_columns(data, self.data.columns, name)
 
         data = data[self.data.columns].copy()
@@ -152,7 +152,7 @@ class AgeSplitter(BaseModel):
     def parse_pattern(
         self, data: DataFrame, pattern: DataFrame, positive_strict: bool
     ) -> DataFrame:
-        name = "pattern"
+        name = "Parsing Pattern"
 
         if not all(
             col in pattern.columns
@@ -224,7 +224,7 @@ class AgeSplitter(BaseModel):
     def parse_population(
         self, data: DataFrame, population: DataFrame
     ) -> DataFrame:
-        name = "population"
+        name = "Parsing Population"
         validate_columns(population, self.population.columns, name)
 
         population = population[self.population.columns].copy()
