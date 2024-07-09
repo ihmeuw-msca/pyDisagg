@@ -1,5 +1,5 @@
 PyDisagg: Dissaggregation under Generalized Proportionality Assumptions
-===================
+=======================================================================
 
 |PyPI| |Python| |GitHub Workflow Status| |GitHub|
 
