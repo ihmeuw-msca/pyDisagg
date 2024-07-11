@@ -26,8 +26,8 @@ data_df = pd.DataFrame(
     {
         "seq": [303284043, 303284062, 303284063, 303284064, 303284065],
         "location_id": [78, 130, 120, 30, 141],
-        "mean": [5, 5, 5, 5, 5],
-        "standard_error": [1, 1, 1, 1, 1],
+        "mean": [0.5, 0.5, 0.5, 0.5, 0.5],
+        "standard_error": [0.1, 0.1, 0.1, 0.1, 0.1],
         "year_id": [2015, 2019, 2018, 2017, 2016],
         "sex_id": [3, 3, 3, 3, 3],
     }
@@ -61,7 +61,7 @@ data_config = SexDataConfig(
 )
 
 pattern_config = SexPatternConfig(
-    by=["year_id"], val="pat_val", val_sd="pat_val_sd"
+    by=["year_id"], val="pat_val", val_sd="pat_val_sd", model="logodds"
 )
 
 population_config = SexPopulationConfig(
