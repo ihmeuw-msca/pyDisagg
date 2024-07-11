@@ -1,5 +1,5 @@
 [![PyPI](https://img.shields.io/pypi/v/pydisagg)](https://pypi.org/project/pydisagg/)
-![Python](https://img.shields.io/badge/python-3.8,_3.9-blue.svg)
+![Python](https://img.shields.io/badge/python-3.8,_3.9,_3.10,_3.11,_3.12-blue.svg)
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/ihmeuw-msca/pyDisagg/build.yml)
 [![GitHub](https://img.shields.io/github/license/ihmeuw-msca/pyDisagg)](./LICENSE)
 
