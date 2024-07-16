@@ -21,7 +21,7 @@ def build_init_page(version: str) -> None:
     with open("pages/index.html", "w") as f:
         f.write(
             f"""<!doctype html>
-<meta http-equiv="refresh" content="0; url=./{version}/">"""
+<meta http-equiv="refresh" content="0; url=./{version}/index.html">"""
         )
 
 
