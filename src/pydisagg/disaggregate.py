@@ -17,7 +17,7 @@ def split_datapoint(
     rate_pattern: NDArray,
     observed_total_se: Optional[float] = None,
     model: Optional[DisaggModel] = LogOdds_model(),
-    output_type: Literal["total", "rate"] = "total",
+    output_type: Literal["count", "rate"] = "count",
     normalize_pop_for_average_type_obs: bool = False,
     pattern_covariance: Optional[NDArray] = None,
 ) -> Union[tuple, NDArray]:
@@ -71,7 +71,7 @@ def split_datapoint(
     If observed_total_se is given, then returns a tuple
         (point_estimate,standard_error)
     """
-    if output_type not in ["total", "rate"]:
+    if output_type not in ["count", "rate"]:
         raise ValueError("output_type must be one of either 'total' or 'rate'")
 
     if normalize_pop_for_average_type_obs is True:
@@ -81,7 +81,7 @@ def split_datapoint(
     else:
         processed_bucket_populations = bucket_populations.copy()
 
-    if output_type == "total":
+    if output_type == "count":
         point_estimates = model.split_to_counts(
             observed_total, rate_pattern, processed_bucket_populations
         )
@@ -160,7 +160,7 @@ def split_dataframe(
     rate_patterns: DataFrame,
     use_se: Optional[bool] = False,
     model: Optional[DisaggModel] = LogOdds_model(),
-    output_type: Literal["total", "rate"] = "total",
+    output_type: Literal["count", "rate"] = "count",
     demographic_id_columns: Optional[list] = None,
     normalize_pop_for_average_type_obs: bool = False,
 ) -> DataFrame:
@@ -220,7 +220,7 @@ def split_dataframe(
             point estimate and standard error for the estimate for each group is given.
     """
     if (normalize_pop_for_average_type_obs is True) and (
-        output_type == "total"
+        output_type == "count"
     ):
         raise Warning(
             "Normalizing populations may not be appropriate here, as we are working with a total"

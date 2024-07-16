@@ -1,4 +1,19 @@
-# Changelog
+## [0.5.1] - 2024-07-09
+
+### Added
+
+- **Count splitting:**
+  - `output_type = 'rate'` satisfies the condition that the population weighted mean of the post-split result adds up to the pre-split value.
+  - `output_type = 'total'` satisfies the condition that the SUM of the post-split results adds up to the pre-split value.
+
+- **Age splitting columns:**
+  - `Population_total`: the sum of age group specific populations across a study.
+  - `Population_proportion`: the normalized population in each post-split group.
+  - Implication: can multiply `population_proportion` by sample study size to get the post-split pseudo sample sizes.
+
+### Fixed
+
+- Error messaging in sex splitting if a population is missing.
 
 ## [0.5.0] - 2024-06-17
 

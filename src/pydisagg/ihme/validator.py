@@ -6,7 +6,15 @@ from pandas import DataFrame
 def validate_columns(df: DataFrame, columns: list[str], name: str) -> None:
     missing = [col for col in columns if col not in df.columns]
     if missing:
-        raise KeyError(f"{name} has missing columns: {missing}")
+        error_message = (
+            f"{name} has missing columns: {len(missing)} columns are missing.\n"
+        )
+        error_message += f"Missing columns: {', '.join(missing)}\n"
+        if len(missing) > 5:
+            error_message += "First 5 missing columns: \n"
+        error_message += ", \n".join(missing[:5])
+        error_message += "\n"
+        raise KeyError(error_message)
 
 
 def validate_index(df: DataFrame, index: list[str], name: str) -> None:
@@ -26,7 +34,15 @@ def validate_index(df: DataFrame, index: list[str], name: str) -> None:
 def validate_nonan(df: DataFrame, name: str) -> None:
     nan_columns = df.columns[df.isna().any(axis=0)].to_list()
     if nan_columns:
-        raise ValueError(f"{name} has NaN values in columns: {nan_columns}")
+        error_message = (
+            f"{name} has NaN values in {len(nan_columns)} columns. \n"
+        )
+        error_message += f"Columns with NaN values: {', '.join(nan_columns)}\n"
+        if len(nan_columns) > 5:
+            error_message += "First 5 columns with NaN values: \n"
+        error_message += ", \n".join(nan_columns[:5])
+        error_message += "\n"
+        raise ValueError(error_message)
 
 
 def validate_positive(
@@ -114,20 +130,3 @@ def validate_pat_coverage(
         raise ValueError(
             f"{name} pattern does not cover the data lower and/or upper bound"
         )
-
-
-def validate_population_data(
-    df: DataFrame, columns: list[str], index: list[str], name: str
-) -> None:
-    missing_data = df[df[columns].isna().any(axis=1)]
-    if not missing_data.empty:
-        error_message = (
-            f"Missing {name} data for {missing_data.shape[0]} rows.\n"
-        )
-        error_message += f"Index columns: ({', '.join(index)})\n"
-        formatted_rows = ",\n".join(
-            str(tuple(missing_data.loc[idx, index]))
-            for idx in missing_data.head().index
-        )
-        error_message += formatted_rows
-        raise ValueError(error_message)
