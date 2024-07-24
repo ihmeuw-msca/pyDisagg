@@ -225,6 +225,7 @@ class SexSplitter(BaseModel):
                     "split_val_female": split_result[1],
                     "se_male": SE[0],
                     "se_female": SE[1],
+                    "sex_split": 1,  # Indicate the row was split by sex
                 }
             )
 
@@ -240,6 +241,9 @@ class SexSplitter(BaseModel):
         split_df_male["sex_id"] = self.population.sex_m
         split_df_female["sex_id"] = self.population.sex_f
 
+        split_df_male["sex_split"] = split_results["sex_split"]
+        split_df_female["sex_split"] = split_results["sex_split"]
+
         final_split_df = (
             pd.concat([split_df_male, split_df_female], ignore_index=True)
             .sort_values(self.data.index)
@@ -253,4 +257,5 @@ class SexSplitter(BaseModel):
                 if col not in self.data.index
             ]
         )
+
         return final_split_df

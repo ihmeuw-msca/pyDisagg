@@ -18,7 +18,7 @@ def data():
             location_id=[1, 2] * 5,
             year_id=[2010] * 10,
             age_start=[0, 5, 10, 17, 20] * 2,
-            age_end=[12, 10, 22, 21, 25] * 2,
+            age_end=[4, 10, 22, 21, 25] * 2,
             val=5.0,
             val_sd=1.0,
         )
