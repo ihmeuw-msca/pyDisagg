@@ -371,6 +371,7 @@ class AgeSplitter(BaseModel):
             # Manually split zero values
             data_zero["age_split_result"] = 0.0
             data_zero["age_split_result_se"] = 0.0
+            data_zero["n_ages_being_split_into"] = 1
 
             # Warn for all zero propagation
             num_zval = (data[self.data.val] == 0).sum()
@@ -398,6 +399,8 @@ class AgeSplitter(BaseModel):
         elif output_type == "rate":
             pop_normalize = True
 
+        n_ages_being_split_into = []
+
         for key, data_sub in data_group:
             split_result, SE = split_datapoint(
                 observed_total=data_sub[self.data.val].iloc[0],
@@ -421,14 +424,15 @@ class AgeSplitter(BaseModel):
                 data.loc[index, "age_split"] = (
                     1  # Indicate that the row was split by age
                 )
+            n_ages_being_split_into.extend([len(index)] * len(index))
 
         if propagate_zeros is True:
             data = pd.concat([data, data_zero])
+            n_ages_being_split_into.extend([1] * len(data_zero))
 
         self.pattern.remove_prefix()
         self.population.remove_prefix()
 
-        # Something like this can be implemented for sample size split
-        # data["split_"+ self.data.sample_size] = data[self.data.sample_size] * data[self.population.val + "_proportion"]
+        data["n_ages_being_split_into"] = n_ages_being_split_into
 
         return data
