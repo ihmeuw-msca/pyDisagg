@@ -4,10 +4,10 @@ from numpy.testing import assert_approx_equal
 import pydisagg.transformations as tr
 
 transformations = [
-    tr.LogTransformation(),
-    tr.LogModifiedOddsTransformation(1),
-    tr.LogModifiedOddsTransformation(4),
-    tr.LogOddsTransformation(),
+    tr.Log(),
+    tr.LogModifiedOdds(1),
+    tr.LogModifiedOdds(4),
+    tr.LogOdds(),
 ]
 
 x_values = [0.02, 0.01, 0.5, 0.98]
