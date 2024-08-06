@@ -3,7 +3,7 @@ import pytest
 from numpy.testing import assert_approx_equal
 
 from pydisagg import models
-from pydisagg.DisaggModel import DisaggModel
+from pydisagg.models.disagg_model import DisaggModel
 
 # Need to test
 # from pydisagg.disaggregate import split_datapoint
