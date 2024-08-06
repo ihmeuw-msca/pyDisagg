@@ -4,16 +4,15 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import root_scalar
 
-from pydisagg.ParameterTransformation import ParameterTransformation
+from pydisagg.transformations import Transformation
 
 
 class DisaggModel:
-    """
-    Model for solving splitting/disaggregation problems
+    """Model for solving splitting/disaggregation problems
 
-    parameter_transformation is a class attribute that defines the generalized
+    transformation is a class attribute that defines the generalized
     proportionality assumption that we want to make
-    It should be a ParameterTransformation object which is callable, has an
+    It should be a Transformation object which is callable, has an
     inverse function, and has a derivative.
 
     Notes
@@ -28,16 +27,16 @@ class DisaggModel:
 
     """
 
-    def __init__(self, parameter_transformation: ParameterTransformation):
+    def __init__(self, transformation: Transformation):
         """Initializes a dissaggregation model
 
         Parameters
         ----------
-        parameter_transformation
+        transformation
             Transformation to apply to rate pattern values
 
         """
-        self.T = parameter_transformation
+        self.T = transformation
 
     def predict_rate(self, beta: float, rate_pattern: NDArray) -> NDArray:
         """Predicts the rate in each bucket

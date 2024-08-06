@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 from pandas import DataFrame
 
 from pydisagg.DisaggModel import DisaggModel
-from pydisagg.models import LogOdds_model
+from pydisagg.models import LogOddsModel
 
 
 def split_datapoint(
@@ -16,7 +16,7 @@ def split_datapoint(
     bucket_populations: NDArray,
     rate_pattern: NDArray,
     observed_total_se: Optional[float] = None,
-    model: Optional[DisaggModel] = LogOdds_model(),
+    model: Optional[DisaggModel] = LogOddsModel(),
     output_type: Literal["count", "rate"] = "count",
     normalize_pop_for_average_type_obs: bool = False,
     pattern_covariance: Optional[NDArray] = None,
@@ -46,7 +46,7 @@ def split_datapoint(
         Type of splitting to perform, whether to disaggregate and return the estimated total
         in each group, or estimate the rate per population unit.
     model : Optional[DisaggModel], optional
-        DisaggModel to use, by default LMO_model(1)
+        DisaggModel to use, by default LMOModel(1)
     normalize_pop_for_average_type_obs: bool = True
         Whether or not to normalize populations to sum to 1, this is appropriate when the output_type is rate
         and when the aggregated observation is an average--whether an aggregated rate
@@ -159,7 +159,7 @@ def split_dataframe(
     population_sizes: DataFrame,
     rate_patterns: DataFrame,
     use_se: Optional[bool] = False,
-    model: Optional[DisaggModel] = LogOdds_model(),
+    model: Optional[DisaggModel] = LogOddsModel(),
     output_type: Literal["count", "rate"] = "count",
     demographic_id_columns: Optional[list] = None,
     normalize_pop_for_average_type_obs: bool = False,
@@ -196,7 +196,7 @@ def split_dataframe(
         if set to True, then observation_group_membership_df must have an obs_se column
         , by default False
     model : Optional[DisaggModel], optional
-        DisaggModel to use for splitting, by default LogOdds_model()
+        DisaggModel to use for splitting, by default LogOddsModel()
     output_type: Literal['total','rate'], optional
         One of 'total' or 'rate'
         Type of splitting to perform, whether to disaggregate and return the estimated total

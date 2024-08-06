@@ -29,8 +29,8 @@ $$D_i = \hat f_i \cdot p_i $$
 For the current models in use, T is just a logarithm, and this assumes that each rate is some constant muliplied by the overall rate pattern level. Allowing a more general transformation T, such as a log-odds transformation, assumes multiplicativity in the associated odds, rather than the rate, and can produce better estimates statistically (potentially being a more realistic assumption in some cases) and practically, restricting the estimated rates to lie within a reasonable interval. 
 
 ## Current Package Capabilities and Models
-Currently, the multiplicative-in-rate model RateMultiplicativeModel with $T(x)=\log(x)$ and the Log Modified Odds model LMO_model(m) with $T(x)=\log(\frac{x}{1-x^{m}})$ are implemented. Note that the LMO_model with m=1 gives a multiplicative in odds model.
+Currently, the multiplicative-in-rate model RateMultiplicativeModel with $T(x)=\log(x)$ and the Log Modified Odds model LMOModel(m) with $T(x)=\log(\frac{x}{1-x^{m}})$ are implemented. Note that the LMOModel with m=1 gives a multiplicative in odds model.
 
 A useful (but slightly wrong) analogy is that the multiplicative-in-rate is to the multiplicative-in-odds model as ordinary least squares is to logistic regression in terms of the relationship between covariates and output (not in terms of anything like the likelihood)
 
-Increasing m in the model LMO_model(m) gives results that are more similar to the multiplicative-in-rate model currently in use, while preserving the property that rate estimates are bounded by 1. 
+Increasing m in the model LMOModel(m) gives results that are more similar to the multiplicative-in-rate model currently in use, while preserving the property that rate estimates are bounded by 1. 

@@ -44,9 +44,7 @@ class Log(Transformation):
 
 
 class LogModifiedOdds(Transformation):
-    """Log Modified odds transformation
-    T(x)=log(x/(1-x**a))
-    """
+    """Log Modified odds transformation T(x)=log(x/(1-x**a))"""
 
     def __init__(self, a: float) -> None:
         self.a = a
@@ -71,9 +69,7 @@ class LogModifiedOdds(Transformation):
 
 
 class LogOdds(Transformation):
-    """Log-odds transformation
-    T(x)=log(x/(1-x))
-    """
+    """Log-odds transformation T(x)=log(x/(1-x))"""
 
     def __call__(self, x: float_or_array) -> float_or_array:
         """Calls transformation function"""

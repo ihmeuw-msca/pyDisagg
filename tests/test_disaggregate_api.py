@@ -9,8 +9,8 @@ from pydisagg.disaggregate import split_datapoint
 
 model_list = [
     models.RateMultiplicativeModel(),
-    models.LogOdds_model(),
-    models.LMO_model(5),
+    models.LogOddsModel(),
+    models.LMOModel(5),
 ]
 
 

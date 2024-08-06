@@ -5,24 +5,20 @@ from typing import Optional
 import numpy as np
 from numpy.typing import NDArray
 
-from pydisagg import transformations
 from pydisagg.DisaggModel import DisaggModel
+from pydisagg.transformations import Log, LogModifiedOdds, LogOdds
 
 
 class RateMultiplicativeModel(DisaggModel):
-    """
-    Produces a DisaggModel using the log(rate) transformation with the exponent m.
-    This assumes that log(rate)=log(rate_pattern)+beta
+    """Produces a DisaggModel using the log(rate) transformation with the
+    exponent m. This assumes that log(rate)=log(rate_pattern)+beta
     resulting in the current multiplicative model after exponentiating
     Take exp(beta) to recover the multiplier in the model.
+
     """
 
-    def __init__(
-        self,
-    ):
-        super().__init__(
-            parameter_transformation=transformations.LogTransformation(),
-        )
+    def __init__(self) -> None:
+        super().__init__(transformation=Log())
 
     def fit_beta(
         self,
@@ -42,27 +38,15 @@ class RateMultiplicativeModel(DisaggModel):
         return beta_val
 
 
-class LMO_model(DisaggModel):
-    """
-    DisaggModel using the log-modified odds transformation with the exponent m.
-    """
+class LMOModel(DisaggModel):
+    """DisaggModel using the log-modified odds transformation with the exponent m."""
 
-    def __init__(self, m: float):
-        super().__init__(
-            parameter_transformation=transformations.LogModifiedOddsTransformation(
-                m
-            ),
-        )
+    def __init__(self, m: float) -> None:
+        super().__init__(transformation=LogModifiedOdds(m))
 
 
-class LogOdds_model(DisaggModel):
-    """
-    Produces an DisaggModel assuming multiplicativity in the odds
-    """
+class LogOddsModel(DisaggModel):
+    """Produces an DisaggModel assuming multiplicativity in the odds"""
 
-    def __init__(
-        self,
-    ):
-        super().__init__(
-            parameter_transformation=transformations.LogOddsTransformation(),
-        )
+    def __init__(self) -> None:
+        super().__init__(transformation=LogOdds())
