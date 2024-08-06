@@ -1,7 +1,5 @@
 """Module containing specific splitting models with transformations built in"""
 
-from typing import Optional
-
 import numpy as np
 from numpy.typing import NDArray
 
@@ -27,7 +25,7 @@ class RateMultiplicativeModel(DisaggModel):
         bucket_populations: NDArray,
         lower_guess: float = -50,
         upper_guess: float = 50,
-        verbose: Optional[int] = 0,
+        verbose: int = 0,
     ) -> None:
         """
         Custom fit_beta for this model, as we can do it without rootfinding.
