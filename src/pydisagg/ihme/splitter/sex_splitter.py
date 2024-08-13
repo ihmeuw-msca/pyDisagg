@@ -120,7 +120,7 @@ class SexSplitter(BaseModel):
         pattern = pattern[self.pattern.columns].copy()
         validate_index(pattern, self.pattern.index, name)
         validate_nonan(pattern, name)
-        validate_positive(pattern, [self.pattern.val_sd], name)
+        validate_positive(pattern, [self.pattern.val_sd], name, strict = False)
         data_with_pattern = self._merge_with_pattern(data, pattern)
         return data_with_pattern
 
