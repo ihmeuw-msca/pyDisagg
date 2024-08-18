@@ -7,6 +7,7 @@ from pandas import DataFrame
 from pydantic import BaseModel
 
 from pydisagg.disaggregate import split_datapoint
+from pydisagg.ihme.schema import Schema
 from pydisagg.ihme.validator import (
     validate_columns,
     validate_index,
@@ -19,7 +20,7 @@ from pydisagg.ihme.validator import (
 from pydisagg.models import LogOdds_model, RateMultiplicativeModel
 
 
-class AgeDataConfig(BaseModel):
+class AgeDataConfig(Schema):
     index: list[str]
     age_lwr: str
     age_upr: str
@@ -40,7 +41,7 @@ class AgeDataConfig(BaseModel):
         return list(set(base_columns))
 
 
-class AgePopulationConfig(BaseModel):
+class AgePopulationConfig(Schema):
     index: list[str]
     val: str
 
@@ -54,20 +55,8 @@ class AgePopulationConfig(BaseModel):
     def val_fields(self) -> list[str]:
         return ["val"]
 
-    def apply_prefix(self) -> dict[str, str]:
-        rename_map = {}
-        for field in self.val_fields:
-            new_field_val = self.prefix + (field_val := getattr(self, field))
-            rename_map[field_val] = new_field_val
-            setattr(self, field, new_field_val)
-        return rename_map
 
-    def remove_prefix(self) -> None:
-        for field in self.val_fields:
-            setattr(self, field, getattr(self, field).removeprefix(self.prefix))
-
-
-class AgePatternConfig(BaseModel):
+class AgePatternConfig(Schema):
     by: list[str]
     age_key: str
     age_lwr: str
@@ -99,18 +88,6 @@ class AgePatternConfig(BaseModel):
             "val",
             "val_sd",
         ]
-
-    def apply_prefix(self) -> dict[str, str]:
-        rename_map = {}
-        for field in self.val_fields:
-            new_field_val = self.prefix + (field_val := getattr(self, field))
-            rename_map[field_val] = new_field_val
-            setattr(self, field, new_field_val)
-        return rename_map
-
-    def remove_prefix(self) -> None:
-        for field in self.val_fields:
-            setattr(self, field, getattr(self, field).removeprefix(self.prefix))
 
 
 class AgeSplitter(BaseModel):
@@ -175,9 +152,7 @@ class AgeSplitter(BaseModel):
 
         validate_index(pattern, self.pattern.index, name)
         validate_nonan(pattern, name)
-        validate_positive(
-            pattern, [self.pattern.val_sd], name, strict=False
-        )
+        validate_positive(pattern, [self.pattern.val_sd], name, strict=False)
         validate_interval(
             pattern,
             self.pattern.age_lwr,
@@ -348,6 +323,10 @@ class AgeSplitter(BaseModel):
         model_instance = model_mapping[model]
 
         # If not propagating zeros,then positivity has to be strict
+        if self.population.prefix_status == "prefixed":
+            self.population.remove_prefix()
+        if self.pattern.prefix_status == "prefixed":
+            self.pattern.remove_prefix()
         data = self.parse_data(data, positive_strict=not propagate_zeros)
         data = self.parse_pattern(
             data, pattern, positive_strict=not propagate_zeros
