@@ -47,8 +47,8 @@ The `pyDisagg` package implements simple methods for data splitting into any set
 - An aggregated observation and uncertainty (for example, all-age prevalence with associated uncertainty)
 - Set of categories that were `aggregated' by the datapoint (e.g. which age categories were aggregated to get the prevalence)
 - Frequency pattern most relevant to the datapoint (e.g. age distribution of study or location relevant to the datapoint)
-- Global pattern for observable of intereset (e.g. global prevalence by age)
-the `pyDisagg` package produces split estimates into the specified bins for futher processing. 
+- Global pattern for observable of interest (e.g. global prevalence by age)
+the `pyDisagg` package produces split estimates into the specified bins for further processing. 
 
 # Statement of Need
 
