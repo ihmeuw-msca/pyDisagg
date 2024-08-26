@@ -1,23 +1,26 @@
 from typing import Any
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 from pandas import DataFrame
 from pydantic import BaseModel
 from scipy.special import expit
 from typing import Literal
 from pydisagg.disaggregate import split_datapoint
-from pydisagg.models import RateMultiplicativeModel, LogOdds_model
+from pydisagg.ihme.schema import Schema
 from pydisagg.ihme.validator import (
     validate_columns,
     validate_index,
+    validate_noindexdiff,
     validate_nonan,
     validate_positive,
     validate_noindexdiff,
     validate_realnumber,
 )
+from pydisagg.models import RateMultiplicativeModel
 
 
-class SexPatternConfig(BaseModel):
+class SexPatternConfig(Schema):
     by: list[str]
     draws: list[str] = []
     val: str = "ratio_f_to_m"
@@ -43,7 +46,7 @@ class SexPatternConfig(BaseModel):
         ]
 
 
-class SexPopulationConfig(BaseModel):
+class SexPopulationConfig(Schema):
     index: list[str]
     sex: str
     sex_m: str | int
@@ -59,7 +62,7 @@ class SexPopulationConfig(BaseModel):
         return ["val"]
 
 
-class SexDataConfig(BaseModel):
+class SexDataConfig(Schema):
     index: list[str]
     val: str
     val_sd: str
