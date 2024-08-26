@@ -101,6 +101,7 @@ class SexSplitter(BaseModel):
     def parse_data(self, data: DataFrame) -> DataFrame:
         name = "While parsing data"
 
+        # Validate core columns first
         try:
             validate_columns(data, self.data.columns, name)
         except KeyError as e:
@@ -108,7 +109,10 @@ class SexSplitter(BaseModel):
                 f"{name}: Missing columns in the input data. Details:\n{e}"
             )
 
-        data = data[self.data.columns].copy()
+        if self.population.sex not in data.columns:
+            raise KeyError(
+                f"{name}: Missing column '{self.population.sex}' in the input data."
+            )
 
         try:
             validate_index(data, self.data.index, name)
