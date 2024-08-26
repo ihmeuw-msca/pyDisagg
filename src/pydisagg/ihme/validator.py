@@ -22,7 +22,9 @@ def validate_index(df: DataFrame, index: list[str], name: str) -> None:
         df[df[index].duplicated()][index]
     ).to_list()
     if duplicated_index:
-        error_message = f"{name} has duplicated index with {len(duplicated_index)} indices \n"
+        error_message = (
+            f"{name} has duplicated index with {len(duplicated_index)} indices \n"
+        )
         error_message += f"Index columns: ({', '.join(index)})\n"
         if len(duplicated_index) > 5:
             error_message += "First 5: \n"
@@ -34,9 +36,7 @@ def validate_index(df: DataFrame, index: list[str], name: str) -> None:
 def validate_nonan(df: DataFrame, name: str) -> None:
     nan_columns = df.columns[df.isna().any(axis=0)].to_list()
     if nan_columns:
-        error_message = (
-            f"{name} has NaN values in {len(nan_columns)} columns. \n"
-        )
+        error_message = f"{name} has NaN values in {len(nan_columns)} columns. \n"
         error_message += f"Columns with NaN values: {', '.join(nan_columns)}\n"
         if len(nan_columns) > 5:
             error_message += "First 5 columns with NaN values: \n"
@@ -80,9 +80,7 @@ def validate_noindexdiff(
     missing_index = index_ref.difference(index).to_list()
 
     if missing_index:
-        error_message = (
-            f"Missing {name} info for {len(missing_index)} indices \n"
-        )
+        error_message = f"Missing {name} info for {len(missing_index)} indices \n"
         error_message += f"Index columns: ({', '.join(index.names)})\n"
         if len(missing_index) > 5:
             error_message += "First 5: \n"
@@ -155,9 +153,7 @@ def validate_realnumber(df: DataFrame, columns: list[str], name: str) -> None:
     invalid = [
         col
         for col in columns
-        if not df[col]
-        .apply(lambda x: isinstance(x, (int, float)) and x != 0)
-        .all()
+        if not df[col].apply(lambda x: isinstance(x, (int, float)) and x != 0).all()
     ]
 
     if invalid:
