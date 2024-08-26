@@ -51,6 +51,91 @@ def valid_data():
 
 
 @pytest.fixture
+def valid_pattern():
+    return pd.DataFrame(
+        {
+            "age_group_id": [1, 1, 2, 2],
+            "year_id": [2000, 2000, 2001, 2001],
+            "pattern_val": [1.5, 2.0, 1.2, 1.8],
+            "pattern_val_sd": [0.1, 0.2, 0.15, 0.25],
+        }
+    )
+
+
+@pytest.fixture
+def pattern_with_draws():
+    return pd.DataFrame(
+        {
+            "age_group_id": [1, 1, 2, 2],
+            "year_id": [2000, 2000, 2001, 2001],
+            "draw_1": [1.4, 1.9, 1.3, 1.7],
+            "draw_2": [1.6, 2.1, 1.1, 1.9],
+            "draw_3": [1.5, 2.0, 1.2, 1.8],
+        }
+    )
+
+
+@pytest.fixture
+def invalid_pattern_missing_columns():
+    return pd.DataFrame(
+        {
+            "age_group_id": [1, 1, 2, 2],
+            "year_id": [2000, 2000, 2001, 2001],
+            "pattern_val": [1.5, 2.0, 1.2, 1.8],
+            # Missing pattern_val_sd
+        }
+    )
+
+
+@pytest.fixture
+def duplicated_index_pattern():
+    return pd.DataFrame(
+        {
+            "age_group_id": [1, 1, 1, 1],
+            "year_id": [2000, 2000, 2000, 2000],
+            "pattern_val": [1.5, 2.0, 1.2, 1.8],
+            "pattern_val_sd": [0.1, 0.2, 0.15, 0.25],
+        }
+    )
+
+
+@pytest.fixture
+def pattern_with_nan():
+    return pd.DataFrame(
+        {
+            "age_group_id": [1, 1, 2, 2],
+            "year_id": [2000, 2000, 2001, 2001],
+            "pattern_val": [1.5, None, 1.2, 1.8],
+            "pattern_val_sd": [0.1, 0.2, None, 0.25],
+        }
+    )
+
+
+@pytest.fixture
+def pattern_with_non_positive():
+    return pd.DataFrame(
+        {
+            "age_group_id": [1, 1, 2, 2],
+            "year_id": [2000, 2000, 2001, 2001],
+            "pattern_val": [-1.5, 0, -1.2, 0],
+            "pattern_val_sd": [0.1, 0.2, 0.15, 0.25],
+        }
+    )
+
+
+@pytest.fixture
+def pattern_with_invalid_realnumbers():
+    return pd.DataFrame(
+        {
+            "age_group_id": [1, 1, 2, 2],
+            "year_id": [2000, 2000, 2001, 2001],
+            "pattern_val": [1.5, 2.0, 1.2, 1.8],
+            "pattern_val_sd": [0, 0.2, -0.15, 0.25],
+        }
+    )
+
+
+@pytest.fixture
 def sex_splitter(sex_data_config, sex_pattern_config, sex_population_config):
     return SexSplitter(
         data=sex_data_config,
@@ -60,8 +145,6 @@ def sex_splitter(sex_data_config, sex_pattern_config, sex_population_config):
 
 
 # Step 2: Write Tests for parse_data
-
-
 def test_parse_data_missing_columns(sex_splitter, valid_data):
     """Test parse_data raises an error when columns are missing."""
     invalid_data = valid_data.drop(columns=["val"])
@@ -106,3 +189,6 @@ def test_parse_data_invalid_sex_rows(sex_splitter, valid_data):
     invalid_sex_data.loc[0, "sex_id"] = 1  # Setting sex_id to sex_m
     with pytest.raises(ValueError, match="Invalid rows"):
         sex_splitter.parse_data(invalid_sex_data)
+
+
+# Step 3: Write Tests for parse_pattern
