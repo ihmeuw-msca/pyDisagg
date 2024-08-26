@@ -1,62 +1,62 @@
 """Module containing high level api for splitting"""
 
-from typing import Literal, Optional, Union
+from typing import Literal
 
 import numpy as np
 import pandas as pd
-from numpy.typing import NDArray
-from pandas import DataFrame
 
-from pydisagg.DisaggModel import DisaggModel
-from pydisagg.models import LogOdds_model
+from pydisagg.models import DisaggModel, LogOddsModel
+from pydisagg.typing import DataFrame, NDArray
 
 
 def split_datapoint(
     observed_total: float,
     bucket_populations: NDArray,
     rate_pattern: NDArray,
-    observed_total_se: Optional[float] = None,
-    model: Optional[DisaggModel] = LogOdds_model(),
+    observed_total_se: float | None = None,
+    model: DisaggModel = LogOddsModel(),
     output_type: Literal["count", "rate"] = "count",
     normalize_pop_for_average_type_obs: bool = False,
-    pattern_covariance: Optional[NDArray] = None,
-) -> Union[tuple, NDArray]:
+    pattern_covariance: NDArray | None = None,
+) -> tuple | NDArray:
     """Disaggregate a datapoint using the model given as input.
     Defaults to assuming multiplicativity in the odds ratio
 
-    If output_type=='total', then this outputs estimates for the observed amount in each group
-        such that the sum of the point estimates equals the original total
-    If output_type=='rate', then this estimates rates for each group
-        (and doesn't multiply the rates out by the population)
+    * If output_type=='total', then this outputs estimates for the observed
+      amount in each group such that the sum of the point estimates equals the
+      original total
+    * If output_type=='rate', then this estimates rates for each group
+      (and doesn't multiply the rates out by the population)
 
 
     Parameters
     ----------
-    observed_total : float
+    observed_total
         aggregated observed_total across all buckets, value to be split
-    bucket_populations : NDArray
+    bucket_populations
         population size in each bucket
-    rate_pattern : NDArray
+    rate_pattern
         Rate Pattern to use, should be an estimate of the rates in each bucket
             that we want to rescale
-    observed_total_se : Optional[float], optional
+    observed_total_se
         standard error of observed_total, by default None
-    output_type: Literal['total','rate'], optional
+    output_type
         One of 'total' or 'rate'
-        Type of splitting to perform, whether to disaggregate and return the estimated total
-        in each group, or estimate the rate per population unit.
-    model : Optional[DisaggModel], optional
-        DisaggModel to use, by default LMO_model(1)
-    normalize_pop_for_average_type_obs: bool = True
-        Whether or not to normalize populations to sum to 1, this is appropriate when the output_type is rate
-        and when the aggregated observation is an average--whether an aggregated rate
-        or a mean of a continuous measure over different groups
-    pattern_covariance: Optional[NDArray], optional
+        Type of splitting to perform, whether to disaggregate and return the
+        estimated total in each group, or estimate the rate per population unit.
+    model
+        DisaggModel to use, by default LMOModel(1)
+    normalize_pop_for_average_type_obs
+        Whether or not to normalize populations to sum to 1, this is appropriate
+        when the output_type is rate and when the aggregated observation is an
+        average--whether an aggregated rate or a mean of a continuous measure
+        over different groups
+    pattern_covariance
         2d Numpy array with covariance matrix of pattern.
 
     Returns
     -------
-    Union[Tuple,NDArray]
+    tuple | NDArray
         If standard errors are available, this will return the tuple
             (
                 estimate_in_each_bucket,
@@ -70,6 +70,7 @@ def split_datapoint(
     If no observed_total_se is given, returns point estimates
     If observed_total_se is given, then returns a tuple
         (point_estimate,standard_error)
+
     """
     if output_type not in ["count", "rate"]:
         raise ValueError("output_type must be one of either 'total' or 'rate'")
@@ -158,58 +159,63 @@ def split_dataframe(
     observation_group_membership_df: DataFrame,
     population_sizes: DataFrame,
     rate_patterns: DataFrame,
-    use_se: Optional[bool] = False,
-    model: Optional[DisaggModel] = LogOdds_model(),
+    use_se: bool = False,
+    model: DisaggModel = LogOddsModel(),
     output_type: Literal["count", "rate"] = "count",
-    demographic_id_columns: Optional[list] = None,
+    demographic_id_columns: list | None = None,
     normalize_pop_for_average_type_obs: bool = False,
 ) -> DataFrame:
-    """Disaggregate datapoints and pivots observations into estimates for each group per demographic id
+    """Disaggregate datapoints and pivots observations into estimates for each
+    group per demographic id
 
-    If output_type=='total', then this outputs estimates for the observed amount in each group
-        such that the sum of the point estimates equals the original total
-    If output_type=='rate', then this estimates rates for each group
-        (and doesn't multiply the rates out by the population)
+    * If output_type=='total', then this outputs estimates for the observed
+      amount in each group such that the sum of the point estimates equals the
+      original total
+    * If output_type=='rate', then this estimates rates for each group
+      (and doesn't multiply the rates out by the population)
 
     Parameters
     ----------
-    groups_to_split_into : list
+    groups_to_split_into
         list of groups to disaggregate observations into
-    observation_group_membership_df : DataFrame
+    observation_group_membership_df
         Dataframe with columns demographic_id, pattern_id, obs,
         and columns for each of the groups_to_split_into
         with dummy variables that represent whether or not
         each group is included in the observations for that row.
-        This also optionally contains a obs_se column which will be used if use_se is True
-        demographic_id represents the population that the observation comes from
-        pattern_id gives the baseline that should be used for splitting
-    population_sizes : DataFrame
+        This also optionally contains a obs_se column which will be used if
+        use_se is True. demographic_id represents the population that the
+        observation comes from pattern_id gives the baseline that should be used
+        for splitting
+    population_sizes
         Dataframe with demographic_id as the index containing the
         size of each group within each population (given the demographic_id)
         INDEX FOR THIS DATAFRAME MUST BE DEMOGRAPHIC ID(PANDAS MULTIINDEX OK)
-    rate_patterns : DataFrame
+    rate_patterns
         dataframe with pattern_id as the index, and columns
-        for each of the groups_to_split where the entries represent the rate pattern
-        in the given group to use for pydisagg.
-    use_se : Optional[bool], optional
+        for each of the groups_to_split where the entries represent the rate
+        pattern in the given group to use for pydisagg.
+    use_se
         whether or not to report standard errors along with estimates
-        if set to True, then observation_group_membership_df must have an obs_se column
-        , by default False
-    model : Optional[DisaggModel], optional
-        DisaggModel to use for splitting, by default LogOdds_model()
-    output_type: Literal['total','rate'], optional
+        if set to True, then observation_group_membership_df must have an obs_se
+        column, by default False
+    model
+        DisaggModel to use for splitting, by default LogOddsModel()
+    output_type
         One of 'total' or 'rate'
-        Type of splitting to perform, whether to disaggregate and return the estimated total
-        in each group, or estimate the rate per population unit.
-    demographic_id_columns : Optional[list]
+        Type of splitting to perform, whether to disaggregate and return the
+        estimated total in each group, or estimate the rate per population unit.
+    demographic_id_columns
         Columns to use as demographic_id
         Defaults to None. If None is given, then we assume
-        that there is a already a demographic id column that matches the index in population_sizes.
-        Otherwise, we create a new demographic_id column, zipping the columns chosen into tuples
-    normalize_pop_for_average_type_obs: bool = True
-        Whether or not to normalize populations to sum to 1, this is appropriate when the output_type is rate
-        and when the aggregated observation is an average--whether an aggregated rate
-        or a mean of a continuous measure over different groups
+        that there is a already a demographic id column that matches the index
+        in population_sizes. Otherwise, we create a new demographic_id column,
+        zipping the columns chosen into tuples
+    normalize_pop_for_average_type_obs
+        Whether or not to normalize populations to sum to 1, this is appropriate
+        when the output_type is rate and when the aggregated observation is an
+        average--whether an aggregated rate or a mean of a continuous measure
+        over different groups
 
     Returns
     -------
@@ -218,6 +224,7 @@ def split_dataframe(
             two columns for each of the groups_to_split_into, giving the estimate
         If use_se==True, then has a nested column indexing, where both the
             point estimate and standard error for the estimate for each group is given.
+
     """
     if (normalize_pop_for_average_type_obs is True) and (
         output_type == "count"

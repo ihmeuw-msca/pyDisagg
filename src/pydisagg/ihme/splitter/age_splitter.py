@@ -17,7 +17,7 @@ from pydisagg.ihme.validator import (
     validate_positive,
     validate_realnumber,
 )
-from pydisagg.models import LogOdds_model, RateMultiplicativeModel
+from pydisagg.models import LogOddsModel, RateMultiplicativeModel
 
 
 class AgeDataConfig(BaseModel):
@@ -364,7 +364,7 @@ class AgeSplitter(BaseModel):
         """
         model_mapping = {
             "rate": RateMultiplicativeModel(),
-            "logodds": LogOdds_model(),
+            "logodds": LogOddsModel(),
         }
 
         if model not in model_mapping:
