@@ -130,3 +130,35 @@ def validate_pat_coverage(
         raise ValueError(
             f"{name} pattern does not cover the data lower and/or upper bound"
         )
+
+
+def validate_realnumber(df: DataFrame, columns: list[str], name: str) -> None:
+    """
+    Validates that observation values in columns are real numbers and non-zero.
+
+    Parameters
+    ----------
+    df : DataFrame
+        The DataFrame containing the data to validate.
+    columns : list of str
+        A list of column names to validate within the DataFrame.
+    name : str
+        A string representing the name of the data or dataset
+        (used for constructing error messages).
+
+    Raises
+    ------
+    ValueError
+        If any column contains values that are not real numbers or are zero.
+    """
+    # Check for non-real or zero values in the specified columns
+    invalid = [
+        col
+        for col in columns
+        if not df[col]
+        .apply(lambda x: isinstance(x, (int, float)) and x != 0)
+        .all()
+    ]
+
+    if invalid:
+        raise ValueError(f"{name} has non-real or zero values in: {invalid}")

@@ -347,7 +347,7 @@ class AgeSplitter(BaseModel):
 
         model_instance = model_mapping[model]
 
-        # If not propagating zeros,then positivity has to be strict
+        # If not propagating zeros, then positivity has to be strict
         data = self.parse_data(data, positive_strict=not propagate_zeros)
         data = self.parse_pattern(
             data, pattern, positive_strict=not propagate_zeros
@@ -358,6 +358,10 @@ class AgeSplitter(BaseModel):
 
         # where split happens
         data["age_split_result"], data["age_split_result_se"] = np.nan, np.nan
+        data["age_split"] = (
+            0  # Indicate that the row was not split by age initially
+        )
+
         if propagate_zeros is True:
             data_zero = data[
                 (data[self.data.val] == 0)
@@ -367,6 +371,7 @@ class AgeSplitter(BaseModel):
             # Manually split zero values
             data_zero["age_split_result"] = 0.0
             data_zero["age_split_result_se"] = 0.0
+            data_zero["n_ages_being_split_into"] = 1
 
             # Warn for all zero propagation
             num_zval = (data[self.data.val] == 0).sum()
@@ -385,7 +390,7 @@ class AgeSplitter(BaseModel):
                 )
             if num_overlap > 0:
                 warnings.warn(
-                    f"{num_overlap} zeros produced from this were overlappingf"
+                    f"{num_overlap} zeros produced from this were overlapping"
                 )
 
         data_group = data.groupby(self.data.index)
@@ -393,6 +398,8 @@ class AgeSplitter(BaseModel):
             pop_normalize = False
         elif output_type == "rate":
             pop_normalize = True
+
+        n_ages_being_split_into = []
 
         for key, data_sub in data_group:
             split_result, SE = split_datapoint(
@@ -412,13 +419,20 @@ class AgeSplitter(BaseModel):
             index = data_group.groups[key]
             data.loc[index, "age_split_result"] = split_result
             data.loc[index, "age_split_result_se"] = SE
+            # Check if the split values are different from the original values
+            if not np.allclose(split_result, data_sub[self.data.val].iloc[0]):
+                data.loc[index, "age_split"] = (
+                    1  # Indicate that the row was split by age
+                )
+            n_ages_being_split_into.extend([len(index)] * len(index))
+
         if propagate_zeros is True:
             data = pd.concat([data, data_zero])
+            n_ages_being_split_into.extend([1] * len(data_zero))
 
         self.pattern.remove_prefix()
         self.population.remove_prefix()
 
-        # Something like this can be implemented for sample size split
-        # data["split_"+ self.data.sample_size] = data[self.data.sample_size] * data[self.population.val + "_proportion"]
+        data["n_ages_being_split_into"] = n_ages_being_split_into
 
         return data
