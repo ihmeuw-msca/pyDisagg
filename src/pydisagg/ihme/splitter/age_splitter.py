@@ -175,9 +175,7 @@ class AgeSplitter(BaseModel):
 
         validate_index(pattern, self.pattern.index, name)
         validate_nonan(pattern, name)
-        validate_positive(
-            pattern, [self.pattern.val_sd], name, strict=False
-        )
+        validate_positive(pattern, [self.pattern.val_sd], name, strict=False)
         validate_interval(
             pattern,
             self.pattern.age_lwr,
