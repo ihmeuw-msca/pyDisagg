@@ -87,7 +87,8 @@ def splitter(data, pattern, population):
         val_sd="val_sd",
     )
     population_config = AgePopulationConfig(
-        index=["sex_id", "location_id", "age_group_id", "year_id"], val="population"
+        index=["sex_id", "location_id", "age_group_id", "year_id"],
+        val="population",
     )
     return AgeSplitter(
         data=data_config, pattern=pattern_config, population=population_config
@@ -162,7 +163,9 @@ def test_parse_pattern_missing_columns(splitter, data, pattern):
         with pytest.raises(ValueError, match="Must provide draws for pattern"):
             splitter.parse_pattern(data, pattern, positive_strict=True)
     else:
-        parsed_pattern = splitter.parse_pattern(data, pattern, positive_strict=True)
+        parsed_pattern = splitter.parse_pattern(
+            data, pattern, positive_strict=True
+        )
         assert "val" in parsed_pattern.columns
         assert "val_sd" in parsed_pattern.columns
 
@@ -213,7 +216,9 @@ def test_parse_pattern_nan_values(splitter, data, pattern):
     pattern.loc[0, "val"] = np.nan
 
     # Manually check if NaN is correctly set
-    assert pd.isna(pattern.loc[0, "val"]), "NaN not correctly set in 'val' column"
+    assert pd.isna(
+        pattern.loc[0, "val"]
+    ), "NaN not correctly set in 'val' column"
 
     # Ensure validate_nonan is called in parse_pattern
     with pytest.raises(ValueError, match="has NaN values"):
