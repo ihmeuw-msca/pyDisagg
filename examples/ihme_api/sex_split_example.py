@@ -61,19 +61,27 @@ data_config = SexDataConfig(
 )
 
 pattern_config = SexPatternConfig(
-    by=["year_id"], val="pat_val", val_sd="pat_val_sd", model="logodds"
+    by=["year_id"],
+    val="pat_val",
+    val_sd="pat_val_sd",
 )
 
 population_config = SexPopulationConfig(
     index=["year_id"], sex="sex_id", sex_m=1, sex_f=2, val="population"
 )
+
 sex_splitter = SexSplitter(
     data=data_config, pattern=pattern_config, population=population_config
 )
 
-
-result_df = sex_splitter.split(
-    data=data_df, pattern=pattern_df, population=population_df
-)
-print("Split Data:")
-print(result_df)
+try:
+    result_df = sex_splitter.split(
+        data=data_df,
+        pattern=pattern_df,
+        population=population_df,
+        model="logodds",
+    )
+    print("Split Data:")
+    print(result_df)
+except ValueError as e:
+    print(f"Error: {e}")

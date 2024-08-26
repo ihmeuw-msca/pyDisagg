@@ -13,13 +13,13 @@ from pydisagg.ihme.validator import (
     validate_nonan,
     validate_positive,
     validate_noindexdiff,
+    validate_realnumber,
 )
 
 
 class SexPatternConfig(BaseModel):
     by: list[str]
     draws: list[str] = []
-    model: Literal["rate", "logodds"] = "rate"
     val: str = "ratio_f_to_m"
     val_sd: str = "ratio_f_to_m_se"
     prefix: str = "sex_pat_"
@@ -93,55 +93,136 @@ class SexSplitter(BaseModel):
         ).dropna()
         return data_with_pattern
 
-    def parse_data(self, data: DataFrame) -> DataFrame:
-        name = "When parsing, data"
-        validate_columns(data, self.data.columns, name)
-        data = data[self.data.columns].copy()
-        validate_index(data, self.data.index, name)
-        validate_nonan(data, name)
-        validate_positive(data, [self.data.val_sd], name)
-        return data
-
-    def parse_pattern(self, data: DataFrame, pattern: DataFrame) -> DataFrame:
-        name = "When parsing, pattern"
-        if not all(
-            col in pattern.columns
-            for col in [self.pattern.val, self.pattern.val_sd]
-        ):
-            if not self.pattern.draws:
-                raise ValueError(
-                    "Must provide draws for pattern if pattern.val and "
-                    "pattern.val_sd are not available."
-                )
-            validate_columns(pattern, self.pattern.draws, name)
-            pattern[self.pattern.val] = pattern[self.pattern.draws].mean(axis=1)
-            pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(
-                axis=1
-            )
-
-        validate_columns(pattern, self.pattern.columns, name)
-        pattern = pattern[self.pattern.columns].copy()
-        validate_index(pattern, self.pattern.index, name)
-        validate_nonan(pattern, name)
-        validate_positive(pattern, [self.pattern.val_sd], name)
-        data_with_pattern = self._merge_with_pattern(data, pattern)
-        return data_with_pattern
-
     def get_population_by_sex(self, population, sex_value):
         return population[population[self.population.sex] == sex_value][
             self.population.index + [self.population.val]
         ].copy()
 
+    def parse_data(self, data: DataFrame) -> DataFrame:
+        name = "While parsing data"
+
+        try:
+            validate_columns(data, self.data.columns, name)
+        except KeyError as e:
+            raise KeyError(
+                f"{name}: Missing columns in the input data. Details:\n{e}"
+            )
+
+        data = data[self.data.columns].copy()
+
+        try:
+            validate_index(data, self.data.index, name)
+        except ValueError as e:
+            raise ValueError(f"{name}: Duplicated index found. Details:\n{e}")
+
+        try:
+            validate_nonan(data, name)
+        except ValueError as e:
+            raise ValueError(f"{name}: NaN values found. Details:\n{e}")
+
+        try:
+            validate_positive(data, [self.data.val, self.data.val_sd], name)
+        except ValueError as e:
+            raise ValueError(
+                f"{name}: Non-positive values found in 'val' or 'val_sd'. Details:\n{e}"
+            )
+
+        # Validate that no rows have sex_id equal to sex_m or sex_f
+        invalid_sex_rows = data[
+            data[self.population.sex].isin(
+                [self.population.sex_m, self.population.sex_f]
+            )
+        ]
+        if not invalid_sex_rows.empty:
+            raise ValueError(
+                f"{name}: The input data contains rows where the '{self.population.sex}' column "
+                f"is equal to '{self.population.sex_m}' or '{self.population.sex_f}'. "
+                f"This is not allowed in the pre-split data. \n"
+                f"Invalid rows:\n{invalid_sex_rows.to_string(index=False)}"
+            )
+
+        return data
+
+    def parse_pattern(
+        self, data: DataFrame, pattern: DataFrame, model: str
+    ) -> DataFrame:
+        name = "While parsing pattern"
+
+        try:
+            if not all(
+                col in pattern.columns
+                for col in [self.pattern.val, self.pattern.val_sd]
+            ):
+                if not self.pattern.draws:
+                    raise ValueError(
+                        f"{name}: Must provide draws for pattern if pattern.val and "
+                        "pattern.val_sd are not available."
+                    )
+                validate_columns(pattern, self.pattern.draws, name)
+                pattern[self.pattern.val] = pattern[self.pattern.draws].mean(
+                    axis=1
+                )
+                pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(
+                    axis=1
+                )
+
+            validate_columns(pattern, self.pattern.columns, name)
+        except KeyError as e:
+            raise KeyError(
+                f"{name}: Missing columns in the pattern. Details:\n{e}"
+            )
+
+        pattern = pattern[self.pattern.columns].copy()
+
+        try:
+            validate_index(pattern, self.pattern.index, name)
+        except ValueError as e:
+            raise ValueError(
+                f"{name}: Duplicated index found in the pattern. Details:\n{e}"
+            )
+
+        try:
+            validate_nonan(pattern, name)
+        except ValueError as e:
+            raise ValueError(
+                f"{name}: NaN values found in the pattern. Details:\n{e}"
+            )
+
+        if model == "rate":
+            try:
+                validate_positive(
+                    pattern, [self.pattern.val, self.pattern.val_sd], name
+                )
+            except ValueError as e:
+                raise ValueError(
+                    f"{name}: Non-positive values found in 'val' or 'val_sd'. Details:\n{e}"
+                )
+        elif model == "logodds":
+            try:
+                validate_realnumber(pattern, [self.pattern.val_sd], name)
+            except ValueError as e:
+                raise ValueError(
+                    f"{name}: Invalid real number values found. Details:\n{e}"
+                )
+
+        data_with_pattern = self._merge_with_pattern(data, pattern)
+        return data_with_pattern
+
     def parse_population(
         self, data: DataFrame, population: DataFrame
     ) -> DataFrame:
-        name = "When parsing, population"
-        validate_columns(population, self.population.columns, name)
+        name = "While parsing population"
+
+        try:
+            validate_columns(population, self.population.columns, name)
+        except KeyError as e:
+            raise KeyError(
+                f"{name}: Missing columns in the population data. Details:\n{e}"
+            )
 
         male_population = self.get_population_by_sex(
             population, self.population.sex_m
         )
-
         female_population = self.get_population_by_sex(
             population, self.population.sex_f
         )
@@ -156,14 +237,33 @@ class SexSplitter(BaseModel):
         data_with_population = self._merge_with_population(
             data, male_population, "m_pop"
         )
-
         data_with_population = self._merge_with_population(
             data_with_population, female_population, "f_pop"
         )
 
-        validate_columns(data_with_population, ["m_pop", "f_pop"], name)
-        validate_nonan(data_with_population, name)
-        validate_noindexdiff(data, data_with_population, self.data.index, name)
+        try:
+            validate_columns(data_with_population, ["m_pop", "f_pop"], name)
+        except KeyError as e:
+            raise KeyError(
+                f"{name}: Missing population columns after merging. Details:\n{e}"
+            )
+
+        try:
+            validate_nonan(data_with_population, name)
+        except ValueError as e:
+            raise ValueError(
+                f"{name}: NaN values found in the population data. Details:\n{e}"
+            )
+
+        try:
+            validate_noindexdiff(
+                data, data_with_population, self.data.index, name
+            )
+        except ValueError as e:
+            raise ValueError(
+                f"{name}: Index differences found between data and population. Details:\n{e}"
+            )
+
         return data_with_population
 
     def _merge_with_population(
@@ -183,11 +283,11 @@ class SexSplitter(BaseModel):
         data: DataFrame,
         pattern: DataFrame,
         population: DataFrame,
-        output_type: str = "rate",
+        model: Literal["rate", "logodds"] = "rate",
+        output_type: Literal["rate", "count"] = "rate",
     ) -> DataFrame:
-        model = self.pattern.model
         data = self.parse_data(data)
-        data = self.parse_pattern(data, pattern)
+        data = self.parse_pattern(data, pattern, model)
         data = self.parse_population(data, population)
 
         if output_type == "count":
