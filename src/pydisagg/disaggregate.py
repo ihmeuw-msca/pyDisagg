@@ -290,4 +290,3 @@ def split_dataframe(
         )
 
     return result
-    return result
