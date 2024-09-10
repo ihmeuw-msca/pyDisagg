@@ -68,10 +68,7 @@ class CatPatternConfig(Schema):
     @property
     def columns(self) -> list[str]:
         return list(
-            set(
-                self.match
-                + [self.target, self.sub_target, self.val, self.val_sd]
-            )
+            set(self.match + [self.target, self.sub_target, self.val, self.val_sd])
         )
 
 
@@ -83,7 +80,7 @@ class CatPopulationConfig(Schema):
     prefix: str = "cat_pop_"
 
 
-class SexSplitter(BaseModel):
+class CatSplitter(BaseModel):
     data: CatDataConfig
     pattern: CatPatternConfig
     population: CatPopulationConfig
@@ -101,9 +98,7 @@ class SexSplitter(BaseModel):
                 "Match criteria in the population must be a subset of the data and the pattern"
             )
 
-    def create_ref_return_df(
-        self, data: DataFrame
-    ) -> tuple[DataFrame, DataFrame]:
+    def create_ref_return_df(self, data: DataFrame) -> tuple[DataFrame, DataFrame]:
         """
         Create and return two DataFrames: one with all original columns, and another with only relevant columns.
 
@@ -144,9 +139,7 @@ class SexSplitter(BaseModel):
         try:
             validate_columns(data, self.data.columns, name)
         except KeyError as e:
-            raise KeyError(
-                f"{name}: Missing columns in the input data. Details:\n{e}"
-            )
+            raise KeyError(f"{name}: Missing columns in the input data. Details:\n{e}")
 
         if self.population.target not in data.columns:
             raise KeyError(
@@ -189,18 +182,12 @@ class SexSplitter(BaseModel):
                         "pattern.val_sd are not available."
                     )
                 validate_columns(pattern, self.pattern.draws, name)
-                pattern[self.pattern.val] = pattern[self.pattern.draws].mean(
-                    axis=1
-                )
-                pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(
-                    axis=1
-                )
+                pattern[self.pattern.val] = pattern[self.pattern.draws].mean(axis=1)
+                pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(axis=1)
 
             validate_columns(pattern, self.pattern.columns, name)
         except KeyError as e:
-            raise KeyError(
-                f"{name}: Missing columns in the pattern. Details:\n{e}"
-            )
+            raise KeyError(f"{name}: Missing columns in the pattern. Details:\n{e}")
 
         try:
             validate_index(pattern, self.pattern.match, name)
@@ -212,9 +199,7 @@ class SexSplitter(BaseModel):
         try:
             validate_nonan(pattern, name)
         except ValueError as e:
-            raise ValueError(
-                f"{name}: NaN values found in the pattern. Details:\n{e}"
-            )
+            raise ValueError(f"{name}: NaN values found in the pattern. Details:\n{e}")
 
         if model == "rate":
             try:
@@ -245,9 +230,7 @@ class SexSplitter(BaseModel):
 
         return data_with_pattern
 
-    def parse_population(
-        self, data: DataFrame, population: DataFrame
-    ) -> DataFrame:
+    def parse_population(self, data: DataFrame, population: DataFrame) -> DataFrame:
         name = "While parsing population"
 
         # Step 1: Validate population columns
@@ -258,20 +241,19 @@ class SexSplitter(BaseModel):
                 f"{name}: Missing columns in the population data. Details:\n{e}"
             )
 
-        # Step 2: Get male and female populations and rename columns
-        male_population = self.get_population_by_sex(
-            population, self.population.sex_m
-        )
+        # Step 2: Get all the population data for a given target and match
+        # we have target and sub_target in the population data, e.g. target = state, sub_target = county
+        # so for each target, we want to group the sub targets and get a relative proportion of the population
+        # We should probably do this for target-match combination so that we dont have to recalculate the proportions
+
+        ### Progress so far
+        male_population = self.get_population_by_sex(population, self.population.sex_m)
         female_population = self.get_population_by_sex(
             population, self.population.sex_f
         )
 
-        male_population.rename(
-            columns={self.population.val: "m_pop"}, inplace=True
-        )
-        female_population.rename(
-            columns={self.population.val: "f_pop"}, inplace=True
-        )
+        male_population.rename(columns={self.population.val: "m_pop"}, inplace=True)
+        female_population.rename(columns={self.population.val: "f_pop"}, inplace=True)
 
         # Step 3: Merge population data with main data
         data_with_population = self._merge_with_population(
@@ -299,9 +281,7 @@ class SexSplitter(BaseModel):
 
         # Step 6: Validate index differences
         try:
-            validate_noindexdiff(
-                data, data_with_population, self.data.index, name
-            )
+            validate_noindexdiff(data, data_with_population, self.data.index, name)
         except ValueError as e:
             raise ValueError(
                 f"{name}: Index differences found between data and population. Details:\n{e}"
@@ -309,18 +289,12 @@ class SexSplitter(BaseModel):
 
         # Ensure the columns are in the correct numeric type (e.g., float64)
         # Convert "m_pop" and "f_pop" columns to standard numeric types if necessary
-        data_with_population["m_pop"] = data_with_population["m_pop"].astype(
-            "float64"
-        )
-        data_with_population["f_pop"] = data_with_population["f_pop"].astype(
-            "float64"
-        )
+        data_with_population["m_pop"] = data_with_population["m_pop"].astype("float64")
+        data_with_population["f_pop"] = data_with_population["f_pop"].astype("float64")
 
         return data_with_population
 
-    def _merge_with_pattern(
-        self, data: DataFrame, pattern: DataFrame
-    ) -> DataFrame:
+    def _merge_with_pattern(self, data: DataFrame, pattern: DataFrame) -> DataFrame:
         data_with_pattern = data.merge(
             pattern, on=self.pattern.match, how="left"
         ).dropna()
