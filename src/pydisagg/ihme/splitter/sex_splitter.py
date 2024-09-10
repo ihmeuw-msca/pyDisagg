@@ -89,8 +89,12 @@ class SexSplitter(BaseModel):
                 "population.index must be a subset of data.index + pattern.index"
             )
 
-    def _merge_with_pattern(self, data: DataFrame, pattern: DataFrame) -> DataFrame:
-        data_with_pattern = data.merge(pattern, on=self.pattern.by, how="left").dropna()
+    def _merge_with_pattern(
+        self, data: DataFrame, pattern: DataFrame
+    ) -> DataFrame:
+        data_with_pattern = data.merge(
+            pattern, on=self.pattern.by, how="left"
+        ).dropna()
         return data_with_pattern
 
     def get_population_by_sex(self, population, sex_value):
@@ -105,7 +109,9 @@ class SexSplitter(BaseModel):
         try:
             validate_columns(data, self.data.columns, name)
         except KeyError as e:
-            raise KeyError(f"{name}: Missing columns in the input data. Details:\n{e}")
+            raise KeyError(
+                f"{name}: Missing columns in the input data. Details:\n{e}"
+            )
 
         if self.population.sex not in data.columns:
             raise KeyError(
@@ -147,12 +153,18 @@ class SexSplitter(BaseModel):
                         "pattern.val_sd are not available."
                     )
                 validate_columns(pattern, self.pattern.draws, name)
-                pattern[self.pattern.val] = pattern[self.pattern.draws].mean(axis=1)
-                pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(axis=1)
+                pattern[self.pattern.val] = pattern[self.pattern.draws].mean(
+                    axis=1
+                )
+                pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(
+                    axis=1
+                )
 
             validate_columns(pattern, self.pattern.columns, name)
         except KeyError as e:
-            raise KeyError(f"{name}: Missing columns in the pattern. Details:\n{e}")
+            raise KeyError(
+                f"{name}: Missing columns in the pattern. Details:\n{e}"
+            )
 
         pattern = pattern[self.pattern.columns].copy()
 
@@ -166,7 +178,9 @@ class SexSplitter(BaseModel):
         try:
             validate_nonan(pattern, name)
         except ValueError as e:
-            raise ValueError(f"{name}: NaN values found in the pattern. Details:\n{e}")
+            raise ValueError(
+                f"{name}: NaN values found in the pattern. Details:\n{e}"
+            )
 
         if model == "rate":
             try:
@@ -196,7 +210,9 @@ class SexSplitter(BaseModel):
 
         return data_with_pattern
 
-    def parse_population(self, data: DataFrame, population: DataFrame) -> DataFrame:
+    def parse_population(
+        self, data: DataFrame, population: DataFrame
+    ) -> DataFrame:
         name = "While parsing population"
 
         # Step 1: Validate population columns
@@ -208,13 +224,19 @@ class SexSplitter(BaseModel):
             )
 
         # Step 2: Get male and female populations and rename columns
-        male_population = self.get_population_by_sex(population, self.population.sex_m)
+        male_population = self.get_population_by_sex(
+            population, self.population.sex_m
+        )
         female_population = self.get_population_by_sex(
             population, self.population.sex_f
         )
 
-        male_population.rename(columns={self.population.val: "m_pop"}, inplace=True)
-        female_population.rename(columns={self.population.val: "f_pop"}, inplace=True)
+        male_population.rename(
+            columns={self.population.val: "m_pop"}, inplace=True
+        )
+        female_population.rename(
+            columns={self.population.val: "f_pop"}, inplace=True
+        )
 
         # Step 3: Merge population data with main data
         data_with_population = self._merge_with_population(
@@ -242,7 +264,9 @@ class SexSplitter(BaseModel):
 
         # Step 6: Validate index differences
         try:
-            validate_noindexdiff(data, data_with_population, self.data.index, name)
+            validate_noindexdiff(
+                data, data_with_population, self.data.index, name
+            )
         except ValueError as e:
             raise ValueError(
                 f"{name}: Index differences found between data and population. Details:\n{e}"
@@ -250,8 +274,12 @@ class SexSplitter(BaseModel):
 
         # Ensure the columns are in the correct numeric type (e.g., float64)
         # Convert "m_pop" and "f_pop" columns to standard numeric types if necessary
-        data_with_population["m_pop"] = data_with_population["m_pop"].astype("float64")
-        data_with_population["f_pop"] = data_with_population["f_pop"].astype("float64")
+        data_with_population["m_pop"] = data_with_population["m_pop"].astype(
+            "float64"
+        )
+        data_with_population["f_pop"] = data_with_population["f_pop"].astype(
+            "float64"
+        )
 
         return data_with_population
 
@@ -268,9 +296,9 @@ class SexSplitter(BaseModel):
 
         # Ensure the merged population columns are standard numeric types
         if pop_col in data_with_population.columns:
-            data_with_population[pop_col] = data_with_population[pop_col].astype(
-                "float64"
-            )
+            data_with_population[pop_col] = data_with_population[
+                pop_col
+            ].astype("float64")
 
         return data_with_population
 
@@ -374,12 +402,16 @@ class SexSplitter(BaseModel):
                 lambda row: split_datapoint(
                     observed_total=row[self.data.val],
                     bucket_populations=np.array([row["m_pop"], row["f_pop"]]),
-                    rate_pattern=input_patterns[split_data.index.get_loc(row.name)],
+                    rate_pattern=input_patterns[
+                        split_data.index.get_loc(row.name)
+                    ],
                     model=splitting_model,
                     output_type=output_type,
                     normalize_pop_for_average_type_obs=pop_normalize,
                     observed_total_se=row[self.data.val_sd],
-                    pattern_covariance=np.diag([0, row[self.pattern.val_sd] ** 2]),
+                    pattern_covariance=np.diag(
+                        [0, row[self.pattern.val_sd] ** 2]
+                    ),
                 ),
                 axis=1,
             )
@@ -410,7 +442,11 @@ class SexSplitter(BaseModel):
         # Reindex columns
         final_split_df = final_split_df.reindex(
             columns=self.data.index
-            + [col for col in final_split_df.columns if col not in self.data.index]
+            + [
+                col
+                for col in final_split_df.columns
+                if col not in self.data.index
+            ]
         )
 
         # Clean up any prefixes added earlier
