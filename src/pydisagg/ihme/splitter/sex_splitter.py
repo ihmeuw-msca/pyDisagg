@@ -129,20 +129,6 @@ class SexSplitter(BaseModel):
                 f"{name}: Non-positive values found in 'val' or 'val_sd'. Details:\n{e}"
             )
 
-        # Validate that no rows have sex_id equal to sex_m or sex_f
-        # invalid_sex_rows = data[
-        #     data[self.population.sex].isin(
-        #         [self.population.sex_m, self.population.sex_f]
-        #     )
-        # ]
-        # if not invalid_sex_rows.empty:
-        #     raise ValueError(
-        #         f"{name}: The input data contains rows where the '{self.population.sex}' column "
-        #         f"is equal to '{self.population.sex_m}' or '{self.population.sex_f}'. "
-        #         f"This is not allowed in the pre-split data. \n"
-        #         f"Invalid rows:\n{invalid_sex_rows.to_string(index=False)}"
-        #     )
-
         return data
 
     def parse_pattern(
@@ -339,9 +325,7 @@ class SexSplitter(BaseModel):
             - `sex_split`: A flag (0 or 1) indicating whether the row was split.
         """
 
-        # Ensure no prefixes in the pattern and population configs
-        if self.population.prefix_status == "prefixed":
-            self.population.remove_prefix()
+        # Ensure no prefixes in the pattern config
         if self.pattern.prefix_status == "prefixed":
             self.pattern.remove_prefix()
 
