@@ -328,6 +328,8 @@ class SexSplitter(BaseModel):
         # Ensure no prefixes in the pattern config
         if self.pattern.prefix_status == "prefixed":
             self.pattern.remove_prefix()
+        if self.population.prefix_status == "prefixed":
+            self.population.remove_prefix()
 
         # Parsing input data, pattern, and population
         data = self.parse_data(data)
@@ -415,5 +417,6 @@ class SexSplitter(BaseModel):
 
         # Clean up any prefixes added earlier
         self.pattern.remove_prefix()
+        self.population.remove_prefix()
 
         return final_split_df

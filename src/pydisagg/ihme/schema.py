@@ -32,8 +32,6 @@ class Schema(BaseModel):
         return rename_map
 
     def remove_prefix(self) -> None:
-        if self.prefix_status == PrefixStatus.NOT_PREFIXED:
-            raise ValueError("prefix already removed")
         for field in self.val_fields:
             setattr(self, field, getattr(self, field).removeprefix(self.prefix))
         self.prefix_status = PrefixStatus.NOT_PREFIXED
