@@ -48,6 +48,7 @@ from pydisagg.models import LogOddsModel
 class CatDataConfig(Schema):
     match: list[str]
     target: str
+    sub_target: str  # We are going to assume that the sub_target column will have a list of values per row that associate with the target. If target == sub_target that is the reference for that group?
     val: str
     val_sd: str
 
@@ -247,6 +248,11 @@ class CatSplitter(BaseModel):
         # We should probably do this for target-match combination so that we dont have to recalculate the proportions
 
         ### Progress so far
+        #
+        #
+        #
+        #
+
         male_population = self.get_population_by_sex(population, self.population.sex_m)
         female_population = self.get_population_by_sex(
             population, self.population.sex_f
