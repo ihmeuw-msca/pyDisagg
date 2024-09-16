@@ -2,39 +2,35 @@ from typing import Any, List
 
 import numpy as np
 import pandas as pd
+import multiprocessing
 from pandas import DataFrame
 from pydantic import BaseModel
-from scipy.special import expit  # type: ignore
 from typing import Literal
 from pydisagg.disaggregate import split_datapoint
 from pydisagg.ihme.schema import Schema  # Assuming your original Schema class
+
+from joblib import Parallel, delayed
+
+
 from pydisagg.ihme.validator import (
     validate_columns,
     validate_index,
     validate_noindexdiff,
     validate_nonan,
     validate_positive,
-    validate_realnumber,
 )
-from pydisagg.models import RateMultiplicativeModel
-from pydisagg.models import LogOddsModel
+from pydisagg.models import RateMultiplicativeModel, LogOddsModel
 
 
 class CatDataConfig(Schema):
     index: List[str]
-    target: str
-    sub_target: str  # Column that contains list of sub-targets
+    target: str  # Column that contains list of targets
     val: str
     val_sd: str
 
     @property
     def columns(self) -> List[str]:
-        return list(
-            set(
-                self.index
-                + [self.target, self.sub_target, self.val, self.val_sd]
-            )
-        )
+        return list(set(self.index + [self.target, self.val, self.val_sd]))
 
     @property
     def val_fields(self) -> List[str]:
@@ -43,7 +39,7 @@ class CatDataConfig(Schema):
 
 class CatPatternConfig(Schema):
     index: List[str]
-    sub_target: str
+    target: str
     draws: List[str] = []
     val: str = "mean"
     val_sd: str = "std_err"
@@ -51,7 +47,7 @@ class CatPatternConfig(Schema):
 
     @property
     def columns(self) -> List[str]:
-        return list(set(self.index + [self.sub_target, self.val, self.val_sd]))
+        return list(set(self.index + [self.target, self.val, self.val_sd]))
 
     @property
     def val_fields(self) -> List[str]:
@@ -60,13 +56,13 @@ class CatPatternConfig(Schema):
 
 class CatPopulationConfig(Schema):
     index: List[str]
-    sub_target: str
+    target: str
     val: str
     prefix: str = "cat_pop_"
 
     @property
     def columns(self) -> List[str]:
-        return list(set(self.index + [self.sub_target, self.val]))
+        return list(set(self.index + [self.target, self.val]))
 
     @property
     def val_fields(self) -> List[str]:
@@ -90,10 +86,17 @@ class CatSplitter(BaseModel):
             raise ValueError(
                 "Match criteria in the population must be a subset of the data and the pattern"
             )
+        # Check that the 'target' column in pattern and population matches data
+        if self.pattern.target != self.data.target:
+            raise ValueError(
+                "The 'target' column in pattern must match the 'target' column in data"
+            )
+        if self.population.target != self.data.target:
+            raise ValueError(
+                "The 'target' column in population must match the 'target' column in data"
+            )
 
-    def create_ref_return_df(
-        self, data: DataFrame
-    ) -> tuple[DataFrame, DataFrame]:
+    def create_ref_return_df(self, data: DataFrame) -> tuple[DataFrame, DataFrame]:
         ref_df = data.copy()
         ref_df["pyd_id"] = range(len(ref_df))
         return_df = ref_df[self.data.columns + ["pyd_id"]]
@@ -106,9 +109,7 @@ class CatSplitter(BaseModel):
         try:
             validate_columns(data, self.data.columns, name)
         except KeyError as e:
-            raise KeyError(
-                f"{name}: Missing columns in the input data. Details:\n{e}"
-            )
+            raise KeyError(f"{name}: Missing columns in the input data. Details:\n{e}")
 
         try:
             validate_index(data, self.data.index, name)
@@ -127,33 +128,18 @@ class CatSplitter(BaseModel):
                 f"{name}: Non-positive values found in 'val' or 'val_sd'. Details:\n{e}"
             )
 
-        # Explode the 'sub_target' column if it contains lists
-        if (
-            data[self.data.sub_target]
-            .apply(lambda x: isinstance(x, list))
-            .any()
-        ):
-            data = data.explode(self.data.sub_target).reset_index(drop=True)
-            # Rename the sub_target column to match the pattern's sub_target if necessary
-            if self.data.sub_target != self.pattern.sub_target:
-                data.rename(
-                    columns={self.data.sub_target: self.pattern.sub_target},
-                    inplace=True,
-                )
-                self.data.sub_target = self.pattern.sub_target
+        # Explode the 'target' column if it contains lists
+        if data[self.data.target].apply(lambda x: isinstance(x, list)).any():
+            data = data.explode(self.data.target).reset_index(drop=True)
 
         return data
 
-    def _merge_with_pattern(
-        self, data: DataFrame, pattern: DataFrame
-    ) -> DataFrame:
-        merge_keys = self.pattern.index + [self.pattern.sub_target]
-        val_fields = [
-            getattr(self.pattern, field) for field in self.pattern.val_fields
-        ]
-        data_with_pattern = data.merge(
-            pattern, on=merge_keys, how="left"
-        ).dropna(subset=val_fields)
+    def _merge_with_pattern(self, data: DataFrame, pattern: DataFrame) -> DataFrame:
+        merge_keys = self.pattern.index + [self.pattern.target]
+        val_fields = [getattr(self.pattern, field) for field in self.pattern.val_fields]
+        data_with_pattern = data.merge(pattern, on=merge_keys, how="left").dropna(
+            subset=val_fields
+        )
         return data_with_pattern
 
     def parse_pattern(
@@ -170,18 +156,12 @@ class CatSplitter(BaseModel):
                         "pattern.val_sd are not available."
                     )
                 validate_columns(pattern, self.pattern.draws, name)
-                pattern[self.pattern.val] = pattern[self.pattern.draws].mean(
-                    axis=1
-                )
-                pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(
-                    axis=1
-                )
+                pattern[self.pattern.val] = pattern[self.pattern.draws].mean(axis=1)
+                pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(axis=1)
 
             validate_columns(pattern, self.pattern.columns, name)
         except KeyError as e:
-            raise KeyError(
-                f"{name}: Missing columns in the pattern. Details:\n{e}"
-            )
+            raise KeyError(f"{name}: Missing columns in the pattern. Details:\n{e}")
 
         pattern_copy = pattern.copy()
         pattern_copy = pattern_copy[self.pattern.columns]
@@ -195,9 +175,7 @@ class CatSplitter(BaseModel):
 
         return data_with_pattern
 
-    def parse_population(
-        self, data: DataFrame, population: DataFrame
-    ) -> DataFrame:
+    def parse_population(self, data: DataFrame, population: DataFrame) -> DataFrame:
         name = "While parsing population"
 
         # Validate population columns
@@ -208,24 +186,13 @@ class CatSplitter(BaseModel):
                 f"{name}: Missing columns in the population data. Details:\n{e}"
             )
 
-        # Rename sub_target in population to match data if necessary
-        if self.population.sub_target != self.data.sub_target:
-            population = population.rename(
-                columns={self.population.sub_target: self.data.sub_target}
-            )
-            self.population.sub_target = self.data.sub_target
-
         # Merge population data with main data
-        merge_keys = self.population.index + [self.population.sub_target]
+        merge_keys = self.population.index + [self.population.target]
         val_fields = [
-            getattr(self.population, field)
-            for field in self.population.val_fields
+            getattr(self.population, field) for field in self.population.val_fields
         ]
         data_with_population = data.merge(
-            population,
-            on=merge_keys,
-            how="left",
-            suffixes=("", "_pop"),
+            population, on=merge_keys, how="left", suffixes=("", "_pop")
         )
 
         # Validate for NaN values
@@ -253,11 +220,11 @@ class CatSplitter(BaseModel):
         population: DataFrame,
         model: Literal["rate", "logodds"] = "rate",
         output_type: Literal["rate", "count"] = "rate",
+        n_jobs: int = -1,  # Use all available cores by default
     ) -> DataFrame:
         """
         Split the input data based on a specified pattern and population model.
         """
-
         # Parsing input data, pattern, and population
         ref_df, data = self.create_ref_return_df(data)
         data = self.parse_data(data)
@@ -267,70 +234,68 @@ class CatSplitter(BaseModel):
         # Determine whether to normalize by population for the output type
         pop_normalize = output_type == "rate"
 
-        # Handle rows where 'sub_target' == 'target' (no need to split)
-        mask_no_split = data[self.data.sub_target] == data[self.data.target]
+        # Identify unique 'pyd_id's to process
+        unique_pyd_ids = data["pyd_id"].unique()
 
-        # Create a copy for the final DataFrame where rows are not split
-        final_df = data[mask_no_split].copy()
+        # Function to process each group
+        def process_group(pyd_id):
+            group = data[data["pyd_id"] == pyd_id].copy()
 
-        # Set the result columns for non-split rows
-        final_df["split_result"] = final_df[self.data.val]
-        final_df["split_result_se"] = final_df[self.data.val_sd]
-        final_df["split_flag"] = 0  # Mark as not split
-
-        # Handle rows that need to be split
-        split_data = data[~mask_no_split].copy()
-
-        # Group by the original rows using 'pyd_id'
-        split_results = []
-        for pyd_id, group in split_data.groupby("pyd_id"):
             observed_total = group[self.data.val].iloc[0]
             observed_total_se = group[self.data.val_sd].iloc[0]
-            bucket_populations = group[self.population.val].values
-            rate_pattern = group[self.pattern.val].values
-            pattern_sd = group[self.pattern.val_sd].values
-            pattern_covariance = np.diag(pattern_sd**2)
 
-            if model == "rate":
-                splitting_model = RateMultiplicativeModel()
-            elif model == "logodds":
-                splitting_model = LogOddsModel()
+            if len(group) == 1:
+                # No need to split, assign the observed values
+                group["split_result"] = observed_total
+                group["split_result_se"] = observed_total_se
+                group["split_flag"] = 0  # Not split
+            else:
+                # Need to split among multiple targets
+                bucket_populations = group[self.population.val].values
+                rate_pattern = group[self.pattern.val].values
+                pattern_sd = group[self.pattern.val_sd].values
+                pattern_covariance = np.diag(pattern_sd**2)
 
-            # Perform splitting
-            split_result, split_se = split_datapoint(
-                observed_total=observed_total,
-                bucket_populations=bucket_populations,
-                rate_pattern=rate_pattern,
-                model=splitting_model,
-                output_type=output_type,
-                normalize_pop_for_average_type_obs=pop_normalize,
-                observed_total_se=observed_total_se,
-                pattern_covariance=pattern_covariance,
-            )
+                if model == "rate":
+                    splitting_model = RateMultiplicativeModel()
+                elif model == "logodds":
+                    splitting_model = LogOddsModel()
 
-            # Assign results back to the group
-            group["split_result"] = split_result
-            group["split_result_se"] = split_se
-            group["split_flag"] = 1
-            split_results.append(group)
+                # Perform splitting
+                split_result, split_se = split_datapoint(
+                    observed_total=observed_total,
+                    bucket_populations=bucket_populations,
+                    rate_pattern=rate_pattern,
+                    model=splitting_model,
+                    output_type=output_type,
+                    normalize_pop_for_average_type_obs=pop_normalize,
+                    observed_total_se=observed_total_se,
+                    pattern_covariance=pattern_covariance,
+                )
 
-        # Concatenate the split results
-        if split_results:
-            split_df = pd.concat(split_results, ignore_index=True)
-            # Combine the non-split rows and the split rows
-            final_split_df = pd.concat([final_df, split_df], ignore_index=True)
-        else:
-            final_split_df = final_df.copy()
+                # Assign results back to the group
+                group["split_result"] = split_result
+                group["split_result_se"] = split_se
+                group["split_flag"] = 1  # Split
 
-        # Merge back with ref_df to restore original columns
-        final_split_df = final_split_df.merge(
-            ref_df, on="pyd_id", how="left", suffixes=("", "_orig")
+            return group
+
+        # Use Parallel processing to process groups
+        num_cores = multiprocessing.cpu_count() if n_jobs == -1 else n_jobs
+        processed_groups = Parallel(n_jobs=num_cores)(
+            delayed(process_group)(pyd_id) for pyd_id in unique_pyd_ids
         )
 
-        # Drop the '_orig' columns if they were added
-        final_split_df = final_split_df.loc[
-            :, ~final_split_df.columns.str.endswith("_orig")
-        ]
+        # Concatenate the results
+        final_split_df = pd.concat(processed_groups, ignore_index=True)
+
+        # Merge back only data.target from ref_df, adding '_orig' suffix
+        final_split_df = final_split_df.merge(
+            ref_df[["pyd_id", self.data.target]],
+            on="pyd_id",
+            how="left",
+            suffixes=("", "_orig"),
+        )
 
         # Remove temporary columns
         final_split_df.drop(columns=["pyd_id"], inplace=True)
