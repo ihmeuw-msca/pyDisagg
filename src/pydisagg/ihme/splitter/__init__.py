@@ -10,6 +10,12 @@ from .sex_splitter import (
     SexPatternConfig,
     SexPopulationConfig,
 )
+from .cat_splitter import (
+    CatSplitter,
+    CatDataConfig,
+    CatPatternConfig,
+    CatPopulationConfig,
+)
 
 __all__ = [
     "AgeSplitter",
@@ -20,4 +26,8 @@ __all__ = [
     "SexDataConfig",
     "SexPatternConfig",
     "SexPopulationConfig",
+    "CatSplitter",
+    "CatDataConfig",
+    "CatPatternConfig",
+    "CatPopulationConfig",
 ]
