@@ -30,7 +30,10 @@ class CatDataConfig(Schema):
     @property
     def columns(self) -> List[str]:
         return list(
-            set(self.index + [self.target, self.sub_target, self.val, self.val_sd])
+            set(
+                self.index
+                + [self.target, self.sub_target, self.val, self.val_sd]
+            )
         )
 
     @property
@@ -88,7 +91,9 @@ class CatSplitter(BaseModel):
                 "Match criteria in the population must be a subset of the data and the pattern"
             )
 
-    def create_ref_return_df(self, data: DataFrame) -> tuple[DataFrame, DataFrame]:
+    def create_ref_return_df(
+        self, data: DataFrame
+    ) -> tuple[DataFrame, DataFrame]:
         ref_df = data.copy()
         ref_df["pyd_id"] = range(len(ref_df))
         return_df = ref_df[self.data.columns + ["pyd_id"]]
@@ -101,7 +106,9 @@ class CatSplitter(BaseModel):
         try:
             validate_columns(data, self.data.columns, name)
         except KeyError as e:
-            raise KeyError(f"{name}: Missing columns in the input data. Details:\n{e}")
+            raise KeyError(
+                f"{name}: Missing columns in the input data. Details:\n{e}"
+            )
 
         try:
             validate_index(data, self.data.index, name)
@@ -121,7 +128,11 @@ class CatSplitter(BaseModel):
             )
 
         # Explode the 'sub_target' column if it contains lists
-        if data[self.data.sub_target].apply(lambda x: isinstance(x, list)).any():
+        if (
+            data[self.data.sub_target]
+            .apply(lambda x: isinstance(x, list))
+            .any()
+        ):
             data = data.explode(self.data.sub_target).reset_index(drop=True)
             # Rename the sub_target column to match the pattern's sub_target if necessary
             if self.data.sub_target != self.pattern.sub_target:
@@ -133,12 +144,16 @@ class CatSplitter(BaseModel):
 
         return data
 
-    def _merge_with_pattern(self, data: DataFrame, pattern: DataFrame) -> DataFrame:
+    def _merge_with_pattern(
+        self, data: DataFrame, pattern: DataFrame
+    ) -> DataFrame:
         merge_keys = self.pattern.index + [self.pattern.sub_target]
-        val_fields = [getattr(self.pattern, field) for field in self.pattern.val_fields]
-        data_with_pattern = data.merge(pattern, on=merge_keys, how="left").dropna(
-            subset=val_fields
-        )
+        val_fields = [
+            getattr(self.pattern, field) for field in self.pattern.val_fields
+        ]
+        data_with_pattern = data.merge(
+            pattern, on=merge_keys, how="left"
+        ).dropna(subset=val_fields)
         return data_with_pattern
 
     def parse_pattern(
@@ -155,12 +170,18 @@ class CatSplitter(BaseModel):
                         "pattern.val_sd are not available."
                     )
                 validate_columns(pattern, self.pattern.draws, name)
-                pattern[self.pattern.val] = pattern[self.pattern.draws].mean(axis=1)
-                pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(axis=1)
+                pattern[self.pattern.val] = pattern[self.pattern.draws].mean(
+                    axis=1
+                )
+                pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(
+                    axis=1
+                )
 
             validate_columns(pattern, self.pattern.columns, name)
         except KeyError as e:
-            raise KeyError(f"{name}: Missing columns in the pattern. Details:\n{e}")
+            raise KeyError(
+                f"{name}: Missing columns in the pattern. Details:\n{e}"
+            )
 
         pattern_copy = pattern.copy()
         pattern_copy = pattern_copy[self.pattern.columns]
@@ -174,7 +195,9 @@ class CatSplitter(BaseModel):
 
         return data_with_pattern
 
-    def parse_population(self, data: DataFrame, population: DataFrame) -> DataFrame:
+    def parse_population(
+        self, data: DataFrame, population: DataFrame
+    ) -> DataFrame:
         name = "While parsing population"
 
         # Validate population columns
@@ -195,7 +218,8 @@ class CatSplitter(BaseModel):
         # Merge population data with main data
         merge_keys = self.population.index + [self.population.sub_target]
         val_fields = [
-            getattr(self.population, field) for field in self.population.val_fields
+            getattr(self.population, field)
+            for field in self.population.val_fields
         ]
         data_with_population = data.merge(
             population,

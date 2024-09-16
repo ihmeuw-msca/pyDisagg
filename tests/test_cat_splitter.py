@@ -188,7 +188,9 @@ def test_parse_population_missing_columns(
     parsed_pattern = cat_splitter.parse_pattern(
         parsed_data, valid_pattern, model="rate"
     )
-    with pytest.raises(KeyError, match="Missing columns in the population data"):
+    with pytest.raises(
+        KeyError, match="Missing columns in the population data"
+    ):
         cat_splitter.parse_population(parsed_pattern, invalid_population)
 
 
@@ -214,7 +216,9 @@ def test_parse_population_valid(
     parsed_pattern = cat_splitter.parse_pattern(
         parsed_data, valid_pattern, model="rate"
     )
-    parsed_population = cat_splitter.parse_population(parsed_pattern, valid_population)
+    parsed_population = cat_splitter.parse_population(
+        parsed_pattern, valid_population
+    )
     assert not parsed_population.empty
     assert "population" in parsed_population.columns
 
@@ -266,7 +270,9 @@ def test_split_with_invalid_output_type(
 
 def test_split_with_missing_population(cat_splitter, valid_data, valid_pattern):
     """Test that the split method raises an error when population data is missing."""
-    with pytest.raises(KeyError, match="Missing columns in the population data"):
+    with pytest.raises(
+        KeyError, match="Missing columns in the population data"
+    ):
         cat_splitter.split(
             data=valid_data,
             pattern=valid_pattern,

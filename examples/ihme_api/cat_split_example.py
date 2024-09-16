@@ -23,7 +23,13 @@ pre_split = pd.DataFrame(
         "state": ["IA", "WA", "WA"],
         "county": [
             ["Johnson", "Scott", "Cedar", "Polk", "Linn"],  # Iowa counties
-            ["King", "Pierce", "Snohomish", "Spokane", "Clark"],  # WA row 1 counties
+            [
+                "King",
+                "Pierce",
+                "Snohomish",
+                "Spokane",
+                "Clark",
+            ],  # WA row 1 counties
             ["King", "Pierce"],  # WA row 2 counties
         ],
         "year_id": [2010, 2010, 2010],
