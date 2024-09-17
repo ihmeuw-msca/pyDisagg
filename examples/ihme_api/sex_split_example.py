@@ -11,8 +11,8 @@ pattern_df = pd.DataFrame(
     {
         "location_id": [78, 130, 120, 30, 141],
         "year_id": range(2015, 2020),
-        "pat_val": [0.82236405, 0.82100016, 0.81961923, 0.81874504, 0.81972812],
-        "pat_val_sd": [
+        "mean": [0.82236405, 0.82100016, 0.81961923, 0.81874504, 0.81972812],
+        "standard_error": [
             0.00688405,
             0.00552016,
             0.00413923,
@@ -29,7 +29,7 @@ data_df = pd.DataFrame(
         "mean": [0.5, 0.5, 0.5, 0.5, 0.5],
         "standard_error": [0.1, 0.1, 0.1, 0.1, 0.1],
         "year_id": [2015, 2019, 2018, 2017, 2016],
-        "sex_id": [3, 3, 3, 3, 3],
+        "sex_id": [2, 3, 3, 3, 3],
     }
 )
 
@@ -62,8 +62,8 @@ data_config = SexDataConfig(
 
 pattern_config = SexPatternConfig(
     by=["year_id"],
-    val="pat_val",
-    val_sd="pat_val_sd",
+    val="mean",
+    val_sd="standard_error",
 )
 
 population_config = SexPopulationConfig(
