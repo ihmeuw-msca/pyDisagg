@@ -485,6 +485,68 @@ class CatSplitter(BaseModel):
 
         return data_with_population
 
+    def _process_group(
+        self, group: DataFrame, model: str, output_type: str
+    ) -> DataFrame:
+        """
+        Process a group of data for splitting.
+
+        Parameters
+        ----------
+        group : DataFrame
+            The group of data to process.
+        model : str
+            The model type ('rate' or 'logodds').
+        output_type : str
+            The output type ('rate' or 'count').
+
+        Returns
+        -------
+        DataFrame
+            The processed group with splitting results.
+        """
+        observed_total = group[self.data.val].iloc[0]
+        observed_total_se = group[self.data.val_sd].iloc[0]
+
+        if len(group) == 1:
+            # No need to split, assign the observed values
+            group["split_result"] = observed_total
+            group["split_result_se"] = observed_total_se
+            group["split_flag"] = 0  # Not split
+        else:
+            # Need to split among multiple targets
+            bucket_populations = group[self.population.val].values
+            rate_pattern = group[self.pattern.apply_prefix()[self.pattern.val]].values
+            pattern_sd = group[self.pattern.apply_prefix()[self.pattern.val_sd]].values
+            pattern_covariance = np.diag(pattern_sd**2)
+
+            if model == "rate":
+                splitting_model = RateMultiplicativeModel()
+            elif model == "logodds":
+                splitting_model = LogOddsModel()
+
+            # Determine whether to normalize by population for the output type
+            pop_normalize = output_type == "rate"
+
+            # Perform splitting
+            split_result, split_se = split_datapoint(
+                observed_total=observed_total,
+                bucket_populations=bucket_populations,
+                rate_pattern=rate_pattern,
+                model=splitting_model,
+                output_type=output_type,
+                normalize_pop_for_average_type_obs=pop_normalize,
+                observed_total_se=observed_total_se,
+                pattern_covariance=pattern_covariance,
+            )
+
+            # Assign results back to the group
+            group["split_result"] = split_result
+            group["split_result_se"] = split_se
+            group["split_flag"] = 1  # Split
+
+        return group
+
     def split(
         self,
         data: DataFrame,
@@ -493,6 +555,7 @@ class CatSplitter(BaseModel):
         model: Literal["rate", "logodds"] = "rate",
         output_type: Literal["rate", "count"] = "rate",
         n_jobs: int = -1,  # Use all available cores by default
+        use_parallel: bool = True,  # Option to run in parallel
     ) -> DataFrame:
         """
         Split the input data based on a specified pattern and population model.
@@ -511,6 +574,8 @@ class CatSplitter(BaseModel):
             The output type desired, by default 'rate'.
         n_jobs : int, optional
             Number of jobs for parallel processing, by default -1 (use all available cores).
+        use_parallel : bool, optional
+            Whether to use parallel processing, by default True.
 
         Returns
         -------
@@ -534,67 +599,24 @@ class CatSplitter(BaseModel):
         data = self.parse_pattern(data, pattern, model)
         data = self.parse_population(data, population)
 
-        # Determine whether to normalize by population for the output type
-        pop_normalize = output_type == "rate"
+        # Process groups
+        if use_parallel:
+            # Identify unique 'orig_pyd_id's to process
+            num_cores = multiprocessing.cpu_count() if n_jobs == -1 else n_jobs
+            processed_groups = Parallel(n_jobs=num_cores, backend="loky")(
+                delayed(self._process_group)(group, model, output_type)
+                for _, group in data.groupby("orig_pyd_id")
+            )
 
-        # Identify unique 'orig_pyd_id's to process
-        unique_orig_pyd_ids = data["orig_pyd_id"].unique()
-
-        # Function to process each group
-        def process_group(orig_pyd_id):
-            group = data[data["orig_pyd_id"] == orig_pyd_id].copy()
-
-            observed_total = group[self.data.val].iloc[0]
-            observed_total_se = group[self.data.val_sd].iloc[0]
-
-            if len(group) == 1:
-                # No need to split, assign the observed values
-                group["split_result"] = observed_total
-                group["split_result_se"] = observed_total_se
-                group["split_flag"] = 0  # Not split
-            else:
-                # Need to split among multiple targets
-                bucket_populations = group[self.population.val].values
-                rate_pattern = group[
-                    self.pattern.apply_prefix()[self.pattern.val]
-                ].values
-                pattern_sd = group[
-                    self.pattern.apply_prefix()[self.pattern.val_sd]
-                ].values
-                pattern_covariance = np.diag(pattern_sd**2)
-
-                if model == "rate":
-                    splitting_model = RateMultiplicativeModel()
-                elif model == "logodds":
-                    splitting_model = LogOddsModel()
-
-                # Perform splitting
-                split_result, split_se = split_datapoint(
-                    observed_total=observed_total,
-                    bucket_populations=bucket_populations,
-                    rate_pattern=rate_pattern,
-                    model=splitting_model,
-                    output_type=output_type,
-                    normalize_pop_for_average_type_obs=pop_normalize,
-                    observed_total_se=observed_total_se,
-                    pattern_covariance=pattern_covariance,
-                )
-
-                # Assign results back to the group
-                group["split_result"] = split_result
-                group["split_result_se"] = split_se
-                group["split_flag"] = 1  # Split
-
-            return group
-
-        # Use Parallel processing to process groups
-        num_cores = multiprocessing.cpu_count() if n_jobs == -1 else n_jobs
-        processed_groups = Parallel(n_jobs=num_cores)(
-            delayed(process_group)(orig_pyd_id) for orig_pyd_id in unique_orig_pyd_ids
-        )
-
-        # Concatenate the results
-        final_split_df = pd.concat(processed_groups, ignore_index=True)
+            # Concatenate the results
+            final_split_df = pd.concat(processed_groups, ignore_index=True)
+        else:
+            # Process groups using regular groupby
+            final_split_df = (
+                data.groupby("orig_pyd_id", group_keys=False)
+                .apply(lambda group: self._process_group(group, model, output_type))
+                .reset_index(drop=True)
+            )
 
         # Merge back only columns not used in the analysis
         if columns_not_used:
