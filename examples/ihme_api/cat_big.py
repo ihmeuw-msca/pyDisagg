@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import psutil
 import os
 import gc
+import matplotlib.ticker as ticker
 
 from pydisagg.ihme.splitter import (
     CatSplitter,
@@ -13,10 +14,10 @@ from pydisagg.ihme.splitter import (
     CatPopulationConfig,
 )
 
-# Set a random seed for reproducibility
 np.random.seed(42)
 
 # Sizes to test
+# sizes = [100, 1000, 10000, 100000]
 sizes = [100, 1000, 10000, 100000, 250000, 500000, 750000, 1000000]
 times_parallel = []
 times_groupby = []
@@ -181,27 +182,60 @@ for size in sizes:
     gc.collect()
     print(f"Memory Usage After Cleanup: {get_memory_usage():.2f} MB")
 
-# Plot the results
-plt.figure(figsize=(10, 6))
-plt.plot(sizes, times_parallel, marker="o", label="Parallel Processing")
-plt.plot(sizes, times_groupby, marker="s", label="GroupBy Processing")
-plt.xlabel("Number of Rows in Data")
-plt.ylabel("Time Taken (seconds)")
-plt.title("Runtime Comparison: Parallel vs GroupBy in CatSplitter")
-plt.xscale("log")
-plt.yscale("log")
-plt.grid(True, which="both", ls="--")
-plt.legend()
-plt.show()
+# Define colors for the plots
+color_time_parallel = "#1f77b4"  # blue
+color_time_groupby = "#aec7e8"  # light blue
+color_mem_parallel = "#ff7f0e"  # orange
+color_mem_groupby = "#ffbb78"  # light orange
 
-# Plot Memory Usage
-plt.figure(figsize=(10, 6))
-plt.plot(sizes, memory_parallel, marker="o", label="Parallel Processing")
-plt.plot(sizes, memory_groupby, marker="s", label="GroupBy Processing")
-plt.xlabel("Number of Rows in Data")
-plt.ylabel("Memory Usage (MB)")
-plt.title("Memory Usage Comparison: Parallel vs GroupBy in CatSplitter")
-plt.xscale("log")
-plt.grid(True, which="both", ls="--")
-plt.legend()
+# Create a figure and a set of subplots
+fig, ax1 = plt.subplots(figsize=(10, 6))
+
+# Plot time on the left y-axis
+ax1.set_xlabel("Number of Rows in Data")
+ax1.set_ylabel("Time Taken (seconds)", color="blue")
+ax1.plot(
+    sizes,
+    times_parallel,
+    marker="o",
+    label="Time - Parallel",
+    color=color_time_parallel,
+)
+ax1.plot(
+    sizes, times_groupby, marker="s", label="Time - GroupBy", color=color_time_groupby
+)
+ax1.set_xscale("log")
+ax1.set_yscale("log")
+ax1.tick_params(axis="y", labelcolor="blue")
+
+# Set x-axis ticks to show the sizes
+ax1.set_xticks(sizes)
+ax1.get_xaxis().set_major_formatter(ticker.ScalarFormatter())
+ax1.get_xaxis().set_minor_formatter(ticker.NullFormatter())
+
+# Create a twin Axes sharing the x-axis for memory usage
+ax2 = ax1.twinx()
+ax2.set_ylabel("Memory Usage (MB)", color="orange")
+ax2.plot(
+    sizes,
+    memory_parallel,
+    marker="o",
+    label="Memory - Parallel",
+    color=color_mem_parallel,
+)
+ax2.plot(
+    sizes, memory_groupby, marker="s", label="Memory - GroupBy", color=color_mem_groupby
+)
+ax2.set_xscale("log")
+ax2.tick_params(axis="y", labelcolor="orange")
+
+# Add grid
+ax1.grid(True, which="both", ls="--")
+
+# Combine legends from both axes
+lines_1, labels_1 = ax1.get_legend_handles_labels()
+lines_2, labels_2 = ax2.get_legend_handles_labels()
+ax1.legend(lines_1 + lines_2, labels_1 + labels_2, loc="upper left")
+
+plt.title("Time and Memory Usage Comparison: Parallel vs GroupBy in CatSplitter")
 plt.show()

@@ -555,7 +555,7 @@ class CatSplitter(BaseModel):
         model: Literal["rate", "logodds"] = "rate",
         output_type: Literal["rate", "count"] = "rate",
         n_jobs: int = -1,  # Use all available cores by default
-        use_parallel: bool = True,  # Option to run in parallel
+        use_parallel: bool = False,  # Option to run in parallel
     ) -> DataFrame:
         """
         Split the input data based on a specified pattern and population model.
