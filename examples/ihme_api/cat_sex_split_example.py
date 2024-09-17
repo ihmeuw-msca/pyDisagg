@@ -24,17 +24,14 @@ data_df = pd.DataFrame(
         "mean": [0.5] * 5,
         "standard_error": [0.1] * 5,
         "year_id": [2015, 2019, 2018, 2017, 2016],
-        "sex_id": [3] * 5,
     }
 )
 
-# Adding the 'sexes' column with a list [1, 2] for each row
-data_df["sex"] = [[1, 2]] * len(data_df)  # Renamed 'sexes' to 'sex'
+# Adding the 'sex' column with a list [1, 2] for each row
+data_df["sex"] = [[1, 2]] * len(data_df)
 
 # Sort data_df for clarity
-data_df_sorted = data_df.sort_values(by=["location_id", "sex_id"]).reset_index(
-    drop=True
-)
+data_df_sorted = data_df.sort_values(by=["location_id"]).reset_index(drop=True)
 
 # Display the sorted data_df
 print("data_df:")
@@ -50,7 +47,6 @@ pattern_df = pd.DataFrame(
         "mean": [0.5] * 5,
         "standard_error": [0.1] * 5,
         "year_id": [2015, 2019, 2018, 2017, 2016],
-        "sex_id": [3] * 5,
     }
 )
 
@@ -74,9 +70,7 @@ pattern_df_sex2["standard_error"] += np.random.normal(
 pattern_df_sex2["mean"] = pattern_df_sex2["mean"].round(6)
 pattern_df_sex2["standard_error"] = pattern_df_sex2["standard_error"].round(6)
 
-pattern_df_final = pd.concat(
-    [pattern_df_sex1, pattern_df_sex2], ignore_index=True
-)
+pattern_df_final = pd.concat([pattern_df_sex1, pattern_df_sex2], ignore_index=True)
 
 # Sort pattern_df_final for clarity
 pattern_df_final_sorted = pattern_df_final.sort_values(
@@ -93,11 +87,7 @@ print(pattern_df_final_sorted)
 population_df = pd.DataFrame(
     {
         "location_id": [30, 30, 78, 78, 120, 120, 130, 130, 141, 141],
-        "year_id": [2017] * 2
-        + [2015] * 2
-        + [2018] * 2
-        + [2019] * 2
-        + [2016] * 2,
+        "year_id": [2017] * 2 + [2015] * 2 + [2018] * 2 + [2019] * 2 + [2016] * 2,
         "sex": [1, 2] * 5,  # Sexes 1 and 2
         "population": [
             39789,
@@ -115,9 +105,9 @@ population_df = pd.DataFrame(
 )
 
 # Sort population_df for clarity
-population_df_sorted = population_df.sort_values(
-    by=["location_id", "sex"]
-).reset_index(drop=True)
+population_df_sorted = population_df.sort_values(by=["location_id", "sex"]).reset_index(
+    drop=True
+)
 
 # Display the sorted population_df
 print("\npopulation_df:")
@@ -130,8 +120,7 @@ print(population_df_sorted)
 # Data configuration
 data_config = CatDataConfig(
     index=["seq", "location_id", "year_id"],
-    target="sex_id",
-    sub_target="sex",
+    target="sex",
     val="mean",
     val_sd="standard_error",
 )
@@ -139,7 +128,7 @@ data_config = CatDataConfig(
 # Pattern configuration
 pattern_config = CatPatternConfig(
     index=["location_id", "year_id"],
-    sub_target="sex",
+    target="sex",
     val="mean",
     val_sd="standard_error",
 )
@@ -147,7 +136,7 @@ pattern_config = CatPatternConfig(
 # Population configuration
 population_config = CatPopulationConfig(
     index=["location_id", "year_id"],
-    sub_target="sex",
+    target="sex",
     val="population",
 )
 

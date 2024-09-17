@@ -1,6 +1,3 @@
-import pandas as pd
-import numpy as np
-
 # Assuming the CatSplitter and configuration classes have been imported correctly
 from pydisagg.ihme.splitter import (
     CatSplitter,

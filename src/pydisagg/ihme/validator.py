@@ -4,6 +4,23 @@ from pandas import DataFrame
 
 
 def validate_columns(df: DataFrame, columns: list[str], name: str) -> None:
+    """
+    Validates that all specified columns are present in the DataFrame.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame to validate.
+    columns : list of str
+        A list of expected column names that should be present in the DataFrame.
+    name : str
+        A name for the DataFrame, used in error messages.
+
+    Raises
+    ------
+    KeyError
+        If any of the specified columns are missing from the DataFrame.
+    """
     missing = [col for col in columns if col not in df.columns]
     if missing:
         error_message = (
@@ -18,6 +35,23 @@ def validate_columns(df: DataFrame, columns: list[str], name: str) -> None:
 
 
 def validate_index(df: DataFrame, index: list[str], name: str) -> None:
+    """
+    Validates that the DataFrame does not contain duplicate indices based on specified columns.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame to validate.
+    index : list of str
+        A list of column names to be used as the index for validation.
+    name : str
+        A name for the DataFrame, used in error messages.
+
+    Raises
+    ------
+    ValueError
+        If duplicate indices are found in the DataFrame based on the specified columns.
+    """
     duplicated_index = pd.MultiIndex.from_frame(
         df[df[index].duplicated()][index]
     ).to_list()
@@ -32,6 +66,21 @@ def validate_index(df: DataFrame, index: list[str], name: str) -> None:
 
 
 def validate_nonan(df: DataFrame, name: str) -> None:
+    """
+    Validates that the DataFrame does not contain any NaN values.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame to validate.
+    name : str
+        A name for the DataFrame, used in error messages.
+
+    Raises
+    ------
+    ValueError
+        If any NaN values are found in the DataFrame.
+    """
     nan_columns = df.columns[df.isna().any(axis=0)].to_list()
     if nan_columns:
         error_message = (
@@ -48,7 +97,27 @@ def validate_nonan(df: DataFrame, name: str) -> None:
 def validate_positive(
     df: DataFrame, columns: list[str], name: str, strict: bool = False
 ) -> None:
-    """Validates that observation values in cols are non-negative or strictly positive"""
+    """
+    Validates that specified columns contain non-negative or strictly positive values.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame to validate.
+    columns : list of str
+        A list of column names to check for positive values.
+    name : str
+        A name for the DataFrame, used in error messages.
+    strict : bool, optional
+        If True, checks that values are strictly greater than zero.
+        If False, checks that values are greater than or equal to zero.
+        Default is False.
+
+    Raises
+    ------
+    ValueError
+        If any of the specified columns contain invalid (negative or zero) values.
+    """
     op = "<=" if strict else "<"
     negative = [col for col in columns if df.eval(f"{col} {op} 0").any()]
     if negative:
@@ -59,11 +128,32 @@ def validate_positive(
 def validate_interval(
     df: DataFrame, lwr: str, upr: str, index: list[str], name: str
 ) -> None:
+    """
+    Validates that lower interval bounds are strictly less than upper bounds.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame containing interval data to validate.
+    lwr : str
+        The name of the column representing the lower bound of the interval.
+    upr : str
+        The name of the column representing the upper bound of the interval.
+    index : list of str
+        A list of column names to be used as the index for identifying intervals.
+    name : str
+        A name for the DataFrame, used in error messages.
+
+    Raises
+    ------
+    ValueError
+        If any lower bound is not strictly less than its corresponding upper bound.
+    """
     invalid_index = pd.MultiIndex.from_frame(
         df.query(f"{lwr} >= {upr}")[index]
     ).to_list()
     if invalid_index:
-        error_message = f"{name} has invalid interval with {len(invalid_index)} indices. \nLower age must be strictly less than upper age.\n"
+        error_message = f"{name} has invalid interval with {len(invalid_index)} indices. \nLower bound must be strictly less than upper bound.\n"
         error_message += f"Index columns: ({', '.join(index)})\n"
         if len(invalid_index) > 5:
             error_message += "First 5 indices with invalid interval: \n"
@@ -75,17 +165,36 @@ def validate_interval(
 def validate_noindexdiff(
     df_ref: DataFrame, df: DataFrame, index: list[str], name: str
 ) -> None:
+    """
+    Validates that the indices of two DataFrames match.
+
+    Parameters
+    ----------
+    df_ref : pandas.DataFrame
+        The reference DataFrame containing the expected indices.
+    df : pandas.DataFrame
+        The DataFrame to validate against the reference.
+    index : list of str
+        A list of column names to be used as the index for comparison.
+    name : str
+        A name for the validation context, used in error messages.
+
+    Raises
+    ------
+    ValueError
+        If there are indices in the reference DataFrame that are missing in the DataFrame to validate.
+    """
     index_ref = pd.MultiIndex.from_frame(df_ref[index])
-    index = pd.MultiIndex.from_frame(df[index])
-    missing_index = index_ref.difference(index).to_list()
+    index_to_check = pd.MultiIndex.from_frame(df[index])
+    missing_index = index_ref.difference(index_to_check).to_list()
 
     if missing_index:
         error_message = (
             f"Missing {name} info for {len(missing_index)} indices \n"
         )
-        error_message += f"Index columns: ({', '.join(index.names)})\n"
+        error_message += f"Index columns: ({', '.join(index_ref.names)})\n"
         if len(missing_index) > 5:
-            error_message += "First 5: \n"
+            error_message += "First 5 missing indices: \n"
         error_message += ", \n".join(str(idx) for idx in missing_index[:5])
         error_message += "\n"
         raise ValueError(error_message)
@@ -100,16 +209,36 @@ def validate_pat_coverage(
     index: list[str],
     name: str,
 ) -> None:
-    """Validation checks for incomplete age pattern
-    * pattern age intervals do not overlap or have gaps
-    * smallest pattern interval doesn't cover the left end point of data
-    * largest pattern interval doesn't cover the right end point of data
     """
-    # sort dataframe
+    Validates that the pattern intervals cover the data intervals completely without gaps or overlaps.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame containing both data intervals and pattern intervals.
+    lwr : str
+        The name of the column representing the data's lower bound.
+    upr : str
+        The name of the column representing the data's upper bound.
+    pat_lwr : str
+        The name of the column representing the pattern's lower bound.
+    pat_upr : str
+        The name of the column representing the pattern's upper bound.
+    index : list of str
+        A list of column names to group by when validating intervals.
+    name : str
+        A name for the DataFrame or validation context, used in error messages.
+
+    Raises
+    ------
+    ValueError
+        If the pattern intervals have gaps or overlaps, or if they do not fully cover the data intervals.
+    """
+    # Sort dataframe
     df = df.sort_values(index + [lwr, upr, pat_lwr, pat_upr], ignore_index=True)
     df_group = df.groupby(index)
 
-    # check overlap or gap in pattern
+    # Check overlap or gap in pattern
     shifted_pat_upr = df_group[pat_upr].shift(1)
     connect_index = shifted_pat_upr.notnull()
     connected = np.allclose(
@@ -122,7 +251,7 @@ def validate_pat_coverage(
             "bounds across categories."
         )
 
-    # check coverage of head and tail
+    # Check coverage of head and tail
     head_covered = df_group.first().eval(f"{lwr} >= {pat_lwr}").all()
     tail_covered = df_group.last().eval(f"{upr} <= {pat_upr}").all()
 
@@ -134,17 +263,16 @@ def validate_pat_coverage(
 
 def validate_realnumber(df: DataFrame, columns: list[str], name: str) -> None:
     """
-    Validates that observation values in columns are real numbers and non-zero.
+    Validates that specified columns contain real numbers and are non-zero.
 
     Parameters
     ----------
-    df : DataFrame
+    df : pandas.DataFrame
         The DataFrame containing the data to validate.
     columns : list of str
         A list of column names to validate within the DataFrame.
     name : str
-        A string representing the name of the data or dataset
-        (used for constructing error messages).
+        A name for the DataFrame, used in error messages.
 
     Raises
     ------
