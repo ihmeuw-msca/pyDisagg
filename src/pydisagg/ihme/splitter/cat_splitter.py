@@ -22,116 +22,206 @@ from pydisagg.ihme.validator import (
 
 class CatDataConfig(Schema):
     """
-    Configuration for the data DataFrame.
+    Configuration schema for categorical data DataFrame.
+
+    This class defines the configuration parameters required to process
+    a categorical dataset represented as a pandas DataFrame. It specifies
+    which columns to use as indices, the categorical group for splitting,
+    and the observed values along with their standard deviations.
 
     Parameters
     ----------
     index : List[str]
-        List of column names to be used as index in the data DataFrame.
-    target : str
-        Column name representing the target variable to split.
+        A list of column names to be used as the index in the data DataFrame.
+        These columns uniquely identify each observation in the dataset.
+    cat_group : str
+        The name of the column that represents the categorical group used for
+        splitting the data. This column typically contains categorical or
+        grouping information.
     val : str
-        Column name for the observed value.
+        The name of the column that contains the observed value for each
+        observation. This could be a measurement or a metric of interest.
     val_sd : str
-        Column name for the standard deviation of the observed value.
+        The name of the column that contains the standard deviation of the
+        observed value, representing the uncertainty or variability
+        associated with the `val` column.
+
+    Attributes
+    ----------
+    index : List[str]
+        As described in Parameters.
+    cat_group : str
+        As described in Parameters.
+    val : str
+        As described in Parameters.
+    val_sd : str
+        As described in Parameters.
+
+    Properties
+    ----------
+    columns : List[str]
+        A list of all required column names in the data DataFrame,
+        including index columns, categorical group, value, and standard deviation columns.
+
+    val_fields : List[str]
+        A list containing the value fields, specifically `val` and `val_sd`.
+
+    Examples
+    --------
+    Creating a configuration for a sample DataFrame:
+
+    >>> import pandas as pd
+    >>> import numpy as np
+    >>> from your_module import CatDataConfig  # Replace with actual module name
+
+    >>> # Sample DataFrame
+    >>> pre_split = pd.DataFrame(
+    ...     {
+    ...         "study_id": np.random.randint(1000, 9999, size=3),
+    ...         "year_id": [2010, 2010, 2010],
+    ...         "location_id": [
+    ...             [1234, 1235, 1236],  # List of location_ids for row 1
+    ...             [2345, 2346, 2347],  # List of location_ids for row 2
+    ...             [3456],               # Single location_id for row 3 (no need to split)
+    ...         ],
+    ...         "mean": [0.2, 0.3, 0.4],
+    ...         "std_err": [0.01, 0.02, 0.03],
+    ...     }
+    ... )
+
+    >>> # Configuration
+    >>> data_config = CatDataConfig(
+    ...     index=["study_id", "year_id"],  # Columns to be used as index
+    ...     cat_group="location_id",        # Categorical group column for splitting
+    ...     val="mean",                      # Observed value column
+    ...     val_sd="std_err",                # Standard deviation of the observed value
+    ... )
+
+    >>> # Accessing required columns
+    >>> required_columns = data_config.columns
+    >>> print(required_columns)
+    ['study_id', 'year_id', 'location_id', 'mean', 'std_err']
+
+    >>> # Accessing value fields
+    >>> value_fields = data_config.val_fields
+    >>> print(value_fields)
+    ['mean', 'std_err']
     """
 
     index: List[str]
-    target: str
+    cat_group: str
     val: str
     val_sd: str
-
-    @property
-    def columns(self) -> List[str]:
-        """
-        List of all required columns in the data DataFrame.
-
-        Returns
-        -------
-        List[str]
-            List of column names.
-        """
-        return list(set(self.index + [self.target, self.val, self.val_sd]))
-
-    @property
-    def val_fields(self) -> List[str]:
-        """
-        List of value fields (attributes).
-
-        Returns
-        -------
-        List[str]
-            List containing 'val' and 'val_sd'.
-        """
-        return ["val", "val_sd"]  # Attribute names
 
 
 class CatPatternConfig(Schema):
     """
-    Configuration for the pattern DataFrame.
+    Configuration schema for the pattern DataFrame.
+
+    This class defines the configuration parameters required to process
+    a categorical pattern dataset represented as a pandas DataFrame. It specifies
+    which columns to use as indices, the categorical group for splitting,
+    observed mean values, their standard deviations, and additional draw columns
+    if applicable.
 
     Parameters
     ----------
     index : List[str]
-        List of column names to be used as index in the pattern DataFrame.
-    target : str
-        Column name representing the target variable to split.
+        A list of column names to be used as the index in the pattern DataFrame.
+        These columns uniquely identify each pattern entry in the dataset.
+    cat : str
+        The name of the column that represents the categorical group used for
+        splitting the data. This column typically contains categorical or
+        grouping information.
     draws : List[str], optional
-        List of draw column names, by default [].
+        A list of column names representing draw data, used for uncertainty
+        quantification or simulation purposes. Defaults to an empty list.
     val : str, optional
-        Column name for the mean value in the pattern DataFrame, by default 'mean'.
+        The name of the column that contains the observed mean value for each
+        pattern entry. This could be a measurement or a metric of interest.
+        Defaults to `'mean'`.
     val_sd : str, optional
-        Column name for the standard deviation in the pattern DataFrame, by default 'std_err'.
+        The name of the column that contains the standard deviation of the
+        observed mean value, representing the uncertainty or variability
+        associated with the `val` column. Defaults to `'std_err'`.
     prefix : str, optional
-        Prefix to apply to column names when merging, by default 'cat_pat_'.
+        A prefix to apply to column names when merging this pattern DataFrame
+        with other DataFrames. This helps in distinguishing columns from different
+        sources. Defaults to `'cat_pat_'`.
+
+    Attributes
+    ----------
+    index : List[str]
+        As described in Parameters.
+    cat : str
+        As described in Parameters.
+    draws : List[str]
+        As described in Parameters.
+    val : str
+        As described in Parameters.
+    val_sd : str
+        As described in Parameters.
+    prefix : str
+        As described in Parameters.
+
+    Properties
+    ----------
+    columns : List[str]
+        A list of all required column names in the pattern DataFrame,
+        including index columns, categorical group, value, and standard deviation columns.
+
+    val_fields : List[str]
+        A list containing the value fields, specifically the `val` and `val_sd` columns.
+
+    Examples
+    --------
+    Creating a configuration for a sample Pattern DataFrame:
+
+    >>> import pandas as pd
+    >>> import numpy as np
+    >>> from your_module import CatPatternConfig  # Replace with actual module name
+
+    >>> # Sample Pattern DataFrame
+    >>> all_location_ids = [
+    ...     1234, 1235, 1236, 2345, 2346,
+    ...     2347, 3456, 4567, 5678
+    ... ]
+    >>> data_pattern = pd.DataFrame(
+    ...     {
+    ...         "location_id": all_location_ids,
+    ...         "year_id": [2010] * len(all_location_ids),
+    ...         "mean": np.random.uniform(0.1, 0.5, len(all_location_ids)),
+    ...         "std_err": np.random.uniform(0.01, 0.05, len(all_location_ids)),
+    ...     }
+    ... )
+
+    >>> # Configuration
+    >>> pattern_config = CatPatternConfig(
+    ...     index=["year_id"],               # Columns to be used as index
+    ...     cat="location_id",               # Categorical group column for splitting
+    ...     draws=[],                         # No draw columns in this example
+    ...     val="mean",                      # Observed mean value column
+    ...     val_sd="std_err",                # Standard deviation of the observed mean value
+    ...     prefix="cat_pat_"                 # Prefix for merging
+    ... )
+
+    >>> # Accessing required columns
+    >>> required_columns = pattern_config.columns
+    >>> print(required_columns)
+    ['year_id', 'location_id', 'mean', 'std_err']
+
+    >>> # Accessing value fields
+    >>> value_fields = pattern_config.val_fields
+    >>> print(value_fields)
+    ['mean', 'std_err']
     """
 
     index: List[str]
-    target: str
+    cat: str
     draws: List[str] = []
     val: str = "mean"
     val_sd: str = "std_err"
     prefix: str = "cat_pat_"
-
-    @property
-    def columns(self) -> List[str]:
-        """
-        List of all required columns in the pattern DataFrame.
-
-        Returns
-        -------
-        List[str]
-            List of column names.
-        """
-        return list(set(self.index + [self.target, self.val, self.val_sd]))
-
-    @property
-    def val_fields(self) -> List[str]:
-        """
-        List of value fields (attributes).
-
-        Returns
-        -------
-        List[str]
-            List containing 'val' and 'val_sd'.
-        """
-        return ["val", "val_sd"]  # Attribute names
-
-    def apply_prefix(self) -> dict:
-        """
-        Create a mapping to rename columns with the specified prefix.
-
-        Returns
-        -------
-        dict
-            Mapping from original column names to prefixed column names.
-        """
-        return {
-            self.val: f"{self.prefix}{self.val}",
-            self.val_sd: f"{self.prefix}{self.val_sd}",
-            self.target: self.target,  # Do not prefix the target column
-            **{idx: idx for idx in self.index},  # Keep index columns unchanged
-        }
 
 
 class CatPopulationConfig(Schema):
@@ -151,48 +241,9 @@ class CatPopulationConfig(Schema):
     """
 
     index: List[str]
-    target: str
+    # target: str
     val: str
     prefix: str = "cat_pop_"
-
-    @property
-    def columns(self) -> List[str]:
-        """
-        List of all required columns in the population DataFrame.
-
-        Returns
-        -------
-        List[str]
-            List of column names.
-        """
-        return list(set(self.index + [self.target, self.val]))
-
-    @property
-    def val_fields(self) -> List[str]:
-        """
-        List of value fields (attributes).
-
-        Returns
-        -------
-        List[str]
-            List containing 'val'.
-        """
-        return ["val"]
-
-    def apply_prefix(self) -> dict:
-        """
-        Create a mapping to rename columns with the specified prefix.
-
-        Returns
-        -------
-        dict
-            Mapping from original column names to prefixed column names.
-        """
-        return {
-            self.val: f"{self.prefix}{self.val}",
-            self.target: self.target,  # Do not prefix the target column
-            **{idx: idx for idx in self.index},  # Keep index columns unchanged
-        }
 
 
 class CatSplitter(BaseModel):
@@ -224,51 +275,51 @@ class CatSplitter(BaseModel):
         """
         if not set(self.pattern.index).issubset(self.data.index):
             raise ValueError(
-                "Match criteria in the pattern must be a subset of the data"
+                "Meow! The pattern's match criteria must be a subset of the data. Purrrlease check your input."
             )
         if not set(self.population.index).issubset(
             self.data.index + self.pattern.index
         ):
             raise ValueError(
-                "Match criteria in the population must be a subset of the data and the pattern"
+                "Meow! The population's match criteria must be a subset of the data and the pattern. Purrrhaps take a closer look?"
             )
-        # Check that the 'target' column in pattern and population matches data
-        if self.pattern.target != self.data.target:
+        # NOTE: This doesn't have to be true, as long as the values contained within the group are present in the pattern
+        if self.pattern.cat != self.data.cat_group:
             raise ValueError(
-                "The 'target' column in pattern must match the 'target' column in data"
+                "Hiss! The 'target' column in the pattern doesn't match the 'target' column in the data. Meow over it again."
             )
-        if self.population.target != self.data.target:
+        if self.data.cat_group not in self.population.index:
             raise ValueError(
-                "The 'target' column in population must match the 'target' column in data"
+                "Meow! The 'target' column in the population must match the 'target' column in the data. Purr-fect that before proceeding!"
             )
 
-    def create_ref_return_df(self, data: DataFrame) -> tuple[DataFrame, DataFrame]:
-        """
-        Create reference and return DataFrames.
+    # def create_ref_return_df(self, data: DataFrame) -> tuple[DataFrame, DataFrame]:
+    #     """
+    #     Create reference and return DataFrames.
 
-        Parameters
-        ----------
-        data : DataFrame
-            The input data DataFrame.
+    #     Parameters
+    #     ----------
+    #     data : DataFrame
+    #         The input data DataFrame.
 
-        Returns
-        -------
-        tuple[DataFrame, DataFrame]
-            A tuple containing:
-            - ref_df: DataFrame with original data, exploded if necessary.
-            - data: DataFrame with required columns and identifiers.
-        """
-        ref_df = data.copy()
-        ref_df["orig_pyd_id"] = range(
-            len(ref_df)
-        )  # Assign original pyd_id before exploding
-        ref_df["orig_group"] = ref_df[self.data.target]
-        # Explode the 'target' column if it contains lists
-        if ref_df[self.data.target].apply(lambda x: isinstance(x, list)).any():
-            ref_df = ref_df.explode(self.data.target).reset_index(drop=True)
-        # Assign new pyd_id's after exploding
-        ref_df["pyd_id"] = range(len(ref_df))
-        return ref_df, ref_df[self.data.columns + ["pyd_id", "orig_pyd_id"]]
+    #     Returns
+    #     -------
+    #     tuple[DataFrame, DataFrame]
+    #         A tuple containing:
+    #         - ref_df: DataFrame with original data, exploded if necessary.
+    #         - data: DataFrame with required columns and identifiers.
+    #     """
+    #     ref_df = data.copy()
+    #     ref_df["orig_pyd_id"] = range(
+    #         len(ref_df)
+    #     )  # Assign original pyd_id before exploding
+    #     ref_df["orig_group"] = ref_df[self.data.cat_group]
+    #     # Explode the 'target' column if it contains lists
+    #     if ref_df[self.data.cat_group].apply(lambda x: isinstance(x, list)).any():
+    #         ref_df = ref_df.explode(self.data.cat_group).reset_index(drop=True)
+    #     # Assign new pyd_id's after exploding
+    #     ref_df["pyd_id"] = range(len(ref_df))
+    #     return ref_df, ref_df[self.data.columns + ["pyd_id", "orig_pyd_id"]]
 
     def parse_data(self, data: DataFrame) -> DataFrame:
         """
@@ -294,32 +345,21 @@ class CatSplitter(BaseModel):
         name = "While parsing data"
 
         # Validate core columns first
-        try:
-            validate_columns(data, self.data.columns + ["pyd_id", "orig_pyd_id"], name)
-        except KeyError as e:
-            raise KeyError(f"{name}: Missing columns in the input data. Details:\n{e}")
+        validate_columns(data, self.data.columns, name)
 
-        try:
-            validate_index(data, self.data.index + [self.data.target, "pyd_id"], name)
-        except ValueError as e:
-            raise ValueError(f"{name}: Duplicated index found. Details:\n{e}")
+        validate_index(data, self.data.index + [self.data.cat_group], name)
 
-        try:
-            validate_nonan(data, name)
-        except ValueError as e:
-            raise ValueError(f"{name}: NaN values found. Details:\n{e}")
+        validate_nonan(data, name)
 
-        try:
-            validate_positive(data, [self.data.val, self.data.val_sd], name)
-        except ValueError as e:
-            raise ValueError(
-                f"{name}: Non-positive values found in 'val' or 'val_sd'. Details:\n{e}"
-            )
+        validate_positive(data, [self.data.val, self.data.val_sd], name)
 
         return data
 
     def _merge_with_pattern(
-        self, data: DataFrame, pattern: DataFrame, how: str
+        self,
+        data: DataFrame,
+        pattern: DataFrame,
+        how: Literal["left", "right", "outer", "inner"],
     ) -> DataFrame:
         """
         Merge data with pattern DataFrame.
@@ -330,15 +370,15 @@ class CatSplitter(BaseModel):
             The data DataFrame.
         pattern : DataFrame
             The pattern DataFrame.
-        how : str
-            Merge method ('inner', 'left', 'right', etc.).
+        how : {'inner', 'left', 'right', 'outer'}
+            Merge method.
 
         Returns
         -------
         DataFrame
             Merged DataFrame after merging with pattern.
         """
-        merge_keys = self.pattern.index + [self.pattern.target]
+        merge_keys = self.pattern.index + [self.pattern.cat]
         val_fields = [
             self.pattern.apply_prefix()[self.pattern.val],
             self.pattern.apply_prefix()[self.pattern.val_sd],
@@ -399,9 +439,9 @@ class CatSplitter(BaseModel):
         pattern_copy.rename(columns=rename_map, inplace=True)
 
         # Filter pattern_copy to include only target IDs present in data
-        data_target_ids = data[self.data.target].unique()
+        data_target_ids = data[self.data.cat_group].unique()
         pattern_copy = pattern_copy[
-            pattern_copy[self.pattern.target].isin(data_target_ids)
+            pattern_copy[self.pattern.cat].isin(data_target_ids)
         ]
 
         # Use an inner join
@@ -411,7 +451,7 @@ class CatSplitter(BaseModel):
         validate_noindexdiff(
             data,
             data_with_pattern,
-            self.data.index + [self.data.target, "pyd_id"],
+            self.data.index + [self.data.cat_group],
             name,
         )
 
@@ -450,14 +490,20 @@ class CatSplitter(BaseModel):
                 f"{name}: Missing columns in the population data. Details:\n{e}"
             )
 
-        # Filter population to include only target IDs present in data
-        data_target_ids = data[self.data.target].unique()
+        # NOTE: Updated to this point
+
+        # Should we error sooner if a population is missing for the data?
+        # How should we check instead of looping?
+
+        # This isn't right I don't think ...
+        data_target_ids = data[self.data.cat_group].unique()
+
         population = population[
             population[self.population.target].isin(data_target_ids)
         ]
 
         # Use an inner join
-        merge_keys = self.population.index + [self.population.target]
+        merge_keys = self.population.index
         data_with_population = data.merge(
             population, on=merge_keys, how="inner", suffixes=("", "_pop")
         )
@@ -474,7 +520,7 @@ class CatSplitter(BaseModel):
         validate_noindexdiff(
             data,
             data_with_population,
-            self.data.index + [self.data.target, "pyd_id"],
+            self.data.index + [self.data.cat_group, "pyd_id"],
             name,
         )
 
