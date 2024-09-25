@@ -172,7 +172,9 @@ def test_parse_population_valid(
     parsed_pattern = cat_splitter.parse_pattern(
         parsed_data, valid_pattern, model="rate"
     )
-    parsed_population = cat_splitter.parse_population(parsed_pattern, valid_population)
+    parsed_population = cat_splitter.parse_population(
+        parsed_pattern, valid_population
+    )
     assert not parsed_population.empty
     # The population column is renamed with prefix 'cat_pop_'
     pop_col = f"{cat_splitter.population.prefix}{cat_splitter.population.val}"
@@ -212,7 +214,9 @@ def test_split_with_invalid_output_type(
 
 def test_split_with_missing_population(cat_splitter, valid_data, valid_pattern):
     """Test that the split method raises an error when population data is missing."""
-    with pytest.raises(KeyError, match="Parsing Population has missing columns"):
+    with pytest.raises(
+        KeyError, match="Parsing Population has missing columns"
+    ):
         cat_splitter.split(
             data=valid_data,
             pattern=valid_pattern,
@@ -229,7 +233,8 @@ def test_split_with_non_matching_categories(
     invalid_population = valid_population.copy()
     invalid_population["sub_category"] = ["X1", "X2", "X1", "X2", "X1", "X2"]
     with pytest.raises(
-        ValueError, match="After merging with population, there were NaN values created"
+        ValueError,
+        match="After merging with population, there were NaN values created",
     ):
         cat_splitter.split(
             data=valid_data,

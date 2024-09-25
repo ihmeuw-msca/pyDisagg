@@ -128,7 +128,9 @@ class CatSplitter(BaseModel):
         # Validate index after exploding
         validate_index(data, self.data.index, name)
         validate_nonan(data, name)
-        validate_positive(data, [self.data.val_sd], name, strict=positive_strict)
+        validate_positive(
+            data, [self.data.val_sd], name, strict=positive_strict
+        )
 
         return data
 
@@ -140,11 +142,16 @@ class CatSplitter(BaseModel):
         """
         Merge data with pattern DataFrame.
         """
-        data_with_pattern = data.merge(pattern, on=self.pattern.index, how="left")
+        data_with_pattern = data.merge(
+            pattern, on=self.pattern.index, how="left"
+        )
 
         validate_nonan(
             data_with_pattern[
-                [f"{self.pattern.prefix}{col}" for col in self.pattern.val_fields]
+                [
+                    f"{self.pattern.prefix}{col}"
+                    for col in self.pattern.val_fields
+                ]
             ],
             "After merging with pattern, there were NaN values created. This indicates that your pattern does not cover all the data.",
         )
@@ -168,15 +175,23 @@ class CatSplitter(BaseModel):
                         "pattern.val_sd are not available."
                     )
                 validate_columns(pattern, self.pattern.draws, name)
-                pattern[self.pattern.val] = pattern[self.pattern.draws].mean(axis=1)
-                pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(axis=1)
+                pattern[self.pattern.val] = pattern[self.pattern.draws].mean(
+                    axis=1
+                )
+                pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(
+                    axis=1
+                )
 
             validate_columns(pattern, self.pattern.columns, name)
         except KeyError as e:
-            raise KeyError(f"{name}: Missing columns in the pattern. Details:\n{e}")
+            raise KeyError(
+                f"{name}: Missing columns in the pattern. Details:\n{e}"
+            )
 
         pattern_copy = pattern.copy()
-        pattern_copy = pattern_copy[self.pattern.index + self.pattern.val_fields]
+        pattern_copy = pattern_copy[
+            self.pattern.index + self.pattern.val_fields
+        ]
         rename_map = self.pattern.apply_prefix()
         pattern_copy.rename(columns=rename_map, inplace=True)
 
@@ -193,7 +208,9 @@ class CatSplitter(BaseModel):
 
         return data_with_pattern
 
-    def parse_population(self, data: DataFrame, population: DataFrame) -> DataFrame:
+    def parse_population(
+        self, data: DataFrame, population: DataFrame
+    ) -> DataFrame:
         name = "Parsing Population"
         validate_columns(population, self.population.columns, name)
 
@@ -210,7 +227,9 @@ class CatSplitter(BaseModel):
         # Ensure the prefixed population column exists
         pop_col = f"{self.population.prefix}{self.population.val}"
         if pop_col not in data_with_population.columns:
-            raise KeyError(f"Expected column '{pop_col}' not found in merged data.")
+            raise KeyError(
+                f"Expected column '{pop_col}' not found in merged data."
+            )
 
         validate_nonan(
             data_with_population[[pop_col]],
@@ -249,8 +268,12 @@ class CatSplitter(BaseModel):
             bucket_populations = group[
                 f"{self.population.prefix}{self.population.val}"
             ].values
-            rate_pattern = group[f"{self.pattern.prefix}{self.pattern.val}"].values
-            pattern_sd = group[f"{self.pattern.prefix}{self.pattern.val_sd}"].values
+            rate_pattern = group[
+                f"{self.pattern.prefix}{self.pattern.val}"
+            ].values
+            pattern_sd = group[
+                f"{self.pattern.prefix}{self.pattern.val_sd}"
+            ].values
             pattern_covariance = np.diag(pattern_sd**2)
 
             if model == "rate":
