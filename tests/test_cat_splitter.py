@@ -13,8 +13,13 @@ from pydisagg.ihme.splitter import (
 @pytest.fixture
 def cat_data_config():
     return CatDataConfig(
-        index=["study_id", "year_id", "location_id"],
-        target="sub_category",  # Updated from sub_target to target
+        index=[
+            "study_id",
+            "year_id",
+            "location_id",
+            "sub_category",
+        ],  # Include 'sub_category' in index
+        cat_group="sub_category",
         val="val",
         val_sd="val_sd",
     )
@@ -23,8 +28,8 @@ def cat_data_config():
 @pytest.fixture
 def cat_pattern_config():
     return CatPatternConfig(
-        index=["year_id", "location_id"],
-        target="sub_category",  # Updated from sub_target to target
+        by=["year_id", "location_id"],
+        cat="sub_category",
         val="pattern_val",
         val_sd="pattern_val_sd",
     )
@@ -33,8 +38,7 @@ def cat_pattern_config():
 @pytest.fixture
 def cat_population_config():
     return CatPopulationConfig(
-        index=["year_id", "location_id"],
-        target="sub_category",  # Updated from sub_target to target
+        index=["year_id", "location_id", "sub_category"],
         val="population",
     )
 
@@ -47,7 +51,7 @@ def valid_data():
             "year_id": [2000, 2000, 2001],
             "location_id": [10, 20, 10],
             "sub_category": [
-                ["A1", "A2"],  # Assuming sub_category is a list
+                ["A1", "A2"],  # List of sub_categories
                 ["B1", "B2"],
                 ["C1", "C2"],
             ],
@@ -97,13 +101,13 @@ def cat_splitter(cat_data_config, cat_pattern_config, cat_population_config):
 def test_parse_data_duplicated_index(cat_splitter, valid_data):
     """Test parse_data raises an error on duplicated index."""
     duplicated_data = pd.concat([valid_data, valid_data])
-    with pytest.raises(ValueError, match="Duplicated index found"):
-        cat_splitter.parse_data(duplicated_data)
+    with pytest.raises(ValueError, match="has duplicated index"):
+        cat_splitter.parse_data(duplicated_data, positive_strict=True)
 
 
 def test_parse_data_valid(cat_splitter, valid_data):
     """Test that parse_data works correctly on valid data."""
-    parsed_data = cat_splitter.parse_data(valid_data)
+    parsed_data = cat_splitter.parse_data(valid_data, positive_strict=True)
     assert not parsed_data.empty
     assert "val" in parsed_data.columns
     assert "val_sd" in parsed_data.columns
@@ -114,13 +118,20 @@ def test_parse_data_valid(cat_splitter, valid_data):
 
 def test_parse_pattern_valid(cat_splitter, valid_data, valid_pattern):
     """Test that parse_pattern works correctly on valid data."""
-    parsed_data = cat_splitter.parse_data(valid_data)
+    parsed_data = cat_splitter.parse_data(valid_data, positive_strict=True)
     parsed_pattern = cat_splitter.parse_pattern(
         parsed_data, valid_pattern, model="rate"
     )
     assert not parsed_pattern.empty
-    assert "cat_pat_pattern_val" in parsed_pattern.columns
-    assert "cat_pat_pattern_val_sd" in parsed_pattern.columns
+    # The pattern columns are renamed with prefix 'cat_pat_'
+    assert (
+        f"{cat_splitter.pattern.prefix}{cat_splitter.pattern.val}"
+        in parsed_pattern.columns
+    )
+    assert (
+        f"{cat_splitter.pattern.prefix}{cat_splitter.pattern.val_sd}"
+        in parsed_pattern.columns
+    )
 
 
 # Step 4: Write Tests for parse_population
@@ -131,13 +142,11 @@ def test_parse_population_missing_columns(
 ):
     """Test parse_population raises an error when population columns are missing."""
     invalid_population = valid_population.drop(columns=["population"])
-    parsed_data = cat_splitter.parse_data(valid_data)
+    parsed_data = cat_splitter.parse_data(valid_data, positive_strict=True)
     parsed_pattern = cat_splitter.parse_pattern(
         parsed_data, valid_pattern, model="rate"
     )
-    with pytest.raises(
-        KeyError, match="Missing columns in the population data"
-    ):
+    with pytest.raises(KeyError, match="has missing columns"):
         cat_splitter.parse_population(parsed_pattern, invalid_population)
 
 
@@ -147,11 +156,11 @@ def test_parse_population_with_nan(
     """Test parse_population raises an error when there are NaN values."""
     invalid_population = valid_population.copy()
     invalid_population.loc[0, "population"] = None
-    parsed_data = cat_splitter.parse_data(valid_data)
+    parsed_data = cat_splitter.parse_data(valid_data, positive_strict=True)
     parsed_pattern = cat_splitter.parse_pattern(
         parsed_data, valid_pattern, model="rate"
     )
-    with pytest.raises(ValueError, match="NaN values found"):
+    with pytest.raises(ValueError, match="has NaN values"):
         cat_splitter.parse_population(parsed_pattern, invalid_population)
 
 
@@ -159,15 +168,15 @@ def test_parse_population_valid(
     cat_splitter, valid_data, valid_pattern, valid_population
 ):
     """Test that parse_population works correctly on valid data."""
-    parsed_data = cat_splitter.parse_data(valid_data)
+    parsed_data = cat_splitter.parse_data(valid_data, positive_strict=True)
     parsed_pattern = cat_splitter.parse_pattern(
         parsed_data, valid_pattern, model="rate"
     )
-    parsed_population = cat_splitter.parse_population(
-        parsed_pattern, valid_population
-    )
+    parsed_population = cat_splitter.parse_population(parsed_pattern, valid_population)
     assert not parsed_population.empty
-    assert "population" in parsed_population.columns
+    # The population column is renamed with prefix 'cat_pop_'
+    pop_col = f"{cat_splitter.population.prefix}{cat_splitter.population.val}"
+    assert pop_col in parsed_population.columns
 
 
 # Step 5: Write Tests for the split method
@@ -191,7 +200,7 @@ def test_split_with_invalid_output_type(
     cat_splitter, valid_data, valid_pattern, valid_population
 ):
     """Test that the split method raises an error with an invalid output_type."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Invalid output_type"):
         cat_splitter.split(
             data=valid_data,
             pattern=valid_pattern,
@@ -203,9 +212,7 @@ def test_split_with_invalid_output_type(
 
 def test_split_with_missing_population(cat_splitter, valid_data, valid_pattern):
     """Test that the split method raises an error when population data is missing."""
-    with pytest.raises(
-        KeyError, match="Missing columns in the population data"
-    ):
+    with pytest.raises(KeyError, match="Parsing Population has missing columns"):
         cat_splitter.split(
             data=valid_data,
             pattern=valid_pattern,
@@ -215,15 +222,19 @@ def test_split_with_missing_population(cat_splitter, valid_data, valid_pattern):
         )
 
 
-def test_split_with_non_matching_targets(
+def test_split_with_non_matching_categories(
     cat_splitter, valid_data, valid_pattern, valid_population
 ):
-    """Test that the split method raises an error when targets don't match."""
+    """Test that the split method raises an error when categories don't match."""
     invalid_population = valid_population.copy()
     invalid_population["sub_category"] = ["X1", "X2", "X1", "X2", "X1", "X2"]
-    parsed_data = cat_splitter.parse_data(valid_data)
-    parsed_pattern = cat_splitter.parse_pattern(
-        parsed_data, valid_pattern, model="rate"
-    )
-    with pytest.raises(ValueError, match="NaN values found"):
-        cat_splitter.parse_population(parsed_pattern, invalid_population)
+    with pytest.raises(
+        ValueError, match="After merging with population, there were NaN values created"
+    ):
+        cat_splitter.split(
+            data=valid_data,
+            pattern=valid_pattern,
+            population=invalid_population,
+            model="rate",
+            output_type="rate",
+        )
