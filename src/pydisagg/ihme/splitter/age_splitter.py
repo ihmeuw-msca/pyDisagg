@@ -197,7 +197,7 @@ class AgeSplitter(BaseModel):
     def _merge_with_pattern(
         self, data: DataFrame, pattern: DataFrame
     ) -> DataFrame:
-        # Ensure the necessary columns are present before merging
+        # TODO change these asserts to validate_columns
         assert (
             self.data.age_lwr in data.columns
         ), f"Column '{self.data.age_lwr}' not found in data"
@@ -236,11 +236,10 @@ class AgeSplitter(BaseModel):
         validate_index(population, self.population.index, name)
         validate_nonan(population, name)
 
-        pop_copy = population.copy()
         rename_map = self.population.apply_prefix()
-        pop_copy.rename(columns=rename_map, inplace=True)
+        population.rename(columns=rename_map, inplace=True)
 
-        data_with_population = self._merge_with_population(data, pop_copy)
+        data_with_population = self._merge_with_population(data, population)
 
         validate_noindexdiff(
             data,

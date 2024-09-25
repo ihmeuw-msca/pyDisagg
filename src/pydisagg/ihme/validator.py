@@ -290,3 +290,6 @@ def validate_realnumber(df: DataFrame, columns: list[str], name: str) -> None:
 
     if invalid:
         raise ValueError(f"{name} has non-real or zero values in: {invalid}")
+
+
+# TODO def validate_set_uniqueness

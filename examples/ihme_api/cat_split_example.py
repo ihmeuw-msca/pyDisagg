@@ -1,6 +1,10 @@
+# cat_split_example.py
+
 import numpy as np
 import pandas as pd
+from pandas import DataFrame
 
+# Import CatSplitter and related classes
 from pydisagg.ihme.splitter import (
     CatSplitter,
     CatDataConfig,
@@ -8,12 +12,12 @@ from pydisagg.ihme.splitter import (
     CatPopulationConfig,
 )
 
-# Set a random seed for reproducibility
-np.random.seed(42)
-
 # -------------------------------
 # Example DataFrames
 # -------------------------------
+
+# Set a random seed for reproducibility
+np.random.seed(42)
 
 # Pre-split DataFrame with 3 rows
 pre_split = pd.DataFrame(
@@ -39,15 +43,15 @@ all_location_ids = [
     2346,
     2347,
     3456,
-    4567,  # Additional location_ids
-    5678,
+    4567,
+    5678,  # Additional location_ids
 ]
 
 # Pattern DataFrame for all location_ids
 data_pattern = pd.DataFrame(
     {
-        "location_id": all_location_ids,
         "year_id": [2010] * len(all_location_ids),
+        "location_id": all_location_ids,
         "mean": np.random.uniform(0.1, 0.5, len(all_location_ids)),
         "std_err": np.random.uniform(0.01, 0.05, len(all_location_ids)),
     }
@@ -56,8 +60,8 @@ data_pattern = pd.DataFrame(
 # Population DataFrame for all location_ids
 data_pop = pd.DataFrame(
     {
-        "location_id": all_location_ids,
         "year_id": [2010] * len(all_location_ids),
+        "location_id": all_location_ids,
         "population": np.random.randint(10000, 1000000, len(all_location_ids)),
     }
 )
@@ -74,29 +78,35 @@ print(data_pop)
 # Configurations
 # -------------------------------
 
+# Adjusted configurations to match the modified CatSplitter
 data_config = CatDataConfig(
-    index=["study_id", "year_id"],  # Include study_id in the index
-    target="location_id",  # Column containing list of targets
+    index=[
+        "study_id",
+        "year_id",
+        "location_id",
+    ],  # Include 'location_id' in the index
+    cat_group="location_id",
     val="mean",
     val_sd="std_err",
 )
 
 pattern_config = CatPatternConfig(
-    index=["year_id"],
-    target="location_id",
+    by=["year_id"],
+    cat="location_id",
     val="mean",
     val_sd="std_err",
 )
 
 population_config = CatPopulationConfig(
-    index=["year_id"],
-    target="location_id",
+    index=["year_id", "location_id"],
     val="population",
 )
 
-# Initialize the CatSplitter
+# Initialize the CatSplitter with the updated configurations
 splitter = CatSplitter(
-    data=data_config, pattern=pattern_config, population=population_config
+    data=data_config,
+    pattern=pattern_config,
+    population=population_config,
 )
 
 # Perform the split
@@ -108,8 +118,9 @@ try:
         model="rate",
         output_type="rate",
     )
+    # Sort the final DataFrame for better readability
     final_split_df.sort_values(by=["study_id", "location_id"], inplace=True)
     print("\nFinal Split DataFrame:")
     print(final_split_df)
-except ValueError as e:
-    print(f"Error: {e}")
+except Exception as e:
+    print(f"Error during splitting: {e}")

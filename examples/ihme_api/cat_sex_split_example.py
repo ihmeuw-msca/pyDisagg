@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-# Import CatSplitter and configurations from your package
+# Import CatSplitter and configurations from your module
 from pydisagg.ihme.splitter import (
     CatSplitter,
     CatDataConfig,
@@ -70,7 +70,9 @@ pattern_df_sex2["standard_error"] += np.random.normal(
 pattern_df_sex2["mean"] = pattern_df_sex2["mean"].round(6)
 pattern_df_sex2["standard_error"] = pattern_df_sex2["standard_error"].round(6)
 
-pattern_df_final = pd.concat([pattern_df_sex1, pattern_df_sex2], ignore_index=True)
+pattern_df_final = pd.concat(
+    [pattern_df_sex1, pattern_df_sex2], ignore_index=True
+)
 
 # Sort pattern_df_final for clarity
 pattern_df_final_sorted = pattern_df_final.sort_values(
@@ -87,7 +89,11 @@ print(pattern_df_final_sorted)
 population_df = pd.DataFrame(
     {
         "location_id": [30, 30, 78, 78, 120, 120, 130, 130, 141, 141],
-        "year_id": [2017] * 2 + [2015] * 2 + [2018] * 2 + [2019] * 2 + [2016] * 2,
+        "year_id": [2017] * 2
+        + [2015] * 2
+        + [2018] * 2
+        + [2019] * 2
+        + [2016] * 2,
         "sex": [1, 2] * 5,  # Sexes 1 and 2
         "population": [
             39789,
@@ -105,9 +111,9 @@ population_df = pd.DataFrame(
 )
 
 # Sort population_df for clarity
-population_df_sorted = population_df.sort_values(by=["location_id", "sex"]).reset_index(
-    drop=True
-)
+population_df_sorted = population_df.sort_values(
+    by=["location_id", "sex"]
+).reset_index(drop=True)
 
 # Display the sorted population_df
 print("\npopulation_df:")
@@ -119,24 +125,28 @@ print(population_df_sorted)
 
 # Data configuration
 data_config = CatDataConfig(
-    index=["seq", "location_id", "year_id"],
-    target="sex",
+    index=[
+        "seq",
+        "location_id",
+        "year_id",
+        "sex",
+    ],  # Include 'sex' in the index
+    cat_group="sex",
     val="mean",
     val_sd="standard_error",
 )
 
 # Pattern configuration
 pattern_config = CatPatternConfig(
-    index=["location_id", "year_id"],
-    target="sex",
+    by=["location_id", "year_id"],
+    cat="sex",
     val="mean",
     val_sd="standard_error",
 )
 
 # Population configuration
 population_config = CatPopulationConfig(
-    index=["location_id", "year_id"],
-    target="sex",
+    index=["location_id", "year_id", "sex"],  # Include 'sex' in the index
     val="population",
 )
 
@@ -160,5 +170,5 @@ try:
 
     print("\nFinal Split DataFrame:")
     print(final_split_df)
-except ValueError as e:
-    print(f"Error: {e}")
+except Exception as e:
+    print(f"Error during splitting: {e}")
