@@ -1,11 +1,10 @@
 # cat_splitter.py
 
-from typing import Any, List
+from typing import Any, List, Literal
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from pydantic import BaseModel
-from typing import Literal
 
 from pydisagg.disaggregate import split_datapoint
 from pydisagg.models import RateMultiplicativeModel, LogOddsModel
@@ -62,9 +61,6 @@ class CatPatternConfig(Schema):
     def val_fields(self) -> List[str]:
         return [self.val, self.val_sd]
 
-    def apply_prefix(self) -> dict:
-        return {col: f"{self.prefix}{col}" for col in self.val_fields}
-
 
 class CatPopulationConfig(Schema):
     """
@@ -79,8 +75,9 @@ class CatPopulationConfig(Schema):
     def columns(self) -> List[str]:
         return self.index + [self.val]
 
-    def apply_prefix(self) -> dict:
-        return {self.val: f"{self.prefix}{self.val}"}
+    @property
+    def val_fields(self) -> List[str]:
+        return [self.val]
 
 
 class CatSplitter(BaseModel):
@@ -98,17 +95,17 @@ class CatSplitter(BaseModel):
         """
         if not set(self.pattern.index).issubset(self.data.index):
             raise ValueError(
-                "Meow! The pattern's match criteria must be a subset of the data. Purrrlease check your input."
+                "The pattern's match criteria must be a subset of the data."
             )
         if not set(self.population.index).issubset(
             self.data.index + self.pattern.index
         ):
             raise ValueError(
-                "Meow! The population's match criteria must be a subset of the data and the pattern. Purrrhaps take a closer look?"
+                "The population's match criteria must be a subset of the data and the pattern."
             )
         if self.pattern.cat not in self.population.index:
             raise ValueError(
-                "Meow! The 'target' column in the population must match the 'target' column in the data. Purr-fect that before proceeding!"
+                "The 'target' column in the population must match the 'target' column in the data."
             )
 
     def parse_data(self, data: DataFrame, positive_strict: bool) -> DataFrame:
@@ -128,9 +125,7 @@ class CatSplitter(BaseModel):
         # Validate index after exploding
         validate_index(data, self.data.index, name)
         validate_nonan(data, name)
-        validate_positive(
-            data, [self.data.val_sd], name, strict=positive_strict
-        )
+        validate_positive(data, [self.data.val_sd], name, strict=positive_strict)
 
         return data
 
@@ -142,16 +137,11 @@ class CatSplitter(BaseModel):
         """
         Merge data with pattern DataFrame.
         """
-        data_with_pattern = data.merge(
-            pattern, on=self.pattern.index, how="left"
-        )
+        data_with_pattern = data.merge(pattern, on=self.pattern.index, how="left")
 
         validate_nonan(
             data_with_pattern[
-                [
-                    f"{self.pattern.prefix}{col}"
-                    for col in self.pattern.val_fields
-                ]
+                [f"{self.pattern.prefix}{col}" for col in self.pattern.val_fields]
             ],
             "After merging with pattern, there were NaN values created. This indicates that your pattern does not cover all the data.",
         )
@@ -175,24 +165,18 @@ class CatSplitter(BaseModel):
                         "pattern.val_sd are not available."
                     )
                 validate_columns(pattern, self.pattern.draws, name)
-                pattern[self.pattern.val] = pattern[self.pattern.draws].mean(
-                    axis=1
-                )
-                pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(
-                    axis=1
-                )
+                pattern[self.pattern.val] = pattern[self.pattern.draws].mean(axis=1)
+                pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(axis=1)
 
             validate_columns(pattern, self.pattern.columns, name)
         except KeyError as e:
-            raise KeyError(
-                f"{name}: Missing columns in the pattern. Details:\n{e}"
-            )
+            raise KeyError(f"{name}: Missing columns in the pattern. Details:\n{e}")
 
         pattern_copy = pattern.copy()
-        pattern_copy = pattern_copy[
-            self.pattern.index + self.pattern.val_fields
-        ]
-        rename_map = self.pattern.apply_prefix()
+        pattern_copy = pattern_copy[self.pattern.index + self.pattern.val_fields]
+        rename_map = {
+            col: f"{self.pattern.prefix}{col}" for col in self.pattern.val_fields
+        }
         pattern_copy.rename(columns=rename_map, inplace=True)
 
         # Merge with pattern
@@ -208,9 +192,7 @@ class CatSplitter(BaseModel):
 
         return data_with_pattern
 
-    def parse_population(
-        self, data: DataFrame, population: DataFrame
-    ) -> DataFrame:
+    def parse_population(self, data: DataFrame, population: DataFrame) -> DataFrame:
         name = "Parsing Population"
         validate_columns(population, self.population.columns, name)
 
@@ -219,7 +201,9 @@ class CatSplitter(BaseModel):
         validate_index(population, self.population.index, name)
         validate_nonan(population, name)
 
-        rename_map = self.population.apply_prefix()
+        rename_map = {
+            self.population.val: f"{self.population.prefix}{self.population.val}"
+        }
         population.rename(columns=rename_map, inplace=True)
 
         data_with_population = self._merge_with_population(data, population)
@@ -227,9 +211,7 @@ class CatSplitter(BaseModel):
         # Ensure the prefixed population column exists
         pop_col = f"{self.population.prefix}{self.population.val}"
         if pop_col not in data_with_population.columns:
-            raise KeyError(
-                f"Expected column '{pop_col}' not found in merged data."
-            )
+            raise KeyError(f"Expected column '{pop_col}' not found in merged data.")
 
         validate_nonan(
             data_with_population[[pop_col]],
@@ -268,12 +250,8 @@ class CatSplitter(BaseModel):
             bucket_populations = group[
                 f"{self.population.prefix}{self.population.val}"
             ].values
-            rate_pattern = group[
-                f"{self.pattern.prefix}{self.pattern.val}"
-            ].values
-            pattern_sd = group[
-                f"{self.pattern.prefix}{self.pattern.val_sd}"
-            ].values
+            rate_pattern = group[f"{self.pattern.prefix}{self.pattern.val}"].values
+            pattern_sd = group[f"{self.pattern.prefix}{self.pattern.val_sd}"].values
             pattern_covariance = np.diag(pattern_sd**2)
 
             if model == "rate":
@@ -319,6 +297,11 @@ class CatSplitter(BaseModel):
             raise ValueError(f"Invalid model: {model}")
         if output_type not in ["rate", "count"]:
             raise ValueError(f"Invalid output_type: {output_type}")
+
+        if self.population.prefix_status == "prefixed":
+            self.population.remove_prefix()
+        if self.pattern.prefix_status == "prefixed":
+            self.pattern.remove_prefix()
 
         # Parsing input data, pattern, and population
         data = self.parse_data(data, positive_strict=True)
