@@ -261,7 +261,7 @@ def validate_pat_coverage(
 
 def validate_realnumber(df: DataFrame, columns: list[str], name: str) -> None:
     """
-    Validates that specified columns contain real numbers and are non-zero.
+    Validates that specified columns contain real numbers, are non-zero, and are not NaN or Inf.
 
     Parameters
     ----------
@@ -275,14 +275,22 @@ def validate_realnumber(df: DataFrame, columns: list[str], name: str) -> None:
     Raises
     ------
     ValueError
-        If any column contains values that are not real numbers or are zero.
+        If any column contains values that are not real numbers, are zero, or are NaN/Inf.
     """
-    # Check for non-real or zero values in the specified columns
-    invalid = [
-        col
-        for col in columns
-        if not df[col].apply(lambda x: isinstance(x, (int, float)) and x != 0).all()
-    ]
+    # Check for non-real, zero, NaN, or Inf values in the specified columns
+    invalid = []
+    for col in columns:
+        if (
+            not df[col]
+            .apply(
+                lambda x: isinstance(x, (int, float))
+                and x != 0
+                and pd.notna(x)
+                and np.isfinite(x)
+            )
+            .all()
+        ):
+            invalid.append(col)
 
     if invalid:
         raise ValueError(f"{name} has non-real or zero values in: {invalid}")
