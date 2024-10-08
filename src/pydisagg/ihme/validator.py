@@ -56,7 +56,9 @@ def validate_index(df: DataFrame, index: list[str], name: str) -> None:
         df[df[index].duplicated()][index]
     ).to_list()
     if duplicated_index:
-        error_message = f"{name} has duplicated index with {len(duplicated_index)} indices \n"
+        error_message = (
+            f"{name} has duplicated index with {len(duplicated_index)} indices \n"
+        )
         error_message += f"Index columns: ({', '.join(index)})\n"
         if len(duplicated_index) > 5:
             error_message += "First 5: \n"
@@ -83,9 +85,7 @@ def validate_nonan(df: DataFrame, name: str) -> None:
     """
     nan_columns = df.columns[df.isna().any(axis=0)].to_list()
     if nan_columns:
-        error_message = (
-            f"{name} has NaN values in {len(nan_columns)} columns. \n"
-        )
+        error_message = f"{name} has NaN values in {len(nan_columns)} columns. \n"
         error_message += f"Columns with NaN values: {', '.join(nan_columns)}\n"
         if len(nan_columns) > 5:
             error_message += "First 5 columns with NaN values: \n"
@@ -189,9 +189,7 @@ def validate_noindexdiff(
     missing_index = index_ref.difference(index_to_check).to_list()
 
     if missing_index:
-        error_message = (
-            f"Missing {name} info for {len(missing_index)} indices \n"
-        )
+        error_message = f"Missing {name} info for {len(missing_index)} indices \n"
         error_message += f"Index columns: ({', '.join(index_ref.names)})\n"
         if len(missing_index) > 5:
             error_message += "First 5 missing indices: \n"
@@ -283,13 +281,33 @@ def validate_realnumber(df: DataFrame, columns: list[str], name: str) -> None:
     invalid = [
         col
         for col in columns
-        if not df[col]
-        .apply(lambda x: isinstance(x, (int, float)) and x != 0)
-        .all()
+        if not df[col].apply(lambda x: isinstance(x, (int, float)) and x != 0).all()
     ]
 
     if invalid:
         raise ValueError(f"{name} has non-real or zero values in: {invalid}")
 
 
-# TODO def validate_set_uniqueness
+def validate_set_uniqueness(df: DataFrame, column: str, name: str) -> None:
+    """
+    Validates that each list in the specified column contains unique elements.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame containing the data to validate.
+    column : str
+        The name of the column containing lists to validate.
+    name : str
+        A name for the DataFrame or validation context, used in error messages.
+
+    Raises
+    ------
+    ValueError
+        If any list in the specified column contains duplicate elements.
+    """
+    invalid_rows = df[df[column].apply(lambda x: len(x) != len(set(x)))]
+    if not invalid_rows.empty:
+        error_message = f"{name} has rows in column '{column}' where list elements are not unique.\n"
+        error_message += f"Indices of problematic rows: {invalid_rows.index.tolist()}\n"
+        raise ValueError(error_message)
