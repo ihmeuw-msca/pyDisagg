@@ -92,9 +92,7 @@ pop_config = AgePopulationConfig(
     val="population",
 )
 
-age_splitter = AgeSplitter(
-    data=data_config, pattern=pat_config, population=pop_config
-)
+age_splitter = AgeSplitter(data=data_config, pattern=pat_config, population=pop_config)
 result_df = age_splitter.split(
     data=df_data, pattern=df_pattern, population=df_pop, propagate_zeros=True
 )

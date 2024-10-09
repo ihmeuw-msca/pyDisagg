@@ -14,12 +14,8 @@ Getting started
     You can also use it address some of the pre-requisites for the package.
 
 
-Welcome to PyPkg!
------------------
+Goal of the Package
+-------------------
 
-PyPkg package is a template package.
-It tries to show the basic bone structure of a package with minimal functionality.
-It is meant to be used as a starting point for new packages.
 
-For installing the package please check :ref:`Installing PyPkg`.
-For a simple example please check :ref:`Quickstart`.
+
