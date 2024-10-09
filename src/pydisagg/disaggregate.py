@@ -72,8 +72,13 @@ def split_datapoint(
         (point_estimate,standard_error)
 
     """
+    if not np.issubdtype(bucket_populations.dtype, np.number):
+        raise ValueError("All elements in bucket_populations must be numeric")
+    if not np.issubdtype(rate_pattern.dtype, np.number):
+        raise ValueError("All elements in rate_pattern must be numeric")
+
     if output_type not in ["count", "rate"]:
-        raise ValueError("output_type must be one of either 'total' or 'rate'")
+        raise ValueError("output_type must be one of either 'count' or 'rate'")
 
     if normalize_pop_for_average_type_obs is True:
         processed_bucket_populations = bucket_populations / np.sum(
