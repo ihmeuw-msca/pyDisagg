@@ -148,6 +148,7 @@ class AgeSplitter(BaseModel):
 
             # Generate val and val_sd from draws
             validate_columns(pattern, self.pattern.draws, name)
+            validate_realnumber(pattern, self.pattern.draws, name)
             pattern[self.pattern.val] = pattern[self.pattern.draws].mean(axis=1)
             pattern[self.pattern.val_sd] = pattern[self.pattern.draws].std(
                 axis=1

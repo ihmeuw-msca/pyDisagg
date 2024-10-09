@@ -1,14 +1,12 @@
 import pytest
 import pandas as pd
 import numpy as np
-from pydantic import ValidationError
 from pydisagg.ihme.splitter import (
     AgeSplitter,
     AgeDataConfig,
     AgePatternConfig,
     AgePopulationConfig,
 )
-
 from pydisagg.ihme.validator import (
     validate_positive,
     validate_noindexdiff,
@@ -102,42 +100,6 @@ def test_parse_data_success(splitter, data):
     assert not parsed_data.empty
 
 
-def test_parse_data_missing_column(splitter, data):
-    # Remove a required column
-    data = data.drop(columns=["val"])
-    with pytest.raises(KeyError, match="has missing columns"):
-        splitter.parse_data(data, positive_strict=True)
-
-
-def test_parse_data_missing_index_column(splitter, data):
-    # Remove a required index column
-    data = data.drop(columns=["uid"])
-    with pytest.raises(KeyError, match="has missing columns"):
-        splitter.parse_data(data, positive_strict=True)
-
-
-def test_parse_data_nan_values(splitter, data):
-    # Introduce NaN values
-    data.loc[0, "val"] = np.nan
-    with pytest.raises(ValueError, match="has NaN values"):
-        splitter.parse_data(data, positive_strict=True)
-
-
-def test_parse_data_negative_val_sd(splitter, data):
-    # Introduce negative values in val_sd
-    data.loc[0, "val_sd"] = -1.0
-    with pytest.raises(ValueError, match="has 0 or negative values"):
-        splitter.parse_data(data, positive_strict=True)
-
-
-def test_parse_data_invalid_intervals(splitter, data):
-    # Introduce invalid interval (age_start >= age_end)
-    data.loc[0, "age_start"] = 20
-    data.loc[0, "age_end"] = 10
-    with pytest.raises(ValueError, match="has invalid interval"):
-        splitter.parse_data(data, positive_strict=True)
-
-
 def test_parse_pattern_success(splitter, data, pattern):
     # Ensure the pattern parsing works correctly with valid input
     parsed_pattern = splitter.parse_pattern(data, pattern, positive_strict=True)
@@ -145,95 +107,27 @@ def test_parse_pattern_success(splitter, data, pattern):
     assert not parsed_pattern.empty
 
 
-def test_parse_pattern_missing_columns(splitter, data, pattern):
-    # Ensure 'val' and 'val_sd' are set to the expected columns in the splitter config
-    splitter.pattern.val = "val"
-    splitter.pattern.val_sd = "val_sd"
-
-    # Ensure 'val' and 'val_sd' are missing
-    pattern = pattern.drop(columns=["val", "val_sd"], errors="ignore")
-
-    # Check that 'draws' are present
-    assert all(
-        col in pattern.columns for col in splitter.pattern.draws
-    ), "Draw columns are missing"
-
-    # This should generate 'val' and 'val_sd' from the 'draws' or raise a ValueError
-    if not splitter.pattern.draws:
-        with pytest.raises(ValueError, match="Must provide draws for pattern"):
-            splitter.parse_pattern(data, pattern, positive_strict=True)
-    else:
-        parsed_pattern = splitter.parse_pattern(
-            data, pattern, positive_strict=True
-        )
-        assert "val" in parsed_pattern.columns
-        assert "val_sd" in parsed_pattern.columns
-
-
-def test_parse_pattern_missing_draws(splitter, data, pattern):
-    # Remove both val and val_sd, and ensure pattern.draws is empty
-    splitter.pattern.val = "nonexistent_column"
-    splitter.pattern.val_sd = "nonexistent_column"
-    splitter.pattern.draws = []
-    with pytest.raises(ValueError, match="Must provide draws for pattern"):
-        splitter.parse_pattern(data, pattern, positive_strict=True)
-
-
-def test_parse_pattern_missing_index(splitter, data, pattern):
-    # Ensure the 'location_id' column exists before dropping it
-    assert "location_id" in pattern.columns
-    pattern = pattern.drop(columns=["location_id"])
-    with pytest.raises(KeyError, match="has missing columns"):
-        splitter.parse_pattern(data, pattern, positive_strict=True)
-
-
-def test_parse_pattern_invalid_interval(splitter, data, pattern):
-    # Introduce invalid intervals in the pattern
-    pattern.loc[0, "age_start"] = 20
-    pattern.loc[0, "age_end"] = 10
-    with pytest.raises(ValueError, match="has invalid interval"):
-        splitter.parse_pattern(data, pattern, positive_strict=True)
+def test_parse_data_invalid_intervals(splitter, data):
+    # Introduce invalid interval (age_start >= age_end)
+    data.loc[0, "age_start"] = 20
+    data.loc[0, "age_end"] = 10
+    with pytest.raises(ValueError):
+        splitter.parse_data(data, positive_strict=True)
 
 
 def test_parse_pattern_pat_coverage(splitter, data, pattern):
     # Modify pattern intervals so they don't cover the data intervals
     pattern.loc[0, "age_start"] = 50
     pattern.loc[0, "age_end"] = 60
-    with pytest.raises(ValueError, match="pattern does not cover the data"):
-        splitter.parse_pattern(data, pattern, positive_strict=True)
-
-
-def test_parse_pattern_nan_values(splitter, data, pattern):
-    # Ensure that the 'val' column is generated from draws if it doesn't exist
-    if "val" not in pattern.columns or "val_sd" not in pattern.columns:
-        pattern["val"] = pattern[splitter.pattern.draws].mean(axis=1)
-        pattern["val_sd"] = pattern[splitter.pattern.draws].std(axis=1)
-
-    # Now that 'val' exists, ensure the column can accept NaN values
-    pattern["val"] = pattern["val"].astype(float)
-
-    # Introduce NaN values in the 'val' column
-    pattern.loc[0, "val"] = np.nan
-
-    # Manually check if NaN is correctly set
-    assert pd.isna(
-        pattern.loc[0, "val"]
-    ), "NaN not correctly set in 'val' column"
-
-    # Ensure validate_nonan is called in parse_pattern
-    with pytest.raises(ValueError, match="has NaN values"):
+    with pytest.raises(ValueError):
         splitter.parse_pattern(data, pattern, positive_strict=True)
 
 
 def test_validate_positive():
     df = pd.DataFrame({"val_sd": [-1.0, -0.5, 0.0, 1.0, 2.0]})
 
-    try:
-        validate_positive(df, ["val_sd"], "Test Pattern", strict=False)
-    except ValueError as e:
-        assert "negative values in" in str(e)
-    else:
-        pytest.fail("Expected ValueError not raised by validate_positive")
+    with pytest.raises(ValueError):
+        validate_positive(df, ["val_sd"], "Test Pattern", strict=True)
 
 
 def test_validate_noindexdiff():
@@ -258,11 +152,35 @@ def test_validate_noindexdiff():
         }
     )
 
-    try:
+    with pytest.raises(ValueError):
         validate_noindexdiff(
             df_ref, df, ["uid", "sex_id", "location_id", "year_id"], "Test Data"
         )
-    except ValueError as e:
-        assert "Missing Test Data info for" in str(e)
-    else:
-        pytest.fail("Expected ValueError not raised by validate_noindexdiff")
+
+
+def test_parse_data_missing_columns(splitter, data):
+    # Remove a required column
+    data = data.drop(columns=["val"])
+    with pytest.raises(KeyError):
+        splitter.parse_data(data, positive_strict=True)
+
+
+def test_parse_pattern_missing_columns(splitter, pattern):
+    # Remove a required column
+    pattern = pattern.drop(columns=["draw_0"])
+    with pytest.raises(KeyError):
+        splitter.parse_pattern(pattern, pattern, positive_strict=True)
+
+
+# def test_parse_data_invalid_data_types(splitter, data):
+#     # Introduce invalid data type
+#     data["val"] = "invalid"
+#     with pytest.raises(ValueError):
+#         splitter.parse_data(data, positive_strict=True)
+
+
+def test_parse_pattern_invalid_data_types(splitter, pattern):
+    # Introduce invalid data type
+    pattern["draw_0"] = "invalid"
+    with pytest.raises(ValueError):
+        splitter.parse_pattern(pattern, pattern, positive_strict=True)

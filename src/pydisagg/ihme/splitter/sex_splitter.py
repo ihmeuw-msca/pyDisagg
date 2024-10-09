@@ -254,7 +254,7 @@ class SexSplitter(BaseModel):
                 f"{name}: Missing population columns after merging. Details:\n{e}"
             )
 
-        # Step 5: Validate for NaN values
+        # Step 5: Validate for NaN values in the merged columns using validate_nonan
         try:
             validate_nonan(data_with_population, name)
         except ValueError as e:
@@ -273,7 +273,6 @@ class SexSplitter(BaseModel):
             )
 
         # Ensure the columns are in the correct numeric type (e.g., float64)
-        # Convert "m_pop" and "f_pop" columns to standard numeric types if necessary
         data_with_population["m_pop"] = data_with_population["m_pop"].astype(
             "float64"
         )

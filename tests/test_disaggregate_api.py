@@ -80,3 +80,85 @@ def test_split_dataframe_empty():
 
     result = split_dataframe(groups_to_split, obs_df, pop_df, rate_df)
     assert result.empty
+
+
+def test_split_datapoint_output_type_rate():
+    populations = np.array([2, 5])
+    rate_pattern = np.array([0.2, 0.4])
+    result = split_datapoint(4.8, populations, rate_pattern, output_type="rate")
+    assert result is not None
+    assert len(result) == 2
+
+
+def test_split_datapoint_with_observed_total_se():
+    populations = np.array([2, 5])
+    rate_pattern = np.array([0.2, 0.4])
+    observed_total_se = 1.0
+    result, se = split_datapoint(
+        4.8, populations, rate_pattern, observed_total_se=observed_total_se
+    )
+    assert result is not None
+    assert se is not None
+
+
+def test_split_datapoint_negative_observed_total():
+    populations = np.array([2, 5])
+    rate_pattern = np.array([0.2, 0.4])
+    with pytest.raises(ValueError):
+        split_datapoint(-4.8, populations, rate_pattern)
+
+
+def test_split_datapoint_zero_population():
+    populations = np.array([0, 5])
+    rate_pattern = np.array([0.2, 0.4])
+    result = split_datapoint(4.8, populations, rate_pattern)
+    assert result is not None
+
+
+def test_split_datapoint_negative_population():
+    populations = np.array([-2, 5])
+    rate_pattern = np.array([0.2, 0.4])
+    with pytest.raises(ValueError):
+        split_datapoint(4.8, populations, rate_pattern)
+
+
+def test_split_datapoint_zero_rate_pattern():
+    populations = np.array([2, 5])
+    rate_pattern = np.array([0.0, 0.4])
+    result = split_datapoint(4.8, populations, rate_pattern)
+    assert result is not None
+
+
+def test_split_datapoint_empty_populations():
+    populations = np.array([])
+    rate_pattern = np.array([0.2, 0.4])
+    with pytest.raises(ValueError):
+        split_datapoint(4.8, populations, rate_pattern)
+
+
+def test_split_datapoint_empty_rate_pattern():
+    populations = np.array([2, 5])
+    rate_pattern = np.array([])
+    with pytest.raises(ValueError):
+        split_datapoint(4.8, populations, rate_pattern)
+
+
+def test_split_datapoint_mismatched_lengths():
+    populations = np.array([2, 5, 7])
+    rate_pattern = np.array([0.2, 0.4])
+    with pytest.raises(ValueError):
+        split_datapoint(4.8, populations, rate_pattern)
+
+
+def test_split_datapoint_non_numeric_populations():
+    populations = np.array([2, "a"])
+    rate_pattern = np.array([0.2, 0.4])
+    with pytest.raises(ValueError):
+        split_datapoint(4.8, populations, rate_pattern)
+
+
+def test_split_datapoint_non_numeric_rate_pattern():
+    populations = np.array([2, 5])
+    rate_pattern = np.array([0.2, "b"])
+    with pytest.raises(ValueError):
+        split_datapoint(4.8, populations, rate_pattern)
