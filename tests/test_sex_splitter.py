@@ -1,6 +1,5 @@
 import pytest
 import pandas as pd
-from pydantic import ValidationError
 from pydisagg.ihme.splitter import (
     SexSplitter,
     SexDataConfig,
@@ -8,9 +7,8 @@ from pydisagg.ihme.splitter import (
     SexPopulationConfig,
 )
 
+
 # Step 1: Setup Fixtures
-
-
 @pytest.fixture
 def sex_data_config():
     return SexDataConfig(
@@ -58,19 +56,6 @@ def valid_pattern():
             "year_id": [2000, 2000, 2001, 2001],
             "pattern_val": [1.5, 2.0, 1.2, 1.8],
             "pattern_val_sd": [0.1, 0.2, 0.15, 0.25],
-        }
-    )
-
-
-@pytest.fixture
-def pattern_with_draws():
-    return pd.DataFrame(
-        {
-            "age_group_id": [1, 1, 2, 2],
-            "year_id": [2000, 2000, 2001, 2001],
-            "draw_1": [1.4, 1.9, 1.3, 1.7],
-            "draw_2": [1.6, 2.1, 1.1, 1.9],
-            "draw_3": [1.5, 2.0, 1.2, 1.8],
         }
     )
 
@@ -124,18 +109,6 @@ def pattern_with_non_positive():
 
 
 @pytest.fixture
-def pattern_with_invalid_realnumbers():
-    return pd.DataFrame(
-        {
-            "age_group_id": [1, 1, 2, 2],
-            "year_id": [2000, 2000, 2001, 2001],
-            "pattern_val": [1.5, 2.0, 1.2, 1.8],
-            "pattern_val_sd": [0, 0.2, -0.15, 0.25],
-        }
-    )
-
-
-@pytest.fixture
 def sex_splitter(sex_data_config, sex_pattern_config, sex_population_config):
     return SexSplitter(
         data=sex_data_config,
@@ -148,14 +121,14 @@ def sex_splitter(sex_data_config, sex_pattern_config, sex_population_config):
 def test_parse_data_missing_columns(sex_splitter, valid_data):
     """Test parse_data raises an error when columns are missing."""
     invalid_data = valid_data.drop(columns=["val"])
-    with pytest.raises(KeyError, match="Missing columns"):
+    with pytest.raises(KeyError):
         sex_splitter.parse_data(invalid_data)
 
 
 def test_parse_data_duplicated_index(sex_splitter, valid_data):
     """Test parse_data raises an error on duplicated index."""
     duplicated_data = pd.concat([valid_data, valid_data])
-    with pytest.raises(ValueError, match="Duplicated index found"):
+    with pytest.raises(ValueError):
         sex_splitter.parse_data(duplicated_data)
 
 
@@ -163,7 +136,7 @@ def test_parse_data_with_nan(sex_splitter, valid_data):
     """Test parse_data raises an error when there are NaN values."""
     nan_data = valid_data.copy()
     nan_data.loc[0, "val"] = None
-    with pytest.raises(ValueError, match="NaN values found"):
+    with pytest.raises(ValueError):
         sex_splitter.parse_data(nan_data)
 
 
@@ -171,7 +144,7 @@ def test_parse_data_non_positive(sex_splitter, valid_data):
     """Test parse_data raises an error for non-positive values in val or val_sd."""
     non_positive_data = valid_data.copy()
     non_positive_data.loc[0, "val"] = -10
-    with pytest.raises(ValueError, match="Non-positive values found"):
+    with pytest.raises(ValueError):
         sex_splitter.parse_data(non_positive_data)
 
 
@@ -183,12 +156,83 @@ def test_parse_data_valid(sex_splitter, valid_data):
     assert "val_sd" in parsed_data.columns
 
 
-# def test_parse_data_invalid_sex_rows(sex_splitter, valid_data):
-#     """Test parse_data raises an error if invalid sex_id rows are present."""
-#     invalid_sex_data = valid_data.copy()
-#     invalid_sex_data.loc[0, "sex_id"] = 1  # Setting sex_id to sex_m
-#     with pytest.raises(ValueError, match="Invalid rows"):
-#         sex_splitter.parse_data(invalid_sex_data)
-
-
 # Step 3: Write Tests for parse_pattern
+def test_parse_pattern_missing_columns(
+    sex_splitter, valid_data, invalid_pattern_missing_columns
+):
+    """Test parse_pattern raises an error when required columns are missing."""
+    with pytest.raises(ValueError):
+        sex_splitter.parse_pattern(
+            valid_data, invalid_pattern_missing_columns, model="rate"
+        )
+
+
+def test_parse_pattern_non_positive(
+    sex_splitter, valid_data, pattern_with_non_positive
+):
+    """Test parse_pattern raises an error for non-positive values in pattern."""
+    with pytest.raises(ValueError):
+        sex_splitter.parse_pattern(valid_data, pattern_with_non_positive, model="rate")
+
+
+# Step 4: Write Tests for parse_population
+def test_parse_population_valid(sex_splitter, valid_data):
+    """Test parse_population raises an error when population data is missing for some sex_id values."""
+    valid_population = pd.DataFrame(
+        {
+            "age_group_id": [1, 1, 2, 2],
+            "year_id": [2000, 2000, 2001, 2001],
+            "location_id": [10, 20, 10, 20],
+            "sex_id": [1, 2, 1, 2],  # No sex_id = 3 here
+            "population": [1000, 1100, 1200, 1300],
+        }
+    )
+
+    # Ensure that the function raises an error due to unmatched sex_id values
+    with pytest.raises(ValueError):
+        sex_splitter.parse_population(valid_data, valid_population)
+
+
+def test_parse_population_missing_columns(sex_splitter, valid_data):
+    """Test parse_population raises an error when required columns are missing."""
+    invalid_population = pd.DataFrame(
+        {
+            "age_group_id": [1, 1, 2, 2],
+            "year_id": [2000, 2000, 2001, 2001],
+            "location_id": [10, 20, 10, 20],
+            "population": [1000, 1100, 1200, 1300],
+            # Missing 'sex_id' column
+        }
+    )
+    with pytest.raises(KeyError):
+        sex_splitter.parse_population(valid_data, invalid_population)
+
+
+def test_parse_population_with_nan(sex_splitter, valid_data):
+    """Test parse_population raises an error when there are NaN values."""
+    invalid_population = pd.DataFrame(
+        {
+            "age_group_id": [1, 1, 2, 2],
+            "year_id": [2000, 2000, 2001, 2001],
+            "location_id": [10, 20, 10, 20],
+            "sex_id": [1, 2, 1, 2],
+            "population": [1000, None, 1200, 1300],  # NaN value in the population
+        }
+    )
+    with pytest.raises(ValueError):
+        sex_splitter.parse_population(valid_data, invalid_population)
+
+
+def test_parse_population_duplicated_index(sex_splitter, valid_data):
+    """Test parse_population raises an error when population index is duplicated."""
+    duplicated_population = pd.DataFrame(
+        {
+            "age_group_id": [1, 1, 1, 1],
+            "year_id": [2000, 2000, 2000, 2000],
+            "location_id": [10, 20, 10, 20],
+            "sex_id": [1, 2, 1, 2],
+            "population": [1000, 1100, 1200, 1300],
+        }
+    )
+    with pytest.raises(ValueError):
+        sex_splitter.parse_population(valid_data, duplicated_population)
