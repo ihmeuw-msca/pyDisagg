@@ -246,22 +246,39 @@ class SexSplitter(BaseModel):
             data_with_population, female_population, "f_pop"
         )
 
-        # Step 4: Check if there are NaN values in m_pop or f_pop (unmatched sex_id)
-        if (
-            data_with_population["m_pop"].isna().any()
-            or data_with_population["f_pop"].isna().any()
-        ):
-            raise ValueError(
-                f"{name}: Missing population data for some sex_id values. Ensure population data matches sex_id in the input data."
+        # Step 4: Validate the merged data columns
+        try:
+            validate_columns(data_with_population, ["m_pop", "f_pop"], name)
+        except KeyError as e:
+            raise KeyError(
+                f"{name}: Missing population columns after merging. Details:\n{e}"
             )
 
-        # Step 5: Validate for NaN values in other columns
+        # Step 5: Validate for NaN values in the merged columns using validate_nonan
         try:
             validate_nonan(data_with_population, name)
         except ValueError as e:
             raise ValueError(
                 f"{name}: NaN values found in the population data. Details:\n{e}"
             )
+
+        # Step 6: Validate index differences
+        try:
+            validate_noindexdiff(
+                data, data_with_population, self.data.index, name
+            )
+        except ValueError as e:
+            raise ValueError(
+                f"{name}: Index differences found between data and population. Details:\n{e}"
+            )
+
+        # Ensure the columns are in the correct numeric type (e.g., float64)
+        data_with_population["m_pop"] = data_with_population["m_pop"].astype(
+            "float64"
+        )
+        data_with_population["f_pop"] = data_with_population["f_pop"].astype(
+            "float64"
+        )
 
         return data_with_population
 
