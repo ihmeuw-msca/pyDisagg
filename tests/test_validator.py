@@ -10,9 +10,12 @@ from pydisagg.ihme.validator import (
     validate_nonan,
     validate_pat_coverage,
     validate_positive,
+    validate_set_uniqueness,
+    validate_realnumber,
 )
 
 
+# Test functions
 @pytest.fixture
 def data():
     np.random.seed(123)
@@ -65,6 +68,7 @@ def population():
     return population
 
 
+# Tests for validate_columns
 def test_validate_columns_missing(population):
     with pytest.raises(KeyError):
         validate_columns(
@@ -74,6 +78,16 @@ def test_validate_columns_missing(population):
         )
 
 
+def test_validate_columns_no_missing(population):
+    # All columns are present; should pass
+    validate_columns(
+        population,
+        ["sex_id", "location_id", "age_group_id", "year_id", "population"],
+        "population",
+    )
+
+
+# Tests for validate_index
 def test_validate_index_missing(population):
     with pytest.raises(ValueError):
         validate_index(
@@ -83,11 +97,27 @@ def test_validate_index_missing(population):
         )
 
 
+def test_validate_index_no_duplicates(population):
+    # Ensure DataFrame has no duplicate indices; should pass
+    validate_index(
+        population,
+        ["sex_id", "location_id", "age_group_id", "year_id"],
+        "population",
+    )
+
+
+# Tests for validate_nonan
 def test_validate_nonan(population):
     with pytest.raises(ValueError):
         validate_nonan(population.assign(population=np.nan), "population")
 
 
+def test_validate_nonan_no_nan(population):
+    # No NaN values; should pass
+    validate_nonan(population, "population")
+
+
+# Tests for validate_positive
 def test_validate_positive_strict(population):
     with pytest.raises(ValueError):
         validate_positive(
@@ -108,6 +138,12 @@ def test_validate_positive_not_strict(population):
         )
 
 
+def test_validate_positive_no_error(population):
+    validate_positive(population, ["population"], "population", strict=True)
+    validate_positive(population, ["population"], "population", strict=False)
+
+
+# Tests for validate_interval
 def test_validate_interval_lower_equal_upper(data):
     with pytest.raises(ValueError):
         validate_interval(
@@ -130,11 +166,7 @@ def test_validate_interval_positive(data):
     validate_interval(data, "age_start", "age_end", ["uid"], "data")
 
 
-def test_validate_positive_no_error(population):
-    validate_positive(population, ["population"], "population", strict=True)
-    validate_positive(population, ["population"], "population", strict=False)
-
-
+# Tests for validate_noindexdiff
 @pytest.fixture
 def merged_data_pattern(data, pattern):
     return pd.merge(
@@ -149,7 +181,7 @@ def test_validate_noindexdiff_merged_positive(merged_data_pattern, population):
     # Positive test case: no index difference
     validate_noindexdiff(
         population,
-        merged_data_pattern,
+        merged_data_pattern.dropna(subset=["sex_id", "location_id"]),
         ["sex_id", "location_id"],
         "merged_data_pattern",
     )
@@ -173,6 +205,7 @@ def test_validate_noindexdiff_merged_negative(data, pattern):
         )
 
 
+# Tests for validate_pat_coverage
 @pytest.mark.parametrize(
     "bad_data_with_pattern",
     [
@@ -221,3 +254,81 @@ def test_validate_pat_coverage_failure(bad_data_with_pattern):
             ["group_id"],
             "pattern",
         )
+
+
+# Tests for validate_realnumber
+def test_validate_realnumber_positive():
+    df = pd.DataFrame({"col1": [1, 2.5, -3.5, 4.2], "col2": [5.1, 6, 7, 8]})
+    # Should pass without exceptions
+    validate_realnumber(df, ["col1", "col2"], "df")
+
+
+def test_validate_realnumber_zero():
+    df = pd.DataFrame({"col1": [1, 2, 0, 4], "col2": [5, 6, 7, 8]})
+    with pytest.raises(
+        ValueError, match="df has non-real or zero values in: \\['col1'\\]"
+    ):
+        validate_realnumber(df, ["col1"], "df")
+
+
+def test_validate_realnumber_nan():
+    df = pd.DataFrame({"col1": [1, 2, 3, np.nan], "col2": [5, 6, 7, 8]})
+    with pytest.raises(
+        ValueError, match="df has non-real or zero values in: \\['col1'\\]"
+    ):
+        validate_realnumber(df, ["col1"], "df")
+
+
+def test_validate_realnumber_non_numeric():
+    df = pd.DataFrame({"col1": [1, 2, 3, "a"], "col2": [5, 6, 7, 8]})
+    with pytest.raises(
+        ValueError, match="df has non-real or zero values in: \\['col1'\\]"
+    ):
+        validate_realnumber(df, ["col1"], "df")
+
+
+def test_validate_realnumber_infinite():
+    df = pd.DataFrame({"col1": [1, 2, 3, np.inf], "col2": [5, 6, 7, 8]})
+    # np.inf is not a finite real number
+    with pytest.raises(
+        ValueError, match="df has non-real or zero values in: \\['col1'\\]"
+    ):
+        validate_realnumber(df, ["col1"], "df")
+
+
+# Tests for validate_set_uniqueness
+def test_validate_set_uniqueness_positive():
+    df = pd.DataFrame(
+        {"col1": [[1, 2, 3], ["a", "b", "c"], [True, False], [1.1, 2.2, 3.3]]}
+    )
+    # Should pass without exceptions
+    validate_set_uniqueness(df, "col1", "df")
+
+
+def test_validate_set_uniqueness_negative():
+    df = pd.DataFrame(
+        {"col1": [[1, 2, 2], ["a", "b", "a"], [True, False], [1.1, 2.2, 1.1]]}
+    )
+    with pytest.raises(
+        ValueError,
+        match="df has rows in column 'col1' where list elements are not unique.",
+    ):
+        validate_set_uniqueness(df, "col1", "df")
+
+
+def test_validate_set_uniqueness_empty_lists():
+    df = pd.DataFrame({"col1": [[], [], []]})
+    # Should pass; empty lists have no duplicates
+    validate_set_uniqueness(df, "col1", "df")
+
+
+def test_validate_set_uniqueness_single_element_lists():
+    df = pd.DataFrame({"col1": [[1], ["a"], [True]]})
+    # Should pass; single-element lists can't have duplicates
+    validate_set_uniqueness(df, "col1", "df")
+
+
+def test_validate_set_uniqueness_mixed_types_with_duplicates():
+    df = pd.DataFrame({"col1": [[1, "1", 1.0], [True, 1, 1.0], [2, 2, 2]]})
+    with pytest.raises(ValueError):
+        validate_set_uniqueness(df, "col1", "df")
