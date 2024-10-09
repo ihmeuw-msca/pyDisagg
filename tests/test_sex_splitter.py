@@ -172,7 +172,9 @@ def test_parse_pattern_non_positive(
 ):
     """Test parse_pattern raises an error for non-positive values in pattern."""
     with pytest.raises(ValueError):
-        sex_splitter.parse_pattern(valid_data, pattern_with_non_positive, model="rate")
+        sex_splitter.parse_pattern(
+            valid_data, pattern_with_non_positive, model="rate"
+        )
 
 
 # Step 4: Write Tests for parse_population
@@ -216,7 +218,12 @@ def test_parse_population_with_nan(sex_splitter, valid_data):
             "year_id": [2000, 2000, 2001, 2001],
             "location_id": [10, 20, 10, 20],
             "sex_id": [1, 2, 1, 2],
-            "population": [1000, None, 1200, 1300],  # NaN value in the population
+            "population": [
+                1000,
+                None,
+                1200,
+                1300,
+            ],  # NaN value in the population
         }
     )
     with pytest.raises(ValueError):
