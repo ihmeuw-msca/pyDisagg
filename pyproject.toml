@@ -1,7 +1,8 @@
 [build-system]
-build-backend = "setuptools.build_meta"
+build-backend = "mesonpy"
 requires = [
-  "setuptools>=61",
+  "meson-python>=0.12",
+  "meson>=0.61",
 ]
 
 [project]
