@@ -1,9 +1,6 @@
 [build-system]
+requires = ["meson-python>=0.12", "meson>=0.61", "ninja"]
 build-backend = "mesonpy"
-requires = [
-  "meson-python>=0.12",
-  "meson>=0.61",
-]
 
 [project]
 name = "pydisagg"
