@@ -198,32 +198,25 @@ class AgeSplitter(BaseModel):
     def _merge_with_pattern(
         self, data: DataFrame, pattern: DataFrame
     ) -> DataFrame:
-        # TODO change these asserts to validate_columns
-        assert (
-            self.data.age_lwr in data.columns
-        ), f"Column '{self.data.age_lwr}' not found in data"
-        assert (
-            self.data.age_upr in data.columns
-        ), f"Column '{self.data.age_upr}' not found in data"
-        assert (
-            self.pattern.age_lwr in pattern.columns
-        ), f"Column '{self.pattern.age_lwr}' not found in pattern"
-        assert (
-            self.pattern.age_upr in pattern.columns
-        ), f"Column '{self.pattern.age_upr}' not found in pattern"
+        # Validate required columns
+        validate_columns(pattern, self.pattern.columns, "Pattern Data")
 
-        data_with_pattern = (
-            data.merge(pattern, on=self.pattern.by, how="left")
-            .query(
-                f"({self.pattern.age_lwr} >= {self.data.age_lwr} and"
-                f" {self.pattern.age_lwr} < {self.data.age_upr}) or"
-                f"({self.pattern.age_upr} > {self.data.age_lwr} and"
-                f" {self.pattern.age_upr} <= {self.data.age_upr}) or"
-                f"({self.pattern.age_lwr} <= {self.data.age_lwr} and"
-                f" {self.pattern.age_upr} >= {self.data.age_upr})"
-            )
-            .dropna()
-        )
+        # Subset pattern to only the necessary columns
+        pattern = pattern[self.pattern.columns].copy()
+
+        # Proceed with merge
+        data_with_pattern = data.merge(pattern, on=self.pattern.by, how="left")
+
+        # Rest of your code (query, dropna, etc.)
+        data_with_pattern = data_with_pattern.query(
+            f"({self.pattern.age_lwr} >= {self.data.age_lwr} and"
+            f" {self.pattern.age_lwr} < {self.data.age_upr}) or"
+            f"({self.pattern.age_upr} > {self.data.age_lwr} and"
+            f" {self.pattern.age_upr} <= {self.data.age_upr}) or"
+            f"({self.pattern.age_lwr} <= {self.data.age_lwr} and"
+            f" {self.pattern.age_upr} >= {self.data.age_upr})"
+        ).dropna()
+
         return data_with_pattern
 
     def parse_population(
