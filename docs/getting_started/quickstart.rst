@@ -4,11 +4,13 @@ Quickstart
 
 Below are examples of how to load the package in Python and R. The Python example shows age-splitting, sex-splitting, and categorical splitting, and the R example shows the same.
 
+.. _quickstart-python:
+
 Python
 ======
 
-Import
-~~~~~~
+Import Example
+~~~~~~~~~~~~~~
 .. code-block:: python
 
     from pydisagg.ihme.splitter import (
@@ -26,6 +28,8 @@ Import
         CatSplitter,
     )
 
+.. _quickstart-age-splitting:
+
 Age Splitting
 ~~~~~~~~~~~~~
 .. code-block:: python
@@ -39,14 +43,17 @@ Age Splitting
         val_sd="SE",
     )
 
-    draw_cols = patterns_fpg.filter(regex="^draw_").columns.tolist()
+    # draw_cols assumes you use a draw based approach, if you have a point estimate 
+    # and standard error those can be passed into the config directly (i.e. "mean_draw")
+    
+    #draw_cols = patterns_fpg.filter(regex="^draw_").columns.tolist()
 
     fpg_pattern_con = AgePatternConfig(
         by=["location_id", "year_id", "sex_id"],
         age_key="age_group_id",
         age_lwr="age_group_years_start",
         age_upr="age_group_years_end",
-        draws=draw_cols,
+        #draws=draw_cols,
         val="mean_draw",
         val_sd="var_draw",
     )
@@ -67,6 +74,8 @@ Age Splitting
         model="logodds",
         output_type="rate",
     )
+
+.. _quickstart-cat-splitting:
 
 Categorical Splitting
 ~~~~~~~~~~~~~~~~~~~~~
@@ -103,6 +112,8 @@ Categorical Splitting
         model="rate",
         output_type="rate",
     )
+
+.. _quickstart-sex-splitting:
 
 Sex Splitting
 ~~~~~~~~~~~~~
@@ -141,19 +152,23 @@ Sex Splitting
         output_type="total",
     )
 
+.. _quickstart-r:
+
 R
 =
 
-Import
-~~~~~~
+R Import Example
+~~~~~~~~~~~~~~~~
 .. code-block:: r
 
     library(reticulate)
     reticulate::use_python("/some/path/to/miniconda3/envs/your-conda-env/bin/python")
     splitter <- import("pydisagg.ihme.splitter")
 
-Age Splitting
-~~~~~~~~~~~~~
+.. _quickstart-r-age-splitting:
+
+R Age Splitting
+~~~~~~~~~~~~~~~
 .. code-block:: r
 
     # Age Splitting Configuration
@@ -186,69 +201,4 @@ Age Splitting
         population=pops_df,
         model="logodds",
         output_type="rate"
-    )
-
-Categorical Splitting
-~~~~~~~~~~~~~~~~~~~~~
-.. code-block:: r
-
-    # Categorical Splitting Configuration
-    cat_splitter <- splitter$CatSplitter(
-        data=splitter$CatDataConfig(
-            index=c("study_id", "year_id", "location_id"),
-            cat_group="location_id",
-            val="mean",
-            val_sd="std_err"
-        ),
-        pattern=splitter$CatPatternConfig(
-            by=c("year_id"),
-            cat="location_id",
-            val="mean",
-            val_sd="std_err"
-        ),
-        population=splitter$CatPopulationConfig(
-            index=c("year_id", "location_id"),
-            val="population"
-        )
-    )
-
-    result_cat_df <- cat_splitter$split(
-        data=pre_split,
-        pattern=data_pattern,
-        population=data_pop,
-        model="rate",
-        output_type="rate"
-    )
-
-Sex Splitting
-~~~~~~~~~~~~~
-.. code-block:: r
-
-    # Sex Splitting Configuration
-    sex_splitter <- splitter$SexSplitter(
-        data=splitter$SexDataConfig(
-            index=c("nid", "seq", "location_id", "year_id", "sex_id", "age_lwr", "age_upr"),
-            val="val",
-            val_sd="val_sd"
-        ),
-        pattern=splitter$SexPatternConfig(
-            by=c("year_id"),
-            val="draw_mean",
-            val_sd="draw_sd"
-        ),
-        population=splitter$SexPopulationConfig(
-            index=c("location_id", "year_id"),
-            sex="sex_id",
-            sex_m=1,
-            sex_f=2,
-            val="population"
-        )
-    )
-
-    result_sex_df <- sex_splitter$split(
-        data=pre_split,
-        pattern=sex_pattern,
-        population=sex_pop,
-        model="rate",
-        output_type="total"
     )

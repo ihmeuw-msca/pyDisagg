@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="User guide" href="../user_guide/index.html" /><link rel="prev" title="Installing pypkg" href="installation.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="User guide" href="../user_guide/index.html" /><link rel="prev" title="Installing pyDisagg" href="installation.html" />
 
-    <!-- Generated with Sphinx 7.3.7 and Furo 2024.05.06 -->
-        <title>Quickstart - pydisagg 0.5.1</title>
+    <!-- Generated with Sphinx 8.1.3 and Furo 2024.05.06 -->
+        <title>Quickstart - pydisagg 0.6.0</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=387cc868" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
@@ -198,7 +198,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">pydisagg 0.5.1</div></a>
+      <a href="../index.html"><div class="brand">pydisagg 0.6.0</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -226,7 +226,7 @@
     <img class="sidebar-logo only-dark" src="../_static/logo/logo-dark.png" alt="Dark Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">pydisagg 0.5.1</span>
+  <span class="sidebar-brand-text">pydisagg 0.6.0</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -236,19 +236,20 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul class="current">
 <li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Getting started</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Getting started</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="installation.html">Installing pypkg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html">Installing pyDisagg</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Quickstart</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../user_guide/index.html">User guide</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of User guide</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../user_guide/project_organization.html">1. Project organization</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../user_guide/style_guide.html">2. Style guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user_guide/project_organization.html">1. Project Organization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user_guide/config_guide.html">2. Configuration guide</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../user_guide/testing.html">3. Testing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../user_guide/documentation.html">4. Documentation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../user_guide/cicd.html">5. CI/CD</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../api_reference/index.html">API reference</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of API reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="simple">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api_reference/index.html">API reference</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of API reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api_reference/example.html">PyDisagg Example</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_guide/index.html">Developer guide</a></li>
@@ -309,14 +310,190 @@
         <article role="main" id="furo-main-content">
           <section id="quickstart">
 <h1>Quickstart<a class="headerlink" href="#quickstart" title="Link to this heading">¶</a></h1>
-<section id="example">
-<h2>Example<a class="headerlink" href="#example" title="Link to this heading">¶</a></h2>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pypkg.example</span> <span class="kn">import</span> <span class="n">add</span>
-
-<span class="n">result</span> <span class="o">=</span> <span class="n">add</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="mi">3</span>
+<p>Below are examples of how to load the package in Python and R. The Python example shows age-splitting, sex-splitting, and categorical splitting, and the R example shows the same.</p>
+<section id="python">
+<span id="quickstart-python"></span><h2>Python<a class="headerlink" href="#python" title="Link to this heading">¶</a></h2>
+<section id="import-example">
+<h3>Import Example<a class="headerlink" href="#import-example" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pydisagg.ihme.splitter</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AgeDataConfig</span><span class="p">,</span>
+    <span class="n">AgePatternConfig</span><span class="p">,</span>
+    <span class="n">AgePopulationConfig</span><span class="p">,</span>
+    <span class="n">AgeSplitter</span><span class="p">,</span>
+    <span class="n">SexDataConfig</span><span class="p">,</span>
+    <span class="n">SexPatternConfig</span><span class="p">,</span>
+    <span class="n">SexPopulationConfig</span><span class="p">,</span>
+    <span class="n">SexSplitter</span><span class="p">,</span>
+    <span class="n">CatDataConfig</span><span class="p">,</span>
+    <span class="n">CatPatternConfig</span><span class="p">,</span>
+    <span class="n">CatPopulationConfig</span><span class="p">,</span>
+    <span class="n">CatSplitter</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 </div>
+</section>
+<section id="age-splitting">
+<span id="quickstart-age-splitting"></span><h3>Age Splitting<a class="headerlink" href="#age-splitting" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Age Splitting Configuration</span>
+<span class="n">fpg_data_con</span> <span class="o">=</span> <span class="n">AgeDataConfig</span><span class="p">(</span>
+    <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;unique_id&quot;</span><span class="p">,</span> <span class="s2">&quot;location_id&quot;</span><span class="p">,</span> <span class="s2">&quot;year_id&quot;</span><span class="p">,</span> <span class="s2">&quot;sex_id&quot;</span><span class="p">],</span>
+    <span class="n">age_lwr</span><span class="o">=</span><span class="s2">&quot;age_start&quot;</span><span class="p">,</span>
+    <span class="n">age_upr</span><span class="o">=</span><span class="s2">&quot;age_end&quot;</span><span class="p">,</span>
+    <span class="n">val</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+    <span class="n">val_sd</span><span class="o">=</span><span class="s2">&quot;SE&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">draw_cols</span> <span class="o">=</span> <span class="n">patterns_fpg</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">regex</span><span class="o">=</span><span class="s2">&quot;^draw_&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+<span class="n">fpg_pattern_con</span> <span class="o">=</span> <span class="n">AgePatternConfig</span><span class="p">(</span>
+    <span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;location_id&quot;</span><span class="p">,</span> <span class="s2">&quot;year_id&quot;</span><span class="p">,</span> <span class="s2">&quot;sex_id&quot;</span><span class="p">],</span>
+    <span class="n">age_key</span><span class="o">=</span><span class="s2">&quot;age_group_id&quot;</span><span class="p">,</span>
+    <span class="n">age_lwr</span><span class="o">=</span><span class="s2">&quot;age_group_years_start&quot;</span><span class="p">,</span>
+    <span class="n">age_upr</span><span class="o">=</span><span class="s2">&quot;age_group_years_end&quot;</span><span class="p">,</span>
+    <span class="n">draws</span><span class="o">=</span><span class="n">draw_cols</span><span class="p">,</span>
+    <span class="n">val</span><span class="o">=</span><span class="s2">&quot;mean_draw&quot;</span><span class="p">,</span>
+    <span class="n">val_sd</span><span class="o">=</span><span class="s2">&quot;var_draw&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">fpg_pop_con</span> <span class="o">=</span> <span class="n">AgePopulationConfig</span><span class="p">(</span>
+    <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;age_group_id&quot;</span><span class="p">,</span> <span class="s2">&quot;location_id&quot;</span><span class="p">,</span> <span class="s2">&quot;year_id&quot;</span><span class="p">,</span> <span class="s2">&quot;sex_id&quot;</span><span class="p">],</span>
+    <span class="n">val</span><span class="o">=</span><span class="s2">&quot;population&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">age_splitter</span> <span class="o">=</span> <span class="n">AgeSplitter</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">fpg_data_con</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="n">fpg_pattern_con</span><span class="p">,</span> <span class="n">population</span><span class="o">=</span><span class="n">fpg_pop_con</span>
+<span class="p">)</span>
+
+<span class="n">result_age</span> <span class="o">=</span> <span class="n">age_splitter</span><span class="o">.</span><span class="n">split</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">fpg_df</span><span class="p">,</span>
+    <span class="n">pattern</span><span class="o">=</span><span class="n">patterns_fpg</span><span class="p">,</span>
+    <span class="n">population</span><span class="o">=</span><span class="n">pops_df</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;logodds&quot;</span><span class="p">,</span>
+    <span class="n">output_type</span><span class="o">=</span><span class="s2">&quot;rate&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="categorical-splitting">
+<span id="quickstart-cat-splitting"></span><h3>Categorical Splitting<a class="headerlink" href="#categorical-splitting" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Categorical Splitting Configuration</span>
+<span class="n">cat_data_con</span> <span class="o">=</span> <span class="n">CatDataConfig</span><span class="p">(</span>
+    <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;study_id&quot;</span><span class="p">,</span> <span class="s2">&quot;year_id&quot;</span><span class="p">,</span> <span class="s2">&quot;location_id&quot;</span><span class="p">],</span>
+    <span class="n">cat_group</span><span class="o">=</span><span class="s2">&quot;location_id&quot;</span><span class="p">,</span>
+    <span class="n">val</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+    <span class="n">val_sd</span><span class="o">=</span><span class="s2">&quot;std_err&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">cat_pattern_con</span> <span class="o">=</span> <span class="n">CatPatternConfig</span><span class="p">(</span>
+    <span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;year_id&quot;</span><span class="p">],</span>
+    <span class="n">cat</span><span class="o">=</span><span class="s2">&quot;location_id&quot;</span><span class="p">,</span>
+    <span class="n">val</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+    <span class="n">val_sd</span><span class="o">=</span><span class="s2">&quot;std_err&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">cat_pop_con</span> <span class="o">=</span> <span class="n">CatPopulationConfig</span><span class="p">(</span>
+    <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;year_id&quot;</span><span class="p">,</span> <span class="s2">&quot;location_id&quot;</span><span class="p">],</span>
+    <span class="n">val</span><span class="o">=</span><span class="s2">&quot;population&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">cat_splitter</span> <span class="o">=</span> <span class="n">CatSplitter</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">cat_data_con</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="n">cat_pattern_con</span><span class="p">,</span> <span class="n">population</span><span class="o">=</span><span class="n">cat_pop_con</span>
+<span class="p">)</span>
+
+<span class="n">result_cat</span> <span class="o">=</span> <span class="n">cat_splitter</span><span class="o">.</span><span class="n">split</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">pre_split</span><span class="p">,</span>
+    <span class="n">pattern</span><span class="o">=</span><span class="n">data_pattern</span><span class="p">,</span>
+    <span class="n">population</span><span class="o">=</span><span class="n">data_pop</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;rate&quot;</span><span class="p">,</span>
+    <span class="n">output_type</span><span class="o">=</span><span class="s2">&quot;rate&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="sex-splitting">
+<span id="quickstart-sex-splitting"></span><h3>Sex Splitting<a class="headerlink" href="#sex-splitting" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Sex Splitting Configuration</span>
+<span class="n">sex_data_con</span> <span class="o">=</span> <span class="n">SexDataConfig</span><span class="p">(</span>
+    <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;nid&quot;</span><span class="p">,</span> <span class="s2">&quot;seq&quot;</span><span class="p">,</span> <span class="s2">&quot;location_id&quot;</span><span class="p">,</span> <span class="s2">&quot;year_id&quot;</span><span class="p">,</span> <span class="s2">&quot;sex_id&quot;</span><span class="p">,</span> <span class="s2">&quot;age_lwr&quot;</span><span class="p">,</span> <span class="s2">&quot;age_upr&quot;</span><span class="p">],</span>
+    <span class="n">val</span><span class="o">=</span><span class="s2">&quot;val&quot;</span><span class="p">,</span>
+    <span class="n">val_sd</span><span class="o">=</span><span class="s2">&quot;val_sd&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">sex_pattern_con</span> <span class="o">=</span> <span class="n">SexPatternConfig</span><span class="p">(</span>
+    <span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;year_id&quot;</span><span class="p">],</span>
+    <span class="n">val</span><span class="o">=</span><span class="s2">&quot;draw_mean&quot;</span><span class="p">,</span>
+    <span class="n">val_sd</span><span class="o">=</span><span class="s2">&quot;draw_sd&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">sex_pop_con</span> <span class="o">=</span> <span class="n">SexPopulationConfig</span><span class="p">(</span>
+    <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;location_id&quot;</span><span class="p">,</span> <span class="s2">&quot;year_id&quot;</span><span class="p">],</span>
+    <span class="n">sex</span><span class="o">=</span><span class="s2">&quot;sex_id&quot;</span><span class="p">,</span>
+    <span class="n">sex_m</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">sex_f</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">val</span><span class="o">=</span><span class="s2">&quot;population&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">sex_splitter</span> <span class="o">=</span> <span class="n">SexSplitter</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">sex_data_con</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="n">sex_pattern_con</span><span class="p">,</span> <span class="n">population</span><span class="o">=</span><span class="n">sex_pop_con</span>
+<span class="p">)</span>
+
+<span class="n">result_sex</span> <span class="o">=</span> <span class="n">sex_splitter</span><span class="o">.</span><span class="n">split</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">pre_split</span><span class="p">,</span>
+    <span class="n">pattern</span><span class="o">=</span><span class="n">sex_pattern</span><span class="p">,</span>
+    <span class="n">population</span><span class="o">=</span><span class="n">sex_pop</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;rate&quot;</span><span class="p">,</span>
+    <span class="n">output_type</span><span class="o">=</span><span class="s2">&quot;total&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="r">
+<span id="quickstart-r"></span><h2>R<a class="headerlink" href="#r" title="Link to this heading">¶</a></h2>
+<section id="r-import-example">
+<h3>R Import Example<a class="headerlink" href="#r-import-example" title="Link to this heading">¶</a></h3>
+<div class="highlight-r notranslate"><div class="highlight"><pre><span></span><span class="nf">library</span><span class="p">(</span><span class="n">reticulate</span><span class="p">)</span>
+<span class="n">reticulate</span><span class="o">::</span><span class="nf">use_python</span><span class="p">(</span><span class="s">&quot;/some/path/to/miniconda3/envs/your-conda-env/bin/python&quot;</span><span class="p">)</span>
+<span class="n">splitter</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">import</span><span class="p">(</span><span class="s">&quot;pydisagg.ihme.splitter&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="r-age-splitting">
+<span id="quickstart-r-age-splitting"></span><h3>R Age Splitting<a class="headerlink" href="#r-age-splitting" title="Link to this heading">¶</a></h3>
+<div class="highlight-r notranslate"><div class="highlight"><pre><span></span><span class="c1"># Age Splitting Configuration</span>
+<span class="n">age_splitter</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">splitter</span><span class="o">$</span><span class="nf">AgeSplitter</span><span class="p">(</span>
+<span class="w">    </span><span class="n">data</span><span class="o">=</span><span class="n">splitter</span><span class="o">$</span><span class="nf">AgeDataConfig</span><span class="p">(</span>
+<span class="w">        </span><span class="n">index</span><span class="o">=</span><span class="nf">c</span><span class="p">(</span><span class="s">&quot;unique_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;location_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;year_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;sex_id&quot;</span><span class="p">),</span>
+<span class="w">        </span><span class="n">age_lwr</span><span class="o">=</span><span class="s">&quot;age_start&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="n">age_upr</span><span class="o">=</span><span class="s">&quot;age_end&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="n">val</span><span class="o">=</span><span class="s">&quot;mean&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="n">val_sd</span><span class="o">=</span><span class="s">&quot;SE&quot;</span>
+<span class="w">    </span><span class="p">),</span>
+<span class="w">    </span><span class="n">pattern</span><span class="o">=</span><span class="n">splitter</span><span class="o">$</span><span class="nf">AgePatternConfig</span><span class="p">(</span>
+<span class="w">        </span><span class="n">by</span><span class="o">=</span><span class="nf">c</span><span class="p">(</span><span class="s">&quot;location_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;year_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;sex_id&quot;</span><span class="p">),</span>
+<span class="w">        </span><span class="n">age_key</span><span class="o">=</span><span class="s">&quot;age_group_id&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="n">age_lwr</span><span class="o">=</span><span class="s">&quot;age_group_years_start&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="n">age_upr</span><span class="o">=</span><span class="s">&quot;age_group_years_end&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="n">draws</span><span class="o">=</span><span class="n">draw_cols</span><span class="p">,</span>
+<span class="w">        </span><span class="n">val</span><span class="o">=</span><span class="s">&quot;mean_draw&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="n">val_sd</span><span class="o">=</span><span class="s">&quot;var_draw&quot;</span>
+<span class="w">    </span><span class="p">),</span>
+<span class="w">    </span><span class="n">population</span><span class="o">=</span><span class="n">splitter</span><span class="o">$</span><span class="nf">AgePopulationConfig</span><span class="p">(</span>
+<span class="w">        </span><span class="n">index</span><span class="o">=</span><span class="nf">c</span><span class="p">(</span><span class="s">&quot;age_group_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;location_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;year_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;sex_id&quot;</span><span class="p">),</span>
+<span class="w">        </span><span class="n">val</span><span class="o">=</span><span class="s">&quot;population&quot;</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">result_age_df</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">age_splitter</span><span class="o">$</span><span class="nf">split</span><span class="p">(</span>
+<span class="w">    </span><span class="n">data</span><span class="o">=</span><span class="n">fpg_df</span><span class="p">,</span>
+<span class="w">    </span><span class="n">pattern</span><span class="o">=</span><span class="n">patterns_fpg</span><span class="p">,</span>
+<span class="w">    </span><span class="n">population</span><span class="o">=</span><span class="n">pops_df</span><span class="p">,</span>
+<span class="w">    </span><span class="n">model</span><span class="o">=</span><span class="s">&quot;logodds&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">output_type</span><span class="o">=</span><span class="s">&quot;rate&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
 </section>
 </section>
 
@@ -341,7 +518,7 @@
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Installing pypkg</div>
+                <div class="title">Installing pyDisagg</div>
                 
               </div>
             </a>
@@ -376,7 +553,18 @@
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Quickstart</a><ul>
-<li><a class="reference internal" href="#example">Example</a></li>
+<li><a class="reference internal" href="#python">Python</a><ul>
+<li><a class="reference internal" href="#import-example">Import Example</a></li>
+<li><a class="reference internal" href="#age-splitting">Age Splitting</a></li>
+<li><a class="reference internal" href="#categorical-splitting">Categorical Splitting</a></li>
+<li><a class="reference internal" href="#sex-splitting">Sex Splitting</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#r">R</a><ul>
+<li><a class="reference internal" href="#r-import-example">R Import Example</a></li>
+<li><a class="reference internal" href="#r-age-splitting">R Age Splitting</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -389,7 +577,7 @@
     </aside>
   </div>
 </div><script src="../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=4e2eecee"></script>
     </body>

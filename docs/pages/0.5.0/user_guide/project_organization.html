@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="2. Style guide" href="style_guide.html" /><link rel="prev" title="User guide" href="index.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="2. Configuration guide" href="config_guide.html" /><link rel="prev" title="User guide" href="index.html" />
 
-    <!-- Generated with Sphinx 7.3.7 and Furo 2024.05.06 -->
-        <title>1. Project organization - pydisagg 0.5.0</title>
+    <!-- Generated with Sphinx 8.1.3 and Furo 2024.05.06 -->
+        <title>1. Project Organization - pydisagg 0.6.0</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=387cc868" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
@@ -198,7 +198,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">pydisagg 0.5.0</div></a>
+      <a href="../index.html"><div class="brand">pydisagg 0.6.0</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -226,7 +226,7 @@
     <img class="sidebar-logo only-dark" src="../_static/logo/logo-dark.png" alt="Dark Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">pydisagg 0.5.0</span>
+  <span class="sidebar-brand-text">pydisagg 0.6.0</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -236,19 +236,20 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul class="current">
 <li class="toctree-l1 has-children"><a class="reference internal" href="../getting_started/index.html">Getting started</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Getting started</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../getting_started/installation.html">Installing pypkg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../getting_started/installation.html">Installing pyDisagg</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../getting_started/quickstart.html">Quickstart</a></li>
 </ul>
 </li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">User guide</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of User guide</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">1. Project organization</a></li>
-<li class="toctree-l2"><a class="reference internal" href="style_guide.html">2. Style guide</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">1. Project Organization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config_guide.html">2. Configuration guide</a></li>
 <li class="toctree-l2"><a class="reference internal" href="testing.html">3. Testing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="documentation.html">4. Documentation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cicd.html">5. CI/CD</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../api_reference/index.html">API reference</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of API reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="simple">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api_reference/index.html">API reference</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle navigation of API reference</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api_reference/example.html">PyDisagg Example</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../developer_guide/index.html">Developer guide</a></li>
@@ -308,11 +309,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <section id="project-organization">
-<h1><span class="section-number">1. </span>Project organization<a class="headerlink" href="#project-organization" title="Link to this heading">¶</a></h1>
-<div class="attention admonition">
-<p class="admonition-title">Working in progress…</p>
-<p>Explain what different files and folders in the repo mean…</p>
-</div>
+<h1><span class="section-number">1. </span>Project Organization<a class="headerlink" href="#project-organization" title="Link to this heading">¶</a></h1>
 </section>
 
         </article>
@@ -320,12 +317,12 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="style_guide.html">
+          <a class="next-page" href="config_guide.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title"><span class="section-number">2. </span>Style guide</div>
+                <div class="title"><span class="section-number">2. </span>Configuration guide</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -365,7 +362,7 @@
     </aside>
   </div>
 </div><script src="../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=4e2eecee"></script>
     </body>
