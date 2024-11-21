@@ -56,18 +56,6 @@ class AgePopulationConfig(Schema):
     def val_fields(self) -> list[str]:
         return ["val"]
 
-    def apply_prefix(self) -> dict[str, str]:
-        rename_map = {}
-        for field in self.val_fields:
-            new_field_val = self.prefix + (field_val := getattr(self, field))
-            rename_map[field_val] = new_field_val
-            setattr(self, field, new_field_val)
-        return rename_map
-
-    def remove_prefix(self) -> None:
-        for field in self.val_fields:
-            setattr(self, field, getattr(self, field).removeprefix(self.prefix))
-
 
 class AgePatternConfig(Schema):
     by: list[str]
@@ -171,9 +159,11 @@ class AgeSplitter(BaseModel):
 
         # Validate for NaN values
         validate_nonan(pattern, name)
-        validate_positive(
-            pattern, [self.pattern.val_sd], name, strict=positive_strict
-        )
+
+        # Validate for negative values in val_sd
+        validate_positive(pattern, [self.pattern.val_sd], name, strict=False)
+
+        # Validate interval correctness
         validate_interval(
             pattern,
             self.pattern.age_lwr,
