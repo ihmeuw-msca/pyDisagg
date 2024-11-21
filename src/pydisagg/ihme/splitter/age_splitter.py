@@ -21,7 +21,7 @@ from pydisagg.ihme.validator import (
 from pydisagg.models import LogOddsModel, RateMultiplicativeModel
 
 
-class AgeDataConfig(BaseModel):
+class AgeDataConfig(Schema):
     index: list[str]
     age_lwr: str
     age_upr: str
