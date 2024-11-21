@@ -1,51 +1,46 @@
 import functools
 import subprocess
+from typing import TextIO
+
 import tomllib
 
 run = functools.partial(subprocess.run, shell=True)
 
 
 def build_doc(version: str) -> None:
-    """Build documentation for a specific version."""
+    print(f"Build _{version}_")
     run(f"git checkout v{version}")
     run("git checkout main -- conf.py")
     run("git checkout main -- meta.toml")
 
-    run("make html")
+    run("sphinx-build -M html . _build")
     run(f"mv _build/html pages/{version}")
     run("rm -rf _build")
     run("git checkout main")
 
 
-def build_init_page(default_version: str, latest_version: str) -> None:
-    """Create the initial page to redirect to the default or latest version."""
-    redirect_version = default_version or latest_version
+def build_init_page(version: str) -> None:
+    f: TextIO
     with open("pages/index.html", "w") as f:
-        f.write(
-            f"""<!doctype html>
-<meta http-equiv="refresh" content="0; url=./{redirect_version}/index.html">"""
-        )
+        f.write(f"""<!doctype html>
+<meta http-equiv="refresh" content="0; url=./{version}/">""")
 
 
 if __name__ == "__main__":
-    # Create the pages folder
+    # Executes in the docs directory, hence the constant use of ..
+    # create pages folder
     run("rm -rf pages")
     run("mkdir pages")
 
-    # Load configuration from meta.toml
+    # get versions
     with open("meta.toml", "rb") as f:
-        meta = tomllib.load(f)
-
-    # Extract default and available versions
-    default_version = meta.get("default", {}).get("version", None)
-    versions = meta.get("versions", {}).get("available", [])
-
-    # Sort versions in descending order (e.g., 0.6.0 > 0.5.1 > 0.5.0)
+        versions = tomllib.load(f)["versions"]
     versions.sort(reverse=True, key=lambda v: tuple(map(int, v.split("."))))
+    print(f"All detected versions: {versions}")
 
-    # Build documentation for all versions
+    # build documentations for different versions
     for version in versions:
         build_doc(version)
 
-    # Build the initial page
-    build_init_page(default_version, versions[0])
+    # build initial page that redirect to the latest version
+    build_init_page(versions[0])
