@@ -213,6 +213,32 @@ class SexSplitter(BaseModel):
     def parse_population(
         self, data: DataFrame, population: DataFrame
     ) -> DataFrame:
+        """
+        Parse and validate population data for sex splitting.
+
+        This method ensures that the population data is properly formatted and merged
+        with the input data, preventing unintended row multiplication. It accounts for
+        cases where some data may already be sex-specific and not need splitting.
+
+        Parameters
+        ----------
+        data : DataFrame
+            The input data to be split
+        population : DataFrame
+            Population data containing sex-specific population counts
+
+        Returns
+        -------
+        DataFrame
+            Merged data with validated population information
+
+        Raises
+        ------
+        ValueError
+            If population data validation fails
+        KeyError
+            If required columns are missing
+        """
         name = "While parsing population"
 
         # Step 1: Validate population columns
@@ -223,13 +249,35 @@ class SexSplitter(BaseModel):
                 f"{name}: Missing columns in the population data. Details:\n{e}"
             )
 
-        # Step 2: Get male and female populations and rename columns
+        # Step 2: Custom validation for population index uniqueness
+        # We need to check for duplicates only within each sex, not across sexes
+        for sex_value in [self.population.sex_m, self.population.sex_f]:
+            sex_population = population[population[self.population.sex] == sex_value]
+            duplicated_index = pd.MultiIndex.from_frame(
+                sex_population[sex_population[self.population.index].duplicated()][self.population.index]
+            ).to_list()
+            if duplicated_index:
+                error_message = f"{name} has duplicated index with {len(duplicated_index)} indices for sex {sex_value}\n"
+                error_message += f"Index columns: ({', '.join(self.population.index)})\n"
+                if len(duplicated_index) > 5:
+                    error_message += "First 5: \n"
+                error_message += ", \n".join(str(idx) for idx in duplicated_index[:5])
+                error_message += "\n"
+                raise ValueError(error_message)
+
+        # Step 3: Get male and female populations and rename columns
         male_population = self.get_population_by_sex(
             population, self.population.sex_m
         )
         female_population = self.get_population_by_sex(
             population, self.population.sex_f
         )
+
+        # Validate that we have both male and female populations
+        if len(male_population) == 0 or len(female_population) == 0:
+            raise ValueError(
+                f"{name}: Missing population data for either males or females"
+            )
 
         male_population.rename(
             columns={self.population.val: "m_pop"}, inplace=True
@@ -238,7 +286,7 @@ class SexSplitter(BaseModel):
             columns={self.population.val: "f_pop"}, inplace=True
         )
 
-        # Step 3: Merge population data with main data
+        # Step 4: Merge population data with main data
         data_with_population = self._merge_with_population(
             data, male_population, "m_pop"
         )
@@ -246,7 +294,7 @@ class SexSplitter(BaseModel):
             data_with_population, female_population, "f_pop"
         )
 
-        # Step 4: Validate the merged data columns
+        # Step 5: Validate the merged data columns
         try:
             validate_columns(data_with_population, ["m_pop", "f_pop"], name)
         except KeyError as e:
@@ -254,7 +302,7 @@ class SexSplitter(BaseModel):
                 f"{name}: Missing population columns after merging. Details:\n{e}"
             )
 
-        # Step 5: Validate for NaN values in the merged columns using validate_nonan
+        # Step 6: Validate for NaN values in the merged columns
         try:
             validate_nonan(data_with_population, name)
         except ValueError as e:
@@ -262,7 +310,7 @@ class SexSplitter(BaseModel):
                 f"{name}: NaN values found in the population data. Details:\n{e}"
             )
 
-        # Step 6: Validate index differences
+        # Step 7: Validate index differences
         try:
             validate_noindexdiff(
                 data, data_with_population, self.data.index, name
@@ -272,7 +320,26 @@ class SexSplitter(BaseModel):
                 f"{name}: Index differences found between data and population. Details:\n{e}"
             )
 
-        # Ensure the columns are in the correct numeric type (e.g., float64)
+        # Step 8: Validate that we haven't created more rows than expected
+        # Count rows that need splitting (where sex is not already specific)
+        rows_to_split = ~data[self.population.sex].isin(
+            [self.population.sex_m, self.population.sex_f]
+        )
+        num_rows_to_split = rows_to_split.sum()
+        num_rows_already_split = (~rows_to_split).sum()
+        
+        # Expected total rows = already split rows + (rows to split * 2)
+        expected_rows = num_rows_already_split + (num_rows_to_split * 2)
+        
+        if len(data_with_population) > expected_rows:
+            raise ValueError(
+                f"{name}: Population merge created {len(data_with_population)} rows, "
+                f"but expected at most {expected_rows} rows "
+                f"({num_rows_already_split} already split + {num_rows_to_split} to split * 2). "
+                "This indicates a problem with the population data matching."
+            )
+
+        # Ensure the columns are in the correct numeric type
         data_with_population["m_pop"] = data_with_population["m_pop"].astype(
             "float64"
         )
@@ -285,8 +352,33 @@ class SexSplitter(BaseModel):
     def _merge_with_population(
         self, data: DataFrame, population: DataFrame, pop_col: str
     ) -> DataFrame:
+        """
+        Merge population data with the main dataset.
+
+        Parameters
+        ----------
+        data : DataFrame
+            The main dataset
+        population : DataFrame
+            Population data to merge
+        pop_col : str
+            Name of the population column to merge
+
+        Returns
+        -------
+        DataFrame
+            Merged dataset with population information
+        """
         keep_cols = self.population.index + [pop_col]
         population_temp = population[keep_cols]
+        
+        # Validate that the merge keys are unique
+        if not population_temp.index.is_unique:
+            raise ValueError(
+                f"Population data has duplicate index values for {pop_col}. "
+                "This will cause unintended row multiplication."
+            )
+            
         data_with_population = data.merge(
             population_temp,
             on=self.population.index,

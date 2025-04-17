@@ -286,8 +286,9 @@ def split_dataframe(
         result_raw = splitting_df.set_index("demographic_id").apply(
             split_row, axis=1
         )
-        point_estimates = result_raw.applymap(lambda x: x[0])
-        standard_errors = result_raw.applymap(lambda x: x[1])
+        # Use vectorized operations to extract tuple elements
+        point_estimates = result_raw.apply(lambda x: pd.Series([t[0] for t in x]))
+        standard_errors = result_raw.apply(lambda x: pd.Series([t[1] for t in x]))
         result = pd.concat(
             [point_estimates, standard_errors], keys=["estimate", "se"], axis=1
         ).reset_index()  # .groupby(level=0).sum()
