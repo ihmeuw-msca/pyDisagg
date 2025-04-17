@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "pydisagg"
-version = "0.6.0"
+version = "0.6.1"
 description = ""
 readme = "README.md"
 license = { text = "BSD 2-Clause License" }
