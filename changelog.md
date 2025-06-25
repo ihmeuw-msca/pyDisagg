@@ -1,3 +1,10 @@
+## [0.6.1] - 2025-01-24
+
+### Fixed
+
+- **Sex splitting with logodds model:** Fixed issue with logodds sex splitting where the input pattern calculation was incorrectly using `expit` transformation. The fix simplifies the pattern calculation to use consistent input patterns for both rate and logodds models.
+
+
 ## [0.5.1] - 2024-07-09
 
 ### Added
