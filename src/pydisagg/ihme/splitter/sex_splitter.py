@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from pydantic import BaseModel
-from scipy.special import expit  # type: ignore
 from typing import Literal
 from pydisagg.disaggregate import split_datapoint
 from pydisagg.ihme.schema import Schema
@@ -382,19 +381,14 @@ class SexSplitter(BaseModel):
         # Step 2: Handle rows that need to be split (where `sex_id` is not `sex_m` or `sex_f`)
         split_data = data[~mask_sex_m_or_f].copy()
 
-        # Calculate input patterns and splitting logic
+        input_patterns = np.vstack(
+            [np.ones(len(split_data)), split_data[self.pattern.val].values]
+        ).T
+
+        # TODO: Re-think "logodds" splitting for patterns with logit differences
         if model == "rate":
-            input_patterns = np.vstack(
-                [np.ones(len(split_data)), split_data[self.pattern.val].values]
-            ).T
             splitting_model = RateMultiplicativeModel()
         elif model == "logodds":
-            input_patterns = np.vstack(
-                [
-                    0.5 * np.ones(len(split_data)),
-                    expit(split_data[self.pattern.val].values),
-                ]
-            ).T
             splitting_model = LogOddsModel()
 
         # Perform the split for all rows at once using vectorized operations

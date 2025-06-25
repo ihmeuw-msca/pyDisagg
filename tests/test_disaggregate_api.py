@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from numpy.testing import assert_approx_equal, assert_array_equal
 import pandas as pd
 
 from pydisagg import models
