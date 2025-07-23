@@ -1,9 +1,9 @@
-## [0.6.1] - 2025-01-24
+## [0.6.2] - 2025-07-23
 
 ### Fixed
 
-- **Sex splitting with logodds model:** Fixed issue with logodds sex splitting where the input pattern calculation was incorrectly using `expit` transformation. The fix simplifies the pattern calculation to use consistent input patterns for both rate and logodds models.
-
+- **Sex splitting with logodds model:** Fixed issue with logodds sex splitting where the input pattern calculation was incorrectly using `expit` transformation for linear sex ratio inputs. This fix implements a new `lmo`
+option for sex splitting which uses the `logmodifiedodds` model for splitting linear sex ratio inputs and producing a bounded result.
 
 ## [0.5.1] - 2024-07-09
 
