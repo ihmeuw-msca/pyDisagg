@@ -43,6 +43,7 @@ class SexPatternConfig(Schema):
             "val_sd",
         ]
 
+
 class SexPopulationConfig(Schema):
     index: list[str]
     sex: str
