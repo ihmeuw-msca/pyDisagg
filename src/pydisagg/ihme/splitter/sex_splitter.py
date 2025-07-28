@@ -16,8 +16,7 @@ from pydisagg.ihme.validator import (
     validate_positive,
     validate_realnumber,
 )
-from pydisagg.models import RateMultiplicativeModel
-from pydisagg.models import LogOddsModel
+from pydisagg.models import RateMultiplicativeModel, LogOddsModel, LMOModel
 
 
 class SexPatternConfig(Schema):
@@ -306,7 +305,7 @@ class SexSplitter(BaseModel):
         data: DataFrame,
         pattern: DataFrame,
         population: DataFrame,
-        model: Literal["rate", "logodds"] = "rate",
+        model: Literal["rate", "logodds", "lmo_hack"] = "rate",
         output_type: Literal["rate", "count"] = "rate",
     ) -> DataFrame:
         """
@@ -389,13 +388,23 @@ class SexSplitter(BaseModel):
             ).T
             splitting_model = RateMultiplicativeModel()
         elif model == "logodds":
+            cons_mult = 1e-2
             input_patterns = np.vstack(
                 [
-                    0.5 * np.ones(len(split_data)),
-                    expit(split_data[self.pattern.val].values),
+                    cons_mult * np.ones(len(split_data)),
+                    cons_mult * split_data[self.pattern.val].values,
                 ]
             ).T
             splitting_model = LogOddsModel()
+        elif model == "lmo_hack":
+            cons_mult = 1e-3
+            input_patterns = np.vstack(
+                [
+                    cons_mult * np.ones(len(split_data)),
+                    cons_mult * split_data[self.pattern.val].values,
+                ]
+            ).T
+            splitting_model = LMOModel(m = 5)
 
         # Perform the split for all rows at once using vectorized operations
         split_results, SEs = zip(
