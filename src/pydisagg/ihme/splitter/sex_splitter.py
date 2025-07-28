@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from pydantic import BaseModel
-from scipy.special import expit  # type: ignore
 from typing import Literal
 from pydisagg.disaggregate import split_datapoint
 from pydisagg.ihme.schema import Schema
@@ -17,7 +16,6 @@ from pydisagg.ihme.validator import (
     validate_realnumber,
 )
 from pydisagg.models import RateMultiplicativeModel
-from pydisagg.models import LogOddsModel
 
 
 class SexPatternConfig(Schema):
@@ -389,13 +387,9 @@ class SexSplitter(BaseModel):
             ).T
             splitting_model = RateMultiplicativeModel()
         elif model == "logodds":
-            input_patterns = np.vstack(
-                [
-                    0.5 * np.ones(len(split_data)),
-                    expit(split_data[self.pattern.val].values),
-                ]
-            ).T
-            splitting_model = LogOddsModel()
+            raise ValueError(
+                "logodds has been removed from version 0.6.2. For sex splitting with bounded quantities, use the cat_splitter function and pass sex specific patterns directly instead of a ratio or logit difference."
+            )
 
         # Perform the split for all rows at once using vectorized operations
         split_results, SEs = zip(

@@ -2,7 +2,6 @@
 
 import numpy as np
 import pandas as pd
-from pandas import DataFrame
 
 # Import CatSplitter and related classes
 from pydisagg.ihme.splitter import (

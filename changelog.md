@@ -1,3 +1,15 @@
+## [0.6.2] - 2025-07-28
+
+
+### Changed
+
+- **Logodds model behavior:** The `logodds` option now raises a `ValueError` immediately instead of executing deprecated functionality. Users are directed to use `cat_splitter` function with sex-specific patterns instead.
+- **Error messaging:** Updated logodds deprecation message to be more specific about alternative approaches.
+
+### Technical
+
+- Cleaned up unused imports (`warnings`, `scipy.special.expit`, `LogOddsModel`).
+
 ## [0.5.1] - 2024-07-09
 
 ### Added
