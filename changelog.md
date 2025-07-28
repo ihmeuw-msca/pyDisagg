@@ -1,9 +1,14 @@
-## [0.6.2] - 2025-07-23
+## [0.6.3] - 2025-07-28
 
-### Fixed
 
-- **Sex splitting with logodds model:** Fixed issue with logodds sex splitting where the input pattern calculation was incorrectly using `expit` transformation for linear sex ratio inputs. This fix implements a new `lmo`
-option for sex splitting which uses the `logmodifiedodds` model for splitting linear sex ratio inputs and producing a bounded result.
+### Changed
+
+- **Logodds model behavior:** The `logodds` option now raises a `ValueError` immediately instead of executing deprecated functionality. Users are directed to use `cat_splitter` function with sex-specific patterns instead.
+- **Error messaging:** Updated logodds deprecation message to be more specific about alternative approaches.
+
+### Technical
+
+- Cleaned up unused imports (`warnings`, `scipy.special.expit`, `LogOddsModel`).
 
 ## [0.5.1] - 2024-07-09
 

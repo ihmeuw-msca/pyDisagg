@@ -1,12 +1,10 @@
 from typing import Any
-import warnings
 
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from pydantic import BaseModel
 from typing import Literal
-from scipy.special import expit  # type: ignore
 from pydisagg.disaggregate import split_datapoint
 from pydisagg.ihme.schema import Schema
 from pydisagg.ihme.validator import (
@@ -17,8 +15,7 @@ from pydisagg.ihme.validator import (
     validate_positive,
     validate_realnumber,
 )
-from pydisagg.models import RateMultiplicativeModel, LogOddsModel, LMOModel
-from pydisagg.constants import CONST_MULT
+from pydisagg.models import RateMultiplicativeModel
 
 
 class SexPatternConfig(Schema):
@@ -45,7 +42,6 @@ class SexPatternConfig(Schema):
             "val",
             "val_sd",
         ]
-
 
 class SexPopulationConfig(Schema):
     index: list[str]
@@ -78,8 +74,6 @@ class SexSplitter(BaseModel):
     data: SexDataConfig
     pattern: SexPatternConfig
     population: SexPopulationConfig
-    
-    _logodds_warning_shown: bool = False
 
     def model_post_init(self, __context: Any) -> None:
         """Extra validation of all the index."""
@@ -309,7 +303,7 @@ class SexSplitter(BaseModel):
         data: DataFrame,
         pattern: DataFrame,
         population: DataFrame,
-        model: Literal["rate", "logodds", "lmo"] = "rate",
+        model: Literal["rate", "logodds"] = "rate",
         output_type: Literal["rate", "count"] = "rate",
     ) -> DataFrame:
         """
@@ -392,29 +386,9 @@ class SexSplitter(BaseModel):
             ).T
             splitting_model = RateMultiplicativeModel()
         elif model == "logodds":
-            if not SexSplitter._logodds_warning_shown:
-                warnings.warn(
-                    "WARNING: logodds was chosen which expects a logodds difference as the input pattern. If this is not true, use lmo instead.",
-                    UserWarning,
-                    stacklevel=2
-                )
-                SexSplitter._logodds_warning_shown = True
-                
-            input_patterns = np.vstack(
-                [
-                    0.5 * np.ones(len(split_data)),
-                    expit(split_data[self.pattern.val].values),
-                ]
-            ).T
-            splitting_model = LogOddsModel()
-        elif model == "lmo":
-            input_patterns = np.vstack(
-                [
-                    CONST_MULT * np.ones(len(split_data)),
-                    CONST_MULT * split_data[self.pattern.val].values,
-                ]
-            ).T
-            splitting_model = LMOModel(m=5)
+            raise ValueError(
+                "logodds has been removed from version 0.6.2. For sex splitting with bounded quantities, use the cat_splitter function and pass sex specific patterns directly instead of a ratio or logit difference."
+            )
 
         # Perform the split for all rows at once using vectorized operations
         split_results, SEs = zip(
